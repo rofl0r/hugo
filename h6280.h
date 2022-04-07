@@ -268,19 +268,23 @@ extern int tya(void);
 
 extern UChar flnz_list[256];
 
-inline UChar imm_operand(UInt16 addr);
-inline UChar get_8bit_zp(UChar zp_addr);
-inline UInt16 get_16bit_zp(UChar zp_addr);
-inline void put_8bit_zp(UChar zp_addr, UChar byte);
+UChar imm_operand_e(UInt16 addr);
+UChar get_8bit_zp_e(UChar zp_addr);
+UInt16 get_16bit_zp_e(UChar zp_addr);
+void put_8bit_zp_e(UChar zp_addr, UChar byte);
 
 #if !defined(INLINED_ACCESSORS)
 #define get_8bit_addr(addr) Rd6502((addr))
 #define put_8bit_addr(addr,byte) Wr6502((addr),(byte))
 #define get_16bit_addr(addr) (Rd6502(addr) + (Rd6502(addr + 1) << 8))
+
+#define get_8bit_addr_e(addr) Rd6502((UInt16)(addr))
+#define put_8bit_addr_e(addr,byte) Wr6502((addr),(byte))
+#define get_16bit_addr_e(addr) (Rd6502(addr) + (Rd6502(addr + 1) << 8))
 #else
-inline UChar get_8bit_addr(UInt16 addr);
-inline void put_8bit_addr(UInt16 addr, UChar byte);
-inline UInt16 get_16bit_addr(UInt16 addr);
+UChar get_8bit_addr_e(UInt16 addr);
+void put_8bit_addr_e(UInt16 addr, UChar byte);
+UInt16 get_16bit_addr_e(UInt16 addr);
 #endif
 
 #endif

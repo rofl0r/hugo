@@ -58,24 +58,16 @@ UChar flnz_list[256] = {
 //
 //  as a function:
 
-inline UChar imm_operand(UInt16 addr) {
+static inline UChar imm_operand(UInt16 addr) {
   register unsigned short int memreg = addr>>13;
   return( (UChar) (PageR[memreg][addr]));
 }
+UChar imm_operand_e(UInt16 addr) { return imm_operand(addr); }
 
-#if !defined(INLINED_ACCESSORS)
-
-#define get_8bit_addr(addr) Rd6502((addr))
-
-#define put_8bit_addr(addr,byte) Wr6502((addr),(byte))
-
-#define get_16bit_addr(addr) (Rd6502(addr) + (Rd6502((UInt16)(addr + 1)) << 8))
-
-#else
-
+#if defined(INLINED_ACCESSORS)
 
 // This is the more generalized access routine:
-inline UChar get_8bit_addr(UInt16 addr) {
+static inline UChar get_8bit_addr(UInt16 addr) {
   register unsigned short int memreg = addr>>13;
 
   if (PageR[memreg] == IOAREA)
@@ -83,8 +75,9 @@ inline UChar get_8bit_addr(UInt16 addr) {
   else
     return((UChar) (PageR[memreg][addr]));
 }
+UChar get_8bit_addr_e(UInt16 addr) { return get_8bit_addr(addr); }
 
-inline void put_8bit_addr(UInt16 addr, UChar byte) {
+static inline void put_8bit_addr(UInt16 addr, UChar byte) {
   register unsigned int memreg = addr>>13;
 
   if (PageW[memreg] == IOAREA) {
@@ -93,8 +86,9 @@ inline void put_8bit_addr(UInt16 addr, UChar byte) {
     PageW[memreg][addr] = byte;
   }
 }
+void put_8bit_addr_e(UInt16 addr, UChar byte) { put_8bit_addr(addr, byte); }
 
-inline UInt16 get_16bit_addr(UInt16 addr) {
+static inline UInt16 get_16bit_addr(UInt16 addr) {
   register unsigned int memreg = addr>>13;
   UInt16 ret_16bit = (UChar) PageR[memreg][addr];
   memreg = (++addr)>>13;
@@ -102,6 +96,7 @@ inline UInt16 get_16bit_addr(UInt16 addr) {
 
   return(ret_16bit);
 }
+UInt16 get_16bit_addr_e(UInt16 addr) { return get_16bit_addr(addr); }
 
 #endif
 
@@ -121,35 +116,38 @@ inline UInt16 get_16bit_addr(UInt16 addr) {
 
 #define chk_flnz_8bit(x) reg_p = ((reg_p & (~(FL_N|FL_T|FL_Z))) | flnz_list[x]);
 
-inline UChar get_8bit_zp(UChar zp_addr) {
+static inline UChar get_8bit_zp(UChar zp_addr) {
   return((UChar) *(zp_base + zp_addr) );
 }
+UChar get_8bit_zp_e(UChar zp_addr) { return get_8bit_zp(zp_addr); }
 
-inline UInt16 get_16bit_zp(UChar zp_addr) {
+static inline UInt16 get_16bit_zp(UChar zp_addr) {
   UInt16 n = *(zp_base + zp_addr);
   n += (*(zp_base + (UChar)(zp_addr+1)) << 8);
   return(n);
 }
+UInt16 get_16bit_zp_e(UChar zp_addr) { return get_16bit_zp(zp_addr); }
 
-inline void put_8bit_zp(UChar zp_addr, UChar byte) {
+static inline void put_8bit_zp(UChar zp_addr, UChar byte) {
   *(zp_base + zp_addr) = byte;
 }
+void put_8bit_zp_e(UChar zp_addr, UChar byte) { put_8bit_zp(zp_addr, byte); }
 
-inline void push_8bit(UChar byte) {
+static inline void push_8bit(UChar byte) {
   *(sp_base + reg_s--) = byte;
 }
 
-inline UChar pull_8bit(void) {
+static inline UChar pull_8bit(void) {
   return((UChar) *(sp_base + ++reg_s) );
 }
 
-inline void push_16bit(UInt16 addr) {
+static inline void push_16bit(UInt16 addr) {
   *(sp_base + reg_s--) = (UChar)(addr>>8);
   *(sp_base + reg_s--) = (UChar)(addr&0xFF);
   return;
 }
 
-inline UInt16 pull_16bit(void) {
+static inline UInt16 pull_16bit(void) {
   UInt16 n = (UChar) *(sp_base + ++reg_s);
   n += (UInt16)(((UChar) *(sp_base + ++reg_s)) << 8);
   return(n);
