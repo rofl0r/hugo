@@ -193,7 +193,7 @@ create_mainWindow (void)
   gtk_widget_show (hbox2);
   gtk_container_add (GTK_CONTAINER (button1), hbox2);
 
-  pixmap2 = create_pixmap (mainWindow, "pce.xpm");
+  pixmap2 = create_pixmap (mainWindow, "rom.png");
   gtk_widget_show (pixmap2);
   gtk_box_pack_start (GTK_BOX (hbox2), pixmap2, TRUE, TRUE, 0);
   gtk_misc_set_padding (GTK_MISC (pixmap2), 2, 2);
@@ -313,6 +313,9 @@ create_fileselection1 (void)
 
   fileselection1 = gtk_file_selection_new ("Select File");
   gtk_container_set_border_width (GTK_CONTAINER (fileselection1), 10);
+  gtk_window_set_destroy_with_parent (GTK_WINDOW (fileselection1), TRUE);
+  gtk_window_set_type_hint (GTK_WINDOW (fileselection1), GDK_WINDOW_TYPE_HINT_DIALOG);
+  gtk_file_selection_hide_fileop_buttons (GTK_FILE_SELECTION (fileselection1));
 
   ok_button1 = GTK_FILE_SELECTION (fileselection1)->ok_button;
   gtk_widget_show (ok_button1);
@@ -322,6 +325,9 @@ create_fileselection1 (void)
   gtk_widget_show (cancel_button1);
   GTK_WIDGET_SET_FLAGS (cancel_button1, GTK_CAN_DEFAULT);
 
+  g_signal_connect ((gpointer) fileselection1, "delete_event",
+                    G_CALLBACK (on_fileselection1_delete_event),
+                    NULL);
   g_signal_connect ((gpointer) ok_button1, "clicked",
                     G_CALLBACK (on_ok_button1_clicked),
                     NULL);
@@ -349,11 +355,6 @@ create_general_settings_window (void)
   GtkWidget *checkbutton_start_fullscreen;
   GtkWidget *checkbutton_maintain_aspect;
   GtkWidget *label29;
-  GtkWidget *label30;
-  GtkWidget *entry_fullscreen_width;
-  GtkWidget *entry_fullscreen_height;
-  GtkObject *spinbutton_window_size_adj;
-  GtkWidget *spinbutton_window_size;
   GtkWidget *checkbutton_use_overlay;
   GtkWidget *checkbutton_tv_size;
   GtkWidget *hseparator1;
@@ -363,6 +364,11 @@ create_general_settings_window (void)
   GtkWidget *convertwidget42;
   GtkWidget *convertwidget43;
   GtkWidget *label31;
+  GtkWidget *label30;
+  GtkObject *spinbutton_window_size_adj;
+  GtkWidget *spinbutton_window_size;
+  GtkWidget *entry_fullscreen_width;
+  GtkWidget *entry_fullscreen_height;
   GtkWidget *label27;
   GtkWidget *table3;
   GtkWidget *entry_cd_system_filename;
@@ -381,10 +387,10 @@ create_general_settings_window (void)
   GtkWidget *label_cd;
   GtkWidget *table5;
   GtkWidget *label22;
-  GtkWidget *entry_output_frequency;
-  GtkWidget *entry_buffer_size;
   GtkWidget *label23;
   GtkWidget *checkbutton_stereo_sound;
+  GtkWidget *entry_output_frequency;
+  GtkWidget *entry_buffer_size;
   GtkWidget *label_sound;
   GtkWidget *table18;
   GtkWidget *label159;
@@ -511,33 +517,6 @@ create_general_settings_window (void)
   gtk_label_set_justify (GTK_LABEL (label29), GTK_JUSTIFY_RIGHT);
   gtk_misc_set_alignment (GTK_MISC (label29), 0, 0.5);
 
-  label30 = gtk_label_new ("x");
-  gtk_widget_show (label30);
-  gtk_table_attach (GTK_TABLE (table7), label30, 2, 3, 4, 5,
-                    (GtkAttachOptions) (GTK_SHRINK),
-                    (GtkAttachOptions) (0), 0, 0);
-  gtk_label_set_justify (GTK_LABEL (label30), GTK_JUSTIFY_CENTER);
-  gtk_misc_set_alignment (GTK_MISC (label30), 0, 0.5);
-
-  entry_fullscreen_width = gtk_entry_new ();
-  gtk_widget_show (entry_fullscreen_width);
-  gtk_table_attach (GTK_TABLE (table7), entry_fullscreen_width, 1, 2, 4, 5,
-                    (GtkAttachOptions) (GTK_EXPAND | GTK_SHRINK | GTK_FILL),
-                    (GtkAttachOptions) (0), 0, 0);
-
-  entry_fullscreen_height = gtk_entry_new ();
-  gtk_widget_show (entry_fullscreen_height);
-  gtk_table_attach (GTK_TABLE (table7), entry_fullscreen_height, 3, 4, 4, 5,
-                    (GtkAttachOptions) (GTK_EXPAND | GTK_SHRINK | GTK_FILL),
-                    (GtkAttachOptions) (0), 0, 0);
-
-  spinbutton_window_size_adj = gtk_adjustment_new (1, 1, 4, 1, 10, 10);
-  spinbutton_window_size = gtk_spin_button_new (GTK_ADJUSTMENT (spinbutton_window_size_adj), 1, 0);
-  gtk_widget_show (spinbutton_window_size);
-  gtk_table_attach (GTK_TABLE (table7), spinbutton_window_size, 1, 2, 3, 4,
-                    (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
-                    (GtkAttachOptions) (0), 0, 0);
-
   checkbutton_use_overlay = gtk_check_button_new_with_mnemonic ("Hardware acceleration when available");
   gtk_widget_show (checkbutton_use_overlay);
   gtk_table_attach (GTK_TABLE (table7), checkbutton_use_overlay, 0, 4, 6, 7,
@@ -586,6 +565,36 @@ create_general_settings_window (void)
   gtk_label_set_justify (GTK_LABEL (label31), GTK_JUSTIFY_RIGHT);
   gtk_misc_set_alignment (GTK_MISC (label31), 0, 0.5);
 
+  label30 = gtk_label_new ("x");
+  gtk_widget_show (label30);
+  gtk_table_attach (GTK_TABLE (table7), label30, 2, 3, 4, 5,
+                    (GtkAttachOptions) (GTK_SHRINK),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_label_set_justify (GTK_LABEL (label30), GTK_JUSTIFY_CENTER);
+  gtk_misc_set_alignment (GTK_MISC (label30), 0, 0.5);
+
+  spinbutton_window_size_adj = gtk_adjustment_new (1, 1, 4, 1, 10, 10);
+  spinbutton_window_size = gtk_spin_button_new (GTK_ADJUSTMENT (spinbutton_window_size_adj), 1, 0);
+  gtk_widget_show (spinbutton_window_size);
+  gtk_table_attach (GTK_TABLE (table7), spinbutton_window_size, 1, 2, 3, 4,
+                    (GtkAttachOptions) (GTK_SHRINK),
+                    (GtkAttachOptions) (0), 0, 0);
+
+  entry_fullscreen_width = gtk_entry_new ();
+  gtk_widget_show (entry_fullscreen_width);
+  gtk_table_attach (GTK_TABLE (table7), entry_fullscreen_width, 1, 2, 4, 5,
+                    (GtkAttachOptions) (GTK_SHRINK),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_entry_set_max_length (GTK_ENTRY (entry_fullscreen_width), 4);
+  gtk_entry_set_width_chars (GTK_ENTRY (entry_fullscreen_width), 4);
+
+  entry_fullscreen_height = gtk_entry_new ();
+  gtk_widget_show (entry_fullscreen_height);
+  gtk_table_attach (GTK_TABLE (table7), entry_fullscreen_height, 3, 4, 4, 5,
+                    (GtkAttachOptions) (GTK_SHRINK),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_entry_set_width_chars (GTK_ENTRY (entry_fullscreen_height), 4);
+
   label27 = gtk_label_new ("Graphics");
   gtk_widget_show (label27);
   gtk_notebook_set_tab_label (GTK_NOTEBOOK (notebook1), gtk_notebook_get_nth_page (GTK_NOTEBOOK (notebook1), 0), label27);
@@ -628,7 +637,6 @@ create_general_settings_window (void)
   gtk_table_attach (GTK_TABLE (table3), entry_rom_basedir, 1, 2, 1, 2,
                     (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
                     (GtkAttachOptions) (0), 0, 0);
-  gtk_editable_set_editable (GTK_EDITABLE (entry_rom_basedir), FALSE);
 
   button_browse_rom_dirname = gtk_button_new_with_mnemonic ("Browse ...");
   gtk_widget_show (button_browse_rom_dirname);
@@ -694,18 +702,6 @@ create_general_settings_window (void)
   gtk_label_set_justify (GTK_LABEL (label22), GTK_JUSTIFY_RIGHT);
   gtk_misc_set_alignment (GTK_MISC (label22), 0, 0.5);
 
-  entry_output_frequency = gtk_entry_new ();
-  gtk_widget_show (entry_output_frequency);
-  gtk_table_attach (GTK_TABLE (table5), entry_output_frequency, 1, 2, 1, 2,
-                    (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
-                    (GtkAttachOptions) (0), 0, 0);
-
-  entry_buffer_size = gtk_entry_new ();
-  gtk_widget_show (entry_buffer_size);
-  gtk_table_attach (GTK_TABLE (table5), entry_buffer_size, 1, 2, 2, 3,
-                    (GtkAttachOptions) (GTK_EXPAND | GTK_FILL),
-                    (GtkAttachOptions) (0), 0, 0);
-
   label23 = gtk_label_new ("Buffer size : ");
   gtk_widget_show (label23);
   gtk_table_attach (GTK_TABLE (table5), label23, 0, 1, 2, 3,
@@ -719,6 +715,21 @@ create_general_settings_window (void)
   gtk_table_attach (GTK_TABLE (table5), checkbutton_stereo_sound, 0, 2, 0, 1,
                     (GtkAttachOptions) (GTK_FILL),
                     (GtkAttachOptions) (0), 0, 0);
+
+  entry_output_frequency = gtk_entry_new ();
+  gtk_widget_show (entry_output_frequency);
+  gtk_table_attach (GTK_TABLE (table5), entry_output_frequency, 1, 2, 1, 2,
+                    (GtkAttachOptions) (GTK_SHRINK),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_entry_set_max_length (GTK_ENTRY (entry_output_frequency), 5);
+  gtk_entry_set_width_chars (GTK_ENTRY (entry_output_frequency), 5);
+
+  entry_buffer_size = gtk_entry_new ();
+  gtk_widget_show (entry_buffer_size);
+  gtk_table_attach (GTK_TABLE (table5), entry_buffer_size, 1, 2, 2, 3,
+                    (GtkAttachOptions) (GTK_EXPAND),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_entry_set_width_chars (GTK_ENTRY (entry_buffer_size), 5);
 
   label_sound = gtk_label_new ("Sound");
   gtk_widget_show (label_sound);
@@ -1038,7 +1049,6 @@ create_general_settings_window (void)
   gtk_table_attach (GTK_TABLE (table18), optionmenu_netplay, 1, 2, 0, 1,
                     (GtkAttachOptions) (GTK_FILL),
                     (GtkAttachOptions) (0), 0, 0);
-  gtk_option_menu_set_history (GTK_OPTION_MENU (optionmenu_netplay), 3);
 
   menu6 = gtk_menu_new ();
 
@@ -1084,6 +1094,9 @@ create_general_settings_window (void)
   g_signal_connect ((gpointer) general_settings_window, "show",
                     G_CALLBACK (on_general_settings_window_show),
                     NULL);
+  g_signal_connect ((gpointer) general_settings_window, "delete_event",
+                    G_CALLBACK (on_general_settings_window_delete_event),
+                    NULL);
   g_signal_connect ((gpointer) button_browse_cd_system, "clicked",
                     G_CALLBACK (on_button_browse_cd_system_clicked),
                     NULL);
@@ -1110,10 +1123,6 @@ create_general_settings_window (void)
   GLADE_HOOKUP_OBJECT (general_settings_window, checkbutton_start_fullscreen, "checkbutton_start_fullscreen");
   GLADE_HOOKUP_OBJECT (general_settings_window, checkbutton_maintain_aspect, "checkbutton_maintain_aspect");
   GLADE_HOOKUP_OBJECT (general_settings_window, label29, "label29");
-  GLADE_HOOKUP_OBJECT (general_settings_window, label30, "label30");
-  GLADE_HOOKUP_OBJECT (general_settings_window, entry_fullscreen_width, "entry_fullscreen_width");
-  GLADE_HOOKUP_OBJECT (general_settings_window, entry_fullscreen_height, "entry_fullscreen_height");
-  GLADE_HOOKUP_OBJECT (general_settings_window, spinbutton_window_size, "spinbutton_window_size");
   GLADE_HOOKUP_OBJECT (general_settings_window, checkbutton_use_overlay, "checkbutton_use_overlay");
   GLADE_HOOKUP_OBJECT (general_settings_window, checkbutton_tv_size, "checkbutton_tv_size");
   GLADE_HOOKUP_OBJECT (general_settings_window, hseparator1, "hseparator1");
@@ -1123,6 +1132,10 @@ create_general_settings_window (void)
   GLADE_HOOKUP_OBJECT (general_settings_window, convertwidget42, "convertwidget42");
   GLADE_HOOKUP_OBJECT (general_settings_window, convertwidget43, "convertwidget43");
   GLADE_HOOKUP_OBJECT (general_settings_window, label31, "label31");
+  GLADE_HOOKUP_OBJECT (general_settings_window, label30, "label30");
+  GLADE_HOOKUP_OBJECT (general_settings_window, spinbutton_window_size, "spinbutton_window_size");
+  GLADE_HOOKUP_OBJECT (general_settings_window, entry_fullscreen_width, "entry_fullscreen_width");
+  GLADE_HOOKUP_OBJECT (general_settings_window, entry_fullscreen_height, "entry_fullscreen_height");
   GLADE_HOOKUP_OBJECT (general_settings_window, label27, "label27");
   GLADE_HOOKUP_OBJECT (general_settings_window, table3, "table3");
   GLADE_HOOKUP_OBJECT (general_settings_window, entry_cd_system_filename, "entry_cd_system_filename");
@@ -1141,10 +1154,10 @@ create_general_settings_window (void)
   GLADE_HOOKUP_OBJECT (general_settings_window, label_cd, "label_cd");
   GLADE_HOOKUP_OBJECT (general_settings_window, table5, "table5");
   GLADE_HOOKUP_OBJECT (general_settings_window, label22, "label22");
-  GLADE_HOOKUP_OBJECT (general_settings_window, entry_output_frequency, "entry_output_frequency");
-  GLADE_HOOKUP_OBJECT (general_settings_window, entry_buffer_size, "entry_buffer_size");
   GLADE_HOOKUP_OBJECT (general_settings_window, label23, "label23");
   GLADE_HOOKUP_OBJECT (general_settings_window, checkbutton_stereo_sound, "checkbutton_stereo_sound");
+  GLADE_HOOKUP_OBJECT (general_settings_window, entry_output_frequency, "entry_output_frequency");
+  GLADE_HOOKUP_OBJECT (general_settings_window, entry_buffer_size, "entry_buffer_size");
   GLADE_HOOKUP_OBJECT (general_settings_window, label_sound, "label_sound");
   GLADE_HOOKUP_OBJECT (general_settings_window, table18, "table18");
   GLADE_HOOKUP_OBJECT (general_settings_window, label159, "label159");
@@ -1275,6 +1288,9 @@ create_window_about (void)
   gtk_widget_show (button_close_about);
   gtk_container_add (GTK_CONTAINER (alignment4), button_close_about);
 
+  g_signal_connect ((gpointer) window_about, "delete_event",
+                    G_CALLBACK (on_window_about_delete_event),
+                    NULL);
   g_signal_connect ((gpointer) button_close_about, "clicked",
                     G_CALLBACK (on_button_close_about_clicked),
                     NULL);
@@ -1300,6 +1316,9 @@ create_fileselection_cd_system (void)
 
   fileselection_cd_system = gtk_file_selection_new ("Select CD System rom");
   gtk_container_set_border_width (GTK_CONTAINER (fileselection_cd_system), 10);
+  gtk_window_set_destroy_with_parent (GTK_WINDOW (fileselection_cd_system), TRUE);
+  gtk_window_set_type_hint (GTK_WINDOW (fileselection_cd_system), GDK_WINDOW_TYPE_HINT_DIALOG);
+  gtk_file_selection_hide_fileop_buttons (GTK_FILE_SELECTION (fileselection_cd_system));
 
   ok_button_cd_system = GTK_FILE_SELECTION (fileselection_cd_system)->ok_button;
   gtk_widget_show (ok_button_cd_system);
@@ -1309,6 +1328,9 @@ create_fileselection_cd_system (void)
   gtk_widget_show (cancel_button_cd_system);
   GTK_WIDGET_SET_FLAGS (cancel_button_cd_system, GTK_CAN_DEFAULT);
 
+  g_signal_connect ((gpointer) fileselection_cd_system, "delete_event",
+                    G_CALLBACK (on_fileselection_cd_system_delete_event),
+                    NULL);
   g_signal_connect ((gpointer) ok_button_cd_system, "clicked",
                     G_CALLBACK (on_ok_button_cd_system_clicked),
                     NULL);
@@ -1333,6 +1355,9 @@ create_fileselection_cd_path (void)
 
   fileselection_cd_path = gtk_file_selection_new ("Select device for cdrom");
   gtk_container_set_border_width (GTK_CONTAINER (fileselection_cd_path), 10);
+  gtk_window_set_destroy_with_parent (GTK_WINDOW (fileselection_cd_path), TRUE);
+  gtk_window_set_type_hint (GTK_WINDOW (fileselection_cd_path), GDK_WINDOW_TYPE_HINT_DIALOG);
+  gtk_file_selection_hide_fileop_buttons (GTK_FILE_SELECTION (fileselection_cd_path));
 
   ok_button_cd_path = GTK_FILE_SELECTION (fileselection_cd_path)->ok_button;
   gtk_widget_show (ok_button_cd_path);
@@ -1342,6 +1367,9 @@ create_fileselection_cd_path (void)
   gtk_widget_show (cancel_button_cd_path);
   GTK_WIDGET_SET_FLAGS (cancel_button_cd_path, GTK_CAN_DEFAULT);
 
+  g_signal_connect ((gpointer) fileselection_cd_path, "delete_event",
+                    G_CALLBACK (on_fileselection_cd_path_delete_event),
+                    NULL);
   g_signal_connect ((gpointer) ok_button_cd_path, "clicked",
                     G_CALLBACK (on_ok_button_cd_path_clicked),
                     NULL);
@@ -1366,6 +1394,8 @@ create_fileselection_rom_path (void)
 
   fileselection_rom_path = gtk_file_selection_new ("Select default rom path");
   gtk_container_set_border_width (GTK_CONTAINER (fileselection_rom_path), 10);
+  gtk_window_set_destroy_with_parent (GTK_WINDOW (fileselection_rom_path), TRUE);
+  gtk_window_set_type_hint (GTK_WINDOW (fileselection_rom_path), GDK_WINDOW_TYPE_HINT_DIALOG);
 
   ok_button_rom_path = GTK_FILE_SELECTION (fileselection_rom_path)->ok_button;
   gtk_widget_show (ok_button_rom_path);
@@ -1375,6 +1405,9 @@ create_fileselection_rom_path (void)
   gtk_widget_show (cancel_button_rom_path);
   GTK_WIDGET_SET_FLAGS (cancel_button_rom_path, GTK_CAN_DEFAULT);
 
+  g_signal_connect ((gpointer) fileselection_rom_path, "delete_event",
+                    G_CALLBACK (on_fileselection_rom_path_delete_event),
+                    NULL);
   g_signal_connect ((gpointer) ok_button_rom_path, "clicked",
                     G_CALLBACK (on_ok_button_rom_path_clicked),
                     NULL);

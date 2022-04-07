@@ -2875,8 +2875,14 @@ Int6502 (UChar Type)
 	    }
 
 	}
-
+#ifdef KERNEL_DEBUG
+			Log("Interruption : %04X\n", J);
+#endif
       reg_pc = get_16bit_addr((UInt16)J);
+    } else {
+#ifdef KERNEL_DEBUG
+    	Log("Dropped interruption %02X\n", Type);
+#endif
     }
 }
 
@@ -3055,14 +3061,22 @@ void exe_go(void) {
 
 	// if (!key[SDLK_F11])
 #endif
-    Log("[%04X] (%02X) (%02X,%02X,%02X) (%02X,%02X)\n",
+	if (0xC7A8 == reg_pc) {
+		UChar offset = PageR[reg_pc >> 13][reg_pc + 1];
+		Log("C7A8 !! %02X\n", offset);
+		Log("zp[%02X] = %02X\n", offset, get_8bit_addr(get_16bit_zp(offset)));
+	}
+    Log("[%04X] (%02X) (%02X,%02X,%02X) (%02X,%02X) {%02X,%04X} {%02X}\n",
         reg_pc,
         PageR[reg_pc>>13][reg_pc],
         reg_a,
         reg_x,
         reg_y,
         reg_s,
-        reg_p);
+        reg_p,
+        get_8bit_addr(get_16bit_zp(0)),
+        get_16bit_zp(0),
+        get_8bit_zp(0x48));
 #endif
 
 #ifdef USE_INSTR_SWITCH

@@ -22,7 +22,17 @@ AC_CHECK_LIB(SDL_net, main) #,,[AC_MSG_ERROR([need SDL_net. See #http://www.libs
 AC_CHECK_LIB(SDL_mixer,main) #,,[AC_MSG_ERROR([need SDL_mixer. See #http://www.libsdl.org])])
 AC_CHECK_LIB(vorbis, main)
 AC_CHECK_LIB(vorbisfile, main)
-AC_CHECK_LIB(z, main, [ AM_CONDITIONAL(ZLIB, true) LIBS="$LIBS -lz"] , AM_CONDITIONAL(ZLIB, false))
+
+LIBZ_SUPPORT=no
+
+AC_CHECK_LIB(z, main, [ LIBS="$LIBS -lz" AM_CONDITIONAL(ZLIB, true) AC_DEFINE([HAVE_LIBZ], [1], [Define to 1 if you have the 'z' library (-lz)]) LIBZ_SUPPORT=yes])
+
+if test "x$LIBZ_SUPPORT" = "xno"
+then
+
+AC_CHECK_LIB(zdll, main, [ LIBS="$LIBS -lzdll"  AM_CONDITIONAL(ZLIB, true) AC_DEFINE([HAVE_LIBZ], [1], [Define to 1 if you have the 'z' library (-lz)]) LIBZ_SUPPORT=yes] , AM_CONDITIONAL(ZLIB, false))
+
+fi
 
 # Checks for endianess
 
@@ -91,13 +101,13 @@ AC_CHECK_SIZEOF([long int], 4)
 echo "$as_me:$LINENO: checking whether netplay support was asked" >&5
 echo $ECHO_N "checking whether netplay support was asked...            $ECHO_C" >&6
 
-AM_CONDITIONAL(NETPLAY, false)
+AM_CONDITIONAL(NETPLAY, true)
 
-NETPLAY=no
+NETPLAY=yes
 
 AC_ARG_ENABLE(netplay,
-  AC_HELP_STRING([--enable-netplay], [enable netplay support (default is no)]),
-  [ if test "$enableval" = "yes"; then NETPLAY="yes"; fi])
+  AC_HELP_STRING([--enable-netplay], [enable netplay support (default is yes)]),
+  [ if test "$enableval" = "no"; then NETPLAY="no"; fi])
 
 if test "$NETPLAY" = "yes"
 then

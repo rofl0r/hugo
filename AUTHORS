@@ -10,11 +10,14 @@ Work had then been resumed by Zeograd with the help (in no special order) of :
 - Ixion (linux coding, sdl joypad, cd emulation, sound emulation, ...)
 - Black- (gfx bug fixes, gp32 port, ...)
 - Cleaner (freeBSD port fixes)
+- Laurent Desnogues (cpu coding, ps2 port, ...)
+- Erich Kitzmuller (sound improvement, dma bug fixes)
 - Pit (gfx)
 - David Michel (ideas, ...)
 - Lester Barrow (linux coding, joypad support, ...)
 - Mooz (ideas, ...)
 - Bt Garner (ideas, ...)
+- Littletux (mandrake packages, ...)
 - Zoop & his gf (gfx bug fixes)
 
 Tests by :

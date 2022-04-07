@@ -502,9 +502,9 @@ init_log_file ()
      Date.da_mon, Date.da_year, __DATE__);
 
 #elif defined(LINUX)
-  Log ("Creating Linux log file version 2.11 of %s ($Revision: 1.60 $)\n", __DATE__);
+  Log ("Creating Linux log file version 2.11 of %s ($Revision: 1.63 $)\n", __DATE__);
 #elif defined(WIN32)
-  Log ("Creating Win32 log file version 2.11 of %s ($Revision: 1.60 $)\n", __DATE__);
+  Log ("Creating Win32 log file version 2.11 of %s ($Revision: 1.63 $)\n", __DATE__);
 #endif
 
 }
@@ -790,7 +790,7 @@ read_sector_BIN (unsigned char *p, UInt32 sector)
     }
 
 #ifndef FINAL_RELEASE
-  fprintf (stderr, "Loading sector nø%d.\n", pce_cd_sectoraddy);
+  fprintf (stderr, "Loading sector nï¿½%d.\n", pce_cd_sectoraddy);
 #endif
 
   fseek (iso_FILE,
@@ -838,7 +838,7 @@ read_sector_ISQ (unsigned char *p, UInt32 sector)
     }
 
 #ifndef FINAL_RELEASE
-  fprintf (stderr, "Loading sector nø%d.\n", pce_cd_sectoraddy);
+  fprintf (stderr, "Loading sector nï¿½%d.\n", pce_cd_sectoraddy);
 #endif
 
   dummy = (sector - CD_track[binbcd[result]].beg_lsn) * 2048;
@@ -924,14 +924,14 @@ read_sector_ISO (unsigned char *p, UInt32 sector)
     }
 
 #ifndef FINAL_RELEASE
-  fprintf (stderr, "Loading sector nø%d.\n", pce_cd_sectoraddy);
+  fprintf (stderr, "Loading sector nï¿½%d.\n", pce_cd_sectoraddy);
   Log
-    ("Loading sector nø%d.\nAX=%02x%02x\nBX=%02x%02x\nCX=%02x%02x\nDX=%02x%02x\n\n",
+    ("Loading sector nï¿½%d.\nAX=%02x%02x\nBX=%02x%02x\nCX=%02x%02x\nDX=%02x%02x\n\n",
      pce_cd_sectoraddy, RAM[0xf9], RAM[0xf8], RAM[0xfb], RAM[0xfa], RAM[0xfd],
      RAM[0xfc], RAM[0xff], RAM[0xfe]);
   Log("temp+2-5 = %x %x %x\ntemp + 1 = %02x\n",RAM[5], RAM[6], RAM[7], RAM[4]);
   Log ("ISO : seek at %d\n", (sector - CD_track[result].beg_lsn) * 2048);
-  Log ("Track nø%d begin at %d\n", result, CD_track[result].beg_lsn);
+  Log ("Track nï¿½%d begin at %d\n", result, CD_track[result].beg_lsn);
 #endif
 
   if (result != 0x02)
@@ -2054,18 +2054,20 @@ TimerInt ()
 
 #endif
 
+static char syscard_filename[PATH_MAX];
+
 /*****************************************************************************
 
-    Function: search_syscard
+    Function: search_possible_syscard
 
     Description: Search for a system card rom
     Parameters: none
-    Return: -1 on error else 0
-             set true_file_name
+    Return: NULL if none found, else a pointer to a static area containing
+              its name
 
 *****************************************************************************/
-SInt32
-search_syscard()
+char*
+search_possible_syscard()
 {
   FILE* f;
 
@@ -2087,15 +2089,9 @@ search_syscard()
       Log("Testing syscard location : %s\n",cdsystem_path);
       if ((f = fopen(cdsystem_path,"rb")) != NULL)
         {
-          int CD_emulation_bak = CD_emulation;
-          int return_value;
-
-          fclose(f);
-          CD_emulation = 0;
-          return_value = CartLoad(cdsystem_path);
-          CD_emulation = CD_emulation_bak;
-          return return_value;
-        }
+	  fclose(f);
+	  return cdsystem_path;
+	}
     }
 
 
@@ -2112,18 +2108,46 @@ search_syscard()
         Log("Testing syscard location : %s\n",temp_buffer);
         if ((f = fopen(temp_buffer,"rb")) != NULL)
           {
-            int CD_emulation_bak = CD_emulation;
-            int return_value;
-
             fclose(f);
-            CD_emulation = 0;
-            return_value = CartLoad(temp_buffer);
-            CD_emulation = CD_emulation_bak;
-            return return_value;
+	    strncpy(syscard_filename, temp_buffer, sizeof(syscard_filename));
+	    return syscard_filename;
           }
       }
+  return NULL;
+}
 
-  return -1;
+/*****************************************************************************
+
+    Function: search_syscard
+
+    Description: Search for a system card rom
+    Parameters: none
+    Return: -1 on error else 0
+             set true_file_name
+
+*****************************************************************************/
+SInt32
+search_syscard()
+{
+  char* syscard_location;
+  
+  syscard_location = search_possible_syscard();
+
+  if (NULL == syscard_location)
+    {
+      return -1;
+    }
+  else
+    {
+      int CD_emulation_bak = CD_emulation;
+      int return_value;
+      
+      CD_emulation = 0;
+      return_value = CartLoad(cdsystem_path);
+      CD_emulation = CD_emulation_bak;
+      return return_value;
+    }
+  
 }
 
 /*****************************************************************************
@@ -2144,6 +2168,8 @@ CartLoad (char *name)
 #ifdef MSDOS
   char tmp_path[80];
 #endif
+
+	Log("Trying to load %s\n", name);
 
   if (CD_emulation == 1)
     {
@@ -2217,7 +2243,6 @@ CartLoad (char *name)
       char tmp_char[128], tmp_char2[128], tmp_char3[128];
       char *array_arg[6] =
 	{ tmp_char3, tmp_char, "-Cjoqq", tmp_char2, "*.pce", NULL };
-
       sprintf (tmp_char, "%sHU-GO!.TMP/*.*", short_exe_name);
       for_each_file (tmp_char, 32, delete_file_tmp, 0);
 
@@ -2712,12 +2737,15 @@ InitPCE (char *name, char *backmemname)
   unsigned long CRC;
   int dummy;
   char *tmp_dummy;
+  char local_us_encoded_card = 0;
 
   if ((!strcmp (name, "")) && (CD_emulation != 1))
     return -1;
 
   if (CartLoad (name))
     return -1;
+
+	osd_fix_filename_slashes(cart_name);
 
   if (!(tmp_dummy = (char *) (strrchr (cart_name, '/'))))
     tmp_dummy = &cart_name[0];
@@ -2759,7 +2787,7 @@ InitPCE (char *name, char *backmemname)
         short_iso_name[strlen (short_iso_name)] = '.';
       }
 
-#ifndef LINUX
+#ifdef WIN32
 
   switch (CD_emulation)
     {
@@ -2869,8 +2897,10 @@ InitPCE (char *name, char *backmemname)
     fprintf (stderr, "flags = %x\n", (pce_romlist + NO_ROM) ? pce_romlist[NO_ROM].flags : 0);
 #endif
 
+	local_us_encoded_card = US_encoded_card;
+
    if ((NO_ROM != 0xFFFF) && (pce_romlist + NO_ROM) && (pce_romlist[NO_ROM].flags & US_ENCODED))
-    US_encoded_card = 1;
+    local_us_encoded_card = 1;
 
    if (ROM[0x1FFF] < 0xE0)
    {
@@ -2878,10 +2908,10 @@ InitPCE (char *name, char *backmemname)
 #if !defined(FINAL_RELEASE)
 	   fprintf(stderr, "This rom is probably US encrypted, decrypting ..\n");
 #endif
-		US_encoded_card = 1;
+		local_us_encoded_card = 1;
    }
 
-  if (US_encoded_card)
+  if (local_us_encoded_card)
     {
       UInt32 x;
       UChar inverted_nibble[16] = { 0, 8, 4, 12,
@@ -3399,10 +3429,10 @@ main (int argc, char *argv[])
 #else
   strcpy (tmp_path, "/etc/hugo.dat");
 #endif
-  printf (" þ Decrunching data file...");
+  printf (" ï¿½ Decrunching data file...");
   if (!(datafile = load_datafile (tmp_path)))
     {
-      printf ("\n þ ERROR!!\n þ Datafile %s not found\n", tmp_path);
+      printf ("\n ï¿½ ERROR!!\n ï¿½ Datafile %s not found\n", tmp_path);
       exit (-1);
     }
 

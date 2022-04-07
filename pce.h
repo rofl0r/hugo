@@ -111,6 +111,9 @@ int RunPCE (void);
 void pce_cd_read_sector (void);
 void issue_ADPCM_dma (void);
 
+char*
+search_possible_syscard();
+
 extern FILE *out_snd;
 // The file used to put sound into
 

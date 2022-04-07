@@ -43,9 +43,7 @@ void gtk_show_config_player(int player_index);
 //! Construct the gtk interface
 void build_gtk_interface (int argc, char* argv[])
 {
-#if GTK != 2
-  GtkText* manual_text = NULL;
-#endif
+  GtkTextView* manual_text = NULL;
 	
   gtk_set_locale ();
   gtk_init (&argc, &argv);
@@ -71,17 +69,13 @@ void build_gtk_interface (int argc, char* argv[])
   
   attach_input_signal(input_settings_window);
   
-#if GTK != 2
-  manual_text = (GtkText*)lookup_widget(manual_window, "text_manual");
+  manual_text = (GtkTextView*)lookup_widget(manual_window, "text_manual");
   
-#if !defined(LINUX)
-  gtk_text_insert(manual_text, NULL, NULL, NULL, "The manual is called README and it available in the same directory as the executable", 84);
-#else
-  gtk_text_insert(manual_text, NULL, NULL, NULL, manual_content, sizeof(manual_content));
-#endif
-  
-#endif
+	gtk_text_buffer_insert_at_cursor(gtk_text_view_get_buffer(manual_text),
+		manual_content,
+		strlen(manual_content));
 
+  get_directory_from_filename(initial_path);
   gtk_file_selection_set_filename( (GtkFileSelection*) fileselector_window, initial_path);
 
   main_window = create_mainWindow ();

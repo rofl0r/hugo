@@ -58,4 +58,6 @@ char *strcasestr (const char *s1, const char *s2);
 int stricmp (char *s1, char *s2);
 #endif
 
+void get_directory_from_filename(char*);
+
 #endif

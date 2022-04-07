@@ -207,38 +207,40 @@ read_input (UInt16 port)
 
   tmp = 0;
 
-  if (joypad[port])
+  if (config[current_config].individual_config[port].joydev)
     {
+      SDL_Joystick * current_joypad = joypad[config[current_config].individual_config[port].joydev-1];
+
       joy[J_PXAXIS] =
-	SDL_JoystickGetAxis (joypad[port],
+	SDL_JoystickGetAxis (current_joypad,
 			     config[current_config].individual_config[port].
 			     joy_mapping[J_PXAXIS]);
       joy[J_PYAXIS] =
-	SDL_JoystickGetAxis (joypad[port],
+	SDL_JoystickGetAxis (current_joypad,
 			     config[current_config].individual_config[port].
 			     joy_mapping[J_PYAXIS]);
       joy[J_PRUN] =
-	SDL_JoystickGetButton (joypad[port],
+	SDL_JoystickGetButton (current_joypad,
 			       config[current_config].individual_config[port].
 			       joy_mapping[J_PRUN]);
       joy[J_PSELECT] =
-	SDL_JoystickGetButton (joypad[port],
+	SDL_JoystickGetButton (current_joypad,
 			       config[current_config].individual_config[port].
 			       joy_mapping[J_PSELECT]);
       joy[J_PI] =
-	SDL_JoystickGetButton (joypad[port],
+	SDL_JoystickGetButton (current_joypad,
 			       config[current_config].individual_config[port].
 			       joy_mapping[J_PI]);
       joy[J_PII] =
-	SDL_JoystickGetButton (joypad[port],
+	SDL_JoystickGetButton (current_joypad,
 			       config[current_config].individual_config[port].
 			       joy_mapping[J_PII]);
       joy[J_PAUTOI] =
-	SDL_JoystickGetButton (joypad[port],
+	SDL_JoystickGetButton (current_joypad,
 			       config[current_config].individual_config[port].
 			       joy_mapping[J_PAUTOI]);
       joy[J_PAUTOII] =
-	SDL_JoystickGetButton (joypad[port],
+	SDL_JoystickGetButton (current_joypad,
 			       config[current_config].individual_config[port].
 			       joy_mapping[J_PAUTOII]);
     }
@@ -627,6 +629,8 @@ sdl_init_joypads (void)
 	  printf ("SDL could not open system joystick device %d (%s)\n", n, SDL_GetError ());
 	  continue;
 	}
+
+      //      printf("joypad[%d] = %p\n", n, joypad[n]);
 
       printf (" * PCE joypad %d: %s, %d axes, %d buttons\n", n + 1,
 	      SDL_JoystickName (n),

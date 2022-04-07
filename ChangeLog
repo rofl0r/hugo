@@ -1,3 +1,37 @@
+Changes from HU-GO! 2.10 to HU-GO! 2.11
+
+Rewrote manual into smaller manuals, in html and plain text.
+Added zipped rom support for all platforms.
+Added hardware video rendering.
+Cleaned sources, again and again (thanks to splint) (compiles with gcc up to 3.3).
+Added error message when trying to start a cd and the cd system rom
+  can't be found.
+Added partial arcade card support (inner memory management rewritten).
+Added readonly-ness of roms (was writeable until now).
+Removed a bug in DraculaX which was crashing in the intro when not in -m1 mode
+Added netplay support. The normal binary can be used alone or as a client,
+  a server binary is also provided.
+Added nice graphical configuration of keyboard and joypads.
+Added support of joypad via SDL under windows.
+Rewrote graphical engine.
+Added support for big endian cpu (Sparc, ...).
+Switched to gtk 2 for graphical toolkit.
+Added support for interacting with the core variable of the emulation from
+  external processes (can be used to change rom content on the fly e.g.).
+Changed licence to be considered as free (GPL + mBSD + zlib).
+Fixed a crash when starting any game in the windows port.
+Added support for dumping audio and video. Some samples are available to 
+  make an .avi/.mpg/.whatever from it under un*x.
+Fixed some bugs in DMA handling (including one occuring at the end of the first
+  stage of gunhed).
+Improved internal I/O handling (handle remanence of unaffected bit latches).
+Began adding ogg support (untested).
+Fixes sound frequency bug and added stop/start audio subsystem between the various
+  games to provide instantaneous effects of configuration changes.
+Added better command line argument support.
+Autodetection of US encoded roms.
+Added signed format support for audio rendering.
+
 Changes from HU-GO! 2.09 to HU-GO! 2.10
 
 Arrival of a real GUI (using gtk) for both windows and linux ports

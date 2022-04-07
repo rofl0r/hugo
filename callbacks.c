@@ -14,40 +14,14 @@
 
 static char tmp_buf[100];
 
-gboolean
-on_mainWindow_key_press_event          (GtkWidget       *widget,
-                                        GdkEventKey     *event,
-                                        gpointer         user_data)
-{
-
-  return FALSE;
-}
-
-
-gboolean
-on_mainWindow_key_release_event        (GtkWidget       *widget,
-                                        GdkEventKey     *event,
-                                        gpointer         user_data)
-{
-
-  return FALSE;
-}
-
 
 void
 on_open1_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
+	get_directory_from_filename(initial_path);
   gtk_file_selection_set_filename((GtkFileSelection*)fileselector_window, initial_path);
   gtk_widget_show(fileselector_window);
-}
-
-
-void
-on_quit1_activate                      (GtkMenuItem     *menuitem,
-                                        gpointer         user_data)
-{
-
 }
 
 
@@ -80,14 +54,6 @@ on_hugo_manual1_activate               (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
 	gtk_widget_show(manual_window);
-}
-
-
-void
-on_pc_engine_story1_activate           (GtkMenuItem     *menuitem,
-                                        gpointer         user_data)
-{
-
 }
 
 
@@ -153,88 +119,26 @@ on_button_close_input_settings_window_clicked
 
 
 void
-on_button_grab_up_clicked              (GtkButton       *button,
-                                        gpointer         user_data)
-{
-	/*
-	GtkWidget * label = lookup_widget(GTK_WIDGET(button), "label_up");
-	SDLKey key = get_keysym();
-
-	printf("pressed key = %d\n", key);	
-	
-	gtk_label_set_text(label, SDL_GetKeyName(key));
-	*/
-}
-
-
-void
 on_button2_clicked                     (GtkButton       *button,
                                         gpointer         user_data)
 {
-  CD_emulation = 1;
-  play_game();
+  if (NULL == search_possible_syscard())
+    {
+      GtkWidget* dialog;
+      dialog = gtk_message_dialog_new (GTK_WINDOW (main_window),
+				       GTK_DIALOG_DESTROY_WITH_PARENT,
+				       GTK_MESSAGE_ERROR,
+				       GTK_BUTTONS_OK,
+				       "CD system card not found !\nDid you set \"CD system filename\" ?");
+      gtk_dialog_run (GTK_DIALOG (dialog));
+      gtk_widget_destroy (dialog);
+    }
+  else
+    {
+      CD_emulation = 1;
+      play_game();
+    }
 }
-
-
-void
-on_button_grab_clicked                 (GtkButton       *button,
-                                        gpointer         user_data)
-{	
-	gtk_grab_config_for_key(user_data);
-}
-
-
-//void
-//on_button_use_current_config_clicked   (GtkButton       *button,
-//                                        gpointer         user_data)
-//{
-//	GtkOptionMenu* option_menu;
-//	GtkWidget *active_item;
-//	int item_index;  
-//	
-//	option_menu = (GtkOptionMenu*)lookup_widget(input_settings_window, "option_config_number");
-//	
-//	active_item = gtk_menu_get_active (GTK_MENU (option_menu->menu));  
-//	item_index = g_list_index ( GTK_MENU(option_menu->menu)->menu_shell.children, active_item);  
-//  
-//	gtk_show_config(item_index);
-//
-//}
-
-
-//void
-//on_button_configure_this_player_clicked
-//                                        (GtkButton       *button,
-//                                        gpointer         user_data)
-//{
-//	GtkOptionMenu* option_menu;
-//    GtkWidget *active_item;
-//    int item_index;  
-//	
-//	option_menu = (GtkOptionMenu*)lookup_widget(input_settings_window, "option_player_number");
-//  
-//    active_item = gtk_menu_get_active (GTK_MENU (option_menu->menu));  
-//    item_index = g_list_index ( GTK_MENU(option_menu->menu)->menu_shell.children, active_item);  
-//  
-//    gtk_show_config_player(item_index);
-//}
-
-
-//void
-//on_button_use_this_device_clicked      (GtkButton       *button,
-//                                        gpointer         user_data)
-//{
-//	GtkOptionMenu* option_menu;
-//    GtkWidget *active_item;
-//    int item_index;  
-//	
-//	option_menu = (GtkOptionMenu*)lookup_widget(input_settings_window, "option_device_type");
-//  
-//    active_item = gtk_menu_get_active (GTK_MENU (option_menu->menu));  
-//    item_index = g_list_index ( GTK_MENU(option_menu->menu)->menu_shell.children, active_item);  
-//  
-//    gtk_select_config_device(item_index);
-//}
 
 
 void
@@ -362,8 +266,11 @@ on_ok_button_rom_path_clicked          (GtkButton       *button,
 	
 	gtk_widget_hide(fileselector_rom_path);
 	strcpy (initial_path, gtk_file_selection_get_filename((GtkFileSelection*)fileselector_rom_path));
-	if (strrchr(initial_path, '/') != NULL)
-		*strrchr(initial_path, '/') = 0;
+	
+	get_directory_from_filename(initial_path);
+	
+//	if (strrchr(initial_path, '/') != NULL)
+//		*strrchr(initial_path, '/') = 0;
 	temp_entry = (GtkEntry*)lookup_widget(general_settings_window, "entry_rom_basedir");
 	gtk_entry_set_text(temp_entry, initial_path);
 }
@@ -520,5 +427,67 @@ on_spinbutton_joydev_value_changed     (GtkSpinButton   *spinbutton,
 	}
 	
 	gtk_update_configuration(FALSE);
+}
+
+
+gboolean
+on_general_settings_window_delete_event
+                                        (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data)
+{
+	gtk_widget_hide(general_settings_window);
+  return TRUE;
+}
+
+
+gboolean
+on_fileselection_cd_system_delete_event
+                                        (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data)
+{
+	gtk_widget_hide(fileselector_cd_system);
+  return TRUE;
+}
+
+
+gboolean
+on_fileselection_cd_path_delete_event  (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data)
+{
+	gtk_widget_hide(fileselector_cd_path);
+  return TRUE;
+}
+
+
+gboolean
+on_fileselection_rom_path_delete_event (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data)
+{
+	gtk_widget_hide(fileselector_rom_path);
+  return TRUE;
+}
+
+
+gboolean
+on_fileselection1_delete_event         (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data)
+{
+	gtk_widget_hide(fileselector_window);
+  return TRUE;
+}
+
+
+gboolean
+on_window_about_delete_event           (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data)
+{
+	gtk_widget_hide(about_window);
+  return TRUE;
 }
 

@@ -97,13 +97,21 @@ install-data-local:
 	      $(INSTALL_DATA) $$pixmap $(DESTDIR)$(pkgdatadir)/pixmaps; \
 	    fi \
 	  done \
+	fi && \
+	if test -d $(srcdir)/doc; then \
+	  $(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/doc; \
+	  for doc in $(srcdir)/doc/*.{html,txt,css}; do \
+	    if test -f $$doc; then \
+	      $(INSTALL_DATA) $$doc $(DESTDIR)$(pkgdatadir)/doc; \
+	    fi \
+	  done \
 	fi
 
 uninstall-local:
 	@$(NORMAL_UNINSTALL)
-	rm -rf $(DESTDIR)$(pkgdatadir)/pixmaps;
+	rm -rf $(DESTDIR)$(pkgdatadir)/{pixmaps,doc};
 
-dist-hook:
+dist-hook: doc
 	if test -d pixmaps; then \
 	  mkdir $(distdir)/pixmaps; \
 	  for pixmap in pixmaps/*; do \
@@ -121,7 +129,49 @@ dist-hook:
 	  done \
 	fi
 
-manual.h : README manual_convert.pl
+manual.h : doc/quickstart.txt manual_convert.pl
 	  ./manual_convert.pl > manual.h
-	  
+
 gtk_main.o : gtk_main.c manual.h gtk_main.h
+
+# Installation targets
+
+WINE=wine
+LYX=lyx
+LATEX2HTML=latex2html
+TIDY=tidy
+UNIX2DOS=unix2dos
+SED=sed
+
+INNOSETUP_LOCATION=~/.wine/fake_windows/Program\ Files/Inno\ Setup\ 4/ISCC.exe
+LATEX2HTML_FLAGS= -split 0 -local_icons -no_navigation -info 0
+LYX_DOC=$(wildcard doc/*.lyx)
+HTML_DOC=$(patsubst %.lyx,%.html,$(LYX_DOC))
+TXT_DOC=$(patsubst %.lyx,%.txt,$(LYX_DOC))
+
+EXTRA_DIST = setup.iss doc/hugo_manual.css doc/index.html doc/README.old.txt $(HTML_DOC) $(TXT_DOC) $(LYX_DOC)
+
+.PHONY: doc html txt
+
+Output/setup.exe: setup.iss hugo.exe hugod.exe doc
+	$(UNIX2DOS) $<
+	$(WINE) $(INNOSETUP_LOCATION) $<
+
+doc: html txt
+html: $(HTML_DOC)
+txt: $(TXT_DOC)
+
+%.txt: %.lyx
+	test -d $(@D) || mkdir $(@D)
+	LANG=C $(LYX) -e text `test -f '$<' || echo '$(srcdir)/'`$<
+
+%.html: %.tex
+	test -d /tmp/latex2html.tmp || mkdir /tmp/latex2html.tmp
+	$(LATEX2HTML) $(LATEX2HTML_FLAGS) -dir /tmp/latex2html.tmp `test -f '$<' || echo '$(srcdir)/'`$<
+	test -d $(@D) || mkdir $(@D)
+	$(SED) s/$(patsubst %.tex,%.css,$(<F))/hugo_manual.css/ $(patsubst %.tex,%.html,/tmp/latex2html.tmp/$(<F)) > $@
+	-$(TIDY) -im $@
+
+%.tex: %.lyx
+	test -d $(@D) || mkdir $(@D)
+	$(LYX) -e latex `test -f '$<' || echo '$(srcdir)/'`$<

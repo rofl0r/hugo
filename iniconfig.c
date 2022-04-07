@@ -323,33 +323,7 @@ set_arg (char nb_arg, const char *val)
       strcpy (ISO_filename, val);
       Log ("ISO filename is %s\n", ISO_filename);
       return 0;
-
-//    case 'j':
-//      if (strlen (val) != 5)
-//	{
-//	  printf ("\n  The correct usage of the -j switch is for example:\n"
-//		  "   hugo -j12003  or hugo -j10000, hugo -j21000, hugo -j12345 etc.\n"
-//		  "   where the ##### following the -j is the host system's joystick\n"
-//		  "   you'd like to use for each of the PC Engine's five controllers.\n"
-//		  "   Therefore, -j12000 would configure and use the first joystick\n"
-//		  "   device connected to your PC as the PC Engine player 1 controller,\n"
-//		  "   the second device as the player 2 controller, and no joystick\n"
-//		  "   device for players 3-5.  Likewise, -j21000 would set up your\n"
-//		  "   second joystick device as player 1, and the first joystick\n"
-//		  "   device as player 2.\n");
-//	}
-//      else
-//	{
-//	  option.configure_joypads = TRUE;
-//	  config[current_config].joydev[0] = val[0] - '0';
-//	  config[current_config].joydev[1] = val[1] - '0';
-//	  config[current_config].joydev[2] = val[2] - '0';
-//	  config[current_config].joydev[3] = val[3] - '0';
-//	  config[current_config].joydev[4] = val[4] - '0';
-//	  Log ("User requested joypad configuration of devices %s.\n", val);
-//	}
-//      return 0;
-
+      
     case 'm':
       minimum_bios_hooking = atoi (val);
       Log ("Minimum Bios hooking set to %d\n", minimum_bios_hooking);
@@ -437,8 +411,6 @@ static struct argp_option options[] = {
    "Start game in fullscreen (default is 0)"},
   {"cd-device", 'i', "<CD device>", 0,
    "CD device to use (if CD emulation mode = 1, default is /dev/cdrom)"},
-  {"joypad-mapping", 'j', "<joypad mapping>", 0,
-   "Mapping of joypads to input devices. This is a 5 digits long string, the value of each digit represents the host joypad number, the position represents the pc engine ones (if = 32000, joypad 3 is used for player 1, joypad 2 for player 2, and no pads for players 3-5, default is 00000)"},
   {"no-bios-hooking", 'm', "0/1", OPTION_ARG_OPTIONAL,
    "No hard bios hooking (slower but more compatible, default is 0)"},
   {"overlay", 'o', "0/1", OPTION_ARG_OPTIONAL,
@@ -492,31 +464,6 @@ parse_opt (int key, char *arg, struct argp_state *state)
       strcpy (ISO_filename, arg);
       Log ("ISO filename is %s\n", ISO_filename);
       break;
-//    case 'j':
-//      if (strlen (arg) != 5)
-//	{
-//	  printf ("\n  The correct usage of the -j switch is for example:\n"
-//		  "   hugo -j12003  or hugo -j10000, hugo -j21000, hugo -j12345 etc.\n"
-//		  "   where the ##### following the -j is the host system's joystick\n"
-//		  "   you'd like to use for each of the PC Engine's five controllers.\n"
-//		  "   Therefore, -j12000 would configure and use the first joystick\n"
-//		  "   device connected to your PC as the PC Engine player 1 controller,\n"
-//		  "   the second device as the player 2 controller, and no joystick\n"
-//		  "   device for players 3-5.  Likewise, -j21000 would set up your\n"
-//		  "   second joystick device as player 1, and the first joystick\n"
-//		  "   device as player 2.\n");
-//	}
-//      else
-//	{
-//	  option.configure_joypads = TRUE;
-//	  config[current_config].joydev[0] = arg[0] - '0';
-//	  config[current_config].joydev[1] = arg[1] - '0';
-//	  config[current_config].joydev[2] = arg[2] - '0';
-//	  config[current_config].joydev[3] = arg[3] - '0';
-//	  config[current_config].joydev[4] = arg[4] - '0';
-//	  Log ("User requested joypad configuration of devices %s.\n", arg);
-//	}
-//      break;
     case 'm':
       minimum_bios_hooking = (arg == NULL ? 1 : atoi (arg));
       Log ("Minimum Bios hooking set to %d\n", minimum_bios_hooking);
@@ -912,9 +859,9 @@ set_config_var_str (char *section, char *name, char *value)
 {
   config_var key, *result;
 
-// #if !defined(FINAL_RELEASE)
+#if !defined(FINAL_RELEASE)
   printf ("Setting [%s] %s to %s\n", section, name, value);
-// #endif
+#endif
 
   key.section = section;
   key.variable = name;

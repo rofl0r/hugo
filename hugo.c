@@ -139,7 +139,7 @@ play_game (void)
       printf (MESSAGE[language][audio_init_failed]);
     }
   else
-    printf (MESSAGE[language][audio_inited], 0, "SDL compatible soundcard",
+    printf (MESSAGE[language][audio_inited], 8, "SDL compatible soundcard",
 	    host.sound.freq);
   /*
      if (InitPCE(cart_name, backup_mem) != 0)

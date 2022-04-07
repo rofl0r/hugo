@@ -38,6 +38,9 @@
 #endif
 
 #include "utils.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 /******************************************************************************
  * Log stuff
@@ -451,14 +454,12 @@ unsigned long TAB_CONST[256] = {
    0X2D02EF8D
 };
 
-/*
-#if !defined(UNIX)
+#if defined(SOLARIS)
 u_short htons(u_short arg)
 {
   return (arg >> 8) | ((arg & 0xFF) << 8);
 }
 #endif
-*/
 
 void patch_rom(char* filename, int offset, UChar value)
 {
@@ -523,3 +524,31 @@ stricmp (char *s1, char *s2)
   return result;
 }
 #endif
+
+void
+get_directory_from_filename(char* filename)
+{
+	struct stat file_stat;
+#if defined(UNIX)
+	lstat(filename, &file_stat);
+#else
+	stat(filename, &file_stat);
+#endif
+	
+	if (S_ISDIR(file_stat.st_mode))
+	{
+		if ('/' != filename[strlen(filename) - 1])
+		{ // It is a directory but not finished by a slash
+			strcat(filename, "/");
+		}
+		return;
+	}
+	
+	// It is a file, we'll remove the basename part from it
+	// It there's a slash, we put the end of string marker just after the last one
+	if (strrchr(filename, '/') != NULL)
+	{
+		strrchr(filename, '/')[1] = 0;
+	}
+		
+}

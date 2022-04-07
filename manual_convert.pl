@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-open(F, "README");
+open(F, "doc/quickstart.txt");
 
 @manual_content = <F>;
 

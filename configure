@@ -861,7 +861,7 @@ Optional Features:
   --disable-sdltest       Do not try to compile and run a test SDL program
   --enable-gui            enable GUI (default is yes)
   --disable-gtktest       do not try to compile and run a test GTK+ program
-  --enable-netplay        enable netplay support (default is no)
+  --enable-netplay        enable netplay support (default is yes)
   --enable-new-kernel     enable new kernel (default is yes)
   --enable-shared-memory  enable shared memory openness (default is no)
   --enable-new-gfx-engine use new gfx engine to render graphics (default is
@@ -3387,6 +3387,9 @@ _ACEOF
 
 fi
 
+
+LIBZ_SUPPORT=no
+
 echo "$as_me:$LINENO: checking for main in -lz" >&5
 echo $ECHO_N "checking for main in -lz... $ECHO_C" >&6
 if test "${ac_cv_lib_z_main+set}" = set; then
@@ -3445,7 +3448,7 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_z_main" >&5
 echo "${ECHO_T}$ac_cv_lib_z_main" >&6
 if test $ac_cv_lib_z_main = yes; then
-
+   LIBS="$LIBS -lz"
 
 if true; then
   ZLIB_TRUE=
@@ -3454,7 +3457,89 @@ else
   ZLIB_TRUE='#'
   ZLIB_FALSE=
 fi
- LIBS="$LIBS -lz"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBZ 1
+_ACEOF
+ LIBZ_SUPPORT=yes
+fi
+
+
+if test "x$LIBZ_SUPPORT" = "xno"
+then
+
+echo "$as_me:$LINENO: checking for main in -lzdll" >&5
+echo $ECHO_N "checking for main in -lzdll... $ECHO_C" >&6
+if test "${ac_cv_lib_zdll_main+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lzdll  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+main ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_zdll_main=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_zdll_main=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_zdll_main" >&5
+echo "${ECHO_T}$ac_cv_lib_zdll_main" >&6
+if test $ac_cv_lib_zdll_main = yes; then
+   LIBS="$LIBS -lzdll"
+
+if true; then
+  ZLIB_TRUE=
+  ZLIB_FALSE='#'
+else
+  ZLIB_TRUE='#'
+  ZLIB_FALSE=
+fi
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBZ 1
+_ACEOF
+ LIBZ_SUPPORT=yes
 else
 
 
@@ -3468,6 +3553,8 @@ fi
 
 fi
 
+
+fi
 
 # Checks for endianess
 
@@ -4072,7 +4159,7 @@ fi
     if pkg-config --atleast-pkgconfig-version 0.7 ; then
       :
     else
-      echo *** pkg-config too old; version 0.7 or better required.
+      echo "*** pkg-config too old; version 0.7 or better required."
       no_gtk=yes
       PKG_CONFIG=no
     fi
@@ -7595,7 +7682,7 @@ echo $ECHO_N "checking whether netplay support was asked...            $ECHO_C" 
 
 
 
-if false; then
+if true; then
   NETPLAY_TRUE=
   NETPLAY_FALSE='#'
 else
@@ -7604,12 +7691,12 @@ else
 fi
 
 
-NETPLAY=no
+NETPLAY=yes
 
 # Check whether --enable-netplay or --disable-netplay was given.
 if test "${enable_netplay+set}" = set; then
   enableval="$enable_netplay"
-   if test "$enableval" = "yes"; then NETPLAY="yes"; fi
+   if test "$enableval" = "no"; then NETPLAY="no"; fi
 fi;
 
 if test "$NETPLAY" = "yes"
@@ -8523,6 +8610,13 @@ if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"am__fastdepCC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"am__fastdepCC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ZLIB_TRUE}" && test -z "${ZLIB_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ZLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ZLIB\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi

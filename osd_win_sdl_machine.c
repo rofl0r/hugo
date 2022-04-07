@@ -17,7 +17,7 @@ char dump_snd = 0;
 // Do we write sound to file
 
 char synchro;
-// … fond, … fond, … fond? (french joke ;)
+// ï¿½ fond, ï¿½ fond, ï¿½ fond? (french joke ;)
 
 int vwidth, vheight;
 // size of visible part of the screen (I got troubles with allegro screen->* values!)

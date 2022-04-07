@@ -209,6 +209,23 @@ AM_CFLAGS = @GTK_CFLAGS@ @CFLAGS@ -D@HUGO_TARGET_MACHINE@ @HUGO_TARGET_LIBRARY@
 
 hugo_LDFLAGS = @HUGO_TARGET_LIBRARY_LD@
 hugod_LDFLAGS = -lSDL_net
+
+
+# Installation targets
+WINE = wine
+LYX = lyx
+LATEX2HTML = latex2html
+TIDY = tidy
+UNIX2DOS = unix2dos
+SED = sed
+
+INNOSETUP_LOCATION = ~/.wine/fake_windows/Program\ Files/Inno\ Setup\ 4/ISCC.exe
+LATEX2HTML_FLAGS = -split 0 -local_icons -no_navigation -info 0
+LYX_DOC = $(wildcard doc/*.lyx)
+HTML_DOC = $(patsubst %.lyx,%.html,$(LYX_DOC))
+TXT_DOC = $(patsubst %.lyx,%.txt,$(LYX_DOC))
+
+EXTRA_DIST = setup.iss doc/hugo_manual.css doc/index.html doc/README.old.txt $(HTML_DOC) $(TXT_DOC) $(LYX_DOC)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -343,9 +360,9 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(am__hugo_SOURCES_DIST) $(EXTRA_hugo_SOURCES) \
 	$(am__hugod_SOURCES_DIST)
 DIST_COMMON = README $(srcdir)/Makefile.in $(srcdir)/configure AUTHORS \
-	COPYING ChangeLog INSTALL Makefile.am NEWS acconfig.h \
-	aclocal.m4 compile config.guess config.h.in config.sub \
-	configure configure.ac depcomp install-sh missing mkinstalldirs
+	COPYING ChangeLog INSTALL Makefile.am NEWS aclocal.m4 \
+	config.guess config.h.in config.sub configure configure.ac \
+	depcomp install-sh missing mkinstalldirs
 SOURCES = $(hugo_SOURCES) $(EXTRA_hugo_SOURCES) $(hugod_SOURCES)
 
 all: config.h
@@ -380,7 +397,7 @@ stamp-h1: $(srcdir)/config.h.in $(top_builddir)/config.status
 	@rm -f stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status config.h
 
-$(srcdir)/config.h.in: @MAINTAINER_MODE_TRUE@ $(top_srcdir)/configure.ac $(ACLOCAL_M4) $(top_srcdir)/acconfig.h
+$(srcdir)/config.h.in: @MAINTAINER_MODE_TRUE@ $(top_srcdir)/configure.ac $(ACLOCAL_M4) 
 	cd $(top_srcdir) && $(AUTOHEADER)
 	touch $(srcdir)/config.h.in
 
@@ -578,6 +595,7 @@ distcleancheck_listfiles = find . -type f -print
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
+	$(mkinstalldirs) $(distdir)/doc
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -779,13 +797,21 @@ install-data-local:
 	      $(INSTALL_DATA) $$pixmap $(DESTDIR)$(pkgdatadir)/pixmaps; \
 	    fi \
 	  done \
+	fi && \
+	if test -d $(srcdir)/doc; then \
+	  $(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/doc; \
+	  for doc in $(srcdir)/doc/*.{html,txt,css}; do \
+	    if test -f $$doc; then \
+	      $(INSTALL_DATA) $$doc $(DESTDIR)$(pkgdatadir)/doc; \
+	    fi \
+	  done \
 	fi
 
 uninstall-local:
 	@$(NORMAL_UNINSTALL)
-	rm -rf $(DESTDIR)$(pkgdatadir)/pixmaps;
+	rm -rf $(DESTDIR)$(pkgdatadir)/{pixmaps,doc};
 
-dist-hook:
+dist-hook: doc
 	if test -d pixmaps; then \
 	  mkdir $(distdir)/pixmaps; \
 	  for pixmap in pixmaps/*; do \
@@ -803,10 +829,35 @@ dist-hook:
 	  done \
 	fi
 
-manual.h : README manual_convert.pl
+manual.h : doc/quickstart.txt manual_convert.pl
 	  ./manual_convert.pl > manual.h
 
 gtk_main.o : gtk_main.c manual.h gtk_main.h
+
+.PHONY: doc html txt
+
+Output/setup.exe: setup.iss hugo.exe hugod.exe doc
+	$(UNIX2DOS) $<
+	$(WINE) $(INNOSETUP_LOCATION) $<
+
+doc: html txt
+html: $(HTML_DOC)
+txt: $(TXT_DOC)
+
+%.txt: %.lyx
+	test -d $(@D) || mkdir $(@D)
+	LANG=C $(LYX) -e text `test -f '$<' || echo '$(srcdir)/'`$<
+
+%.html: %.tex
+	test -d /tmp/latex2html.tmp || mkdir /tmp/latex2html.tmp
+	$(LATEX2HTML) $(LATEX2HTML_FLAGS) -dir /tmp/latex2html.tmp `test -f '$<' || echo '$(srcdir)/'`$<
+	test -d $(@D) || mkdir $(@D)
+	$(SED) s/$(patsubst %.tex,%.css,$(<F))/hugo_manual.css/ $(patsubst %.tex,%.html,/tmp/latex2html.tmp/$(<F)) > $@
+	-$(TIDY) -im $@
+
+%.tex: %.lyx
+	test -d $(@D) || mkdir $(@D)
+	$(LYX) -e latex `test -f '$<' || echo '$(srcdir)/'`$<
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

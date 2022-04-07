@@ -1,22 +1,8 @@
 #include <gtk/gtk.h>
 
 
-gboolean
-on_mainWindow_key_press_event          (GtkWidget       *widget,
-                                        GdkEventKey     *event,
-                                        gpointer         user_data);
-
-gboolean
-on_mainWindow_key_release_event        (GtkWidget       *widget,
-                                        GdkEventKey     *event,
-                                        gpointer         user_data);
-
 void
 on_open1_activate                      (GtkMenuItem     *menuitem,
-                                        gpointer         user_data);
-
-void
-on_quit1_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data);
 
 void
@@ -33,10 +19,6 @@ on_input_setting_1_activate            (GtkMenuItem     *menuitem,
 
 void
 on_hugo_manual1_activate               (GtkMenuItem     *menuitem,
-                                        gpointer         user_data);
-
-void
-on_pc_engine_story1_activate           (GtkMenuItem     *menuitem,
                                         gpointer         user_data);
 
 void
@@ -73,30 +55,7 @@ on_button_close_input_settings_window_clicked
                                         gpointer         user_data);
 
 void
-on_button_grab_up_clicked              (GtkButton       *button,
-                                        gpointer         user_data);
-
-void
 on_button2_clicked                     (GtkButton       *button,
-                                        gpointer         user_data);
-
-void
-on_button_grab_clicked                 (GtkButton       *button,
-                                        gpointer         user_data);
-
-
-void
-on_button_use_current_config_clicked   (GtkButton       *button,
-                                        gpointer         user_data);
-										
-
-void
-on_button_configure_this_player_clicked
-                                        (GtkButton       *button,
-                                        gpointer         user_data);
-
-void
-on_button_use_this_device_clicked      (GtkButton       *button,
                                         gpointer         user_data);
 
 void
@@ -220,4 +179,36 @@ on_button_input_cancel_activate        (GtkButton       *button,
 
 void
 on_spinbutton_joydev_value_changed     (GtkSpinButton   *spinbutton,
+                                        gpointer         user_data);
+
+gboolean
+on_general_settings_window_delete_event
+                                        (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data);
+
+gboolean
+on_fileselection_cd_system_delete_event
+                                        (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data);
+
+gboolean
+on_fileselection_cd_path_delete_event  (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data);
+
+gboolean
+on_fileselection_rom_path_delete_event (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data);
+
+gboolean
+on_fileselection1_delete_event         (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data);
+
+gboolean
+on_window_about_delete_event           (GtkWidget       *widget,
+                                        GdkEvent        *event,
                                         gpointer         user_data);

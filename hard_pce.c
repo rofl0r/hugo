@@ -432,6 +432,9 @@ IO_read_raw (UInt16 A)
 #endif
 			ret = io.vdc_status;
 			io.vdc_status = 0;	//&=VDC_InVBlank;//&=~VDC_BSY;
+#if defined(GFX_DEBUG)
+			Log("$0000 returns %02X\n", ret);
+#endif
 			return ret;
 		case 1:
 			return 0;
