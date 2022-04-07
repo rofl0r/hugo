@@ -31,13 +31,13 @@ long file_size (char* file_name)
 }
 #endif
 
-inline void fputw (UInt16 value, FILE* F)
+static void fputw (UInt16 value, FILE* F)
 {
  fputc((int)(value & 0xFF), F);
  fputc((int)(value >> 8), F);
  }
 
-inline UInt16 fgetw (FILE* F)
+static UInt16 fgetw (FILE* F)
 {
  return (UInt16)(fgetc(F) + (fgetc(F) << 8));
  }
