@@ -11,6 +11,8 @@
 #include "gtk_main.h"
 #include "pce.h"
 #include "iniconfig.h"
+#include "hugo.h"
+#include "utils.h"
 
 static char tmp_buf[100];
 
