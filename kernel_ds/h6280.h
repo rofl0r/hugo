@@ -6,6 +6,8 @@
 #ifndef H6280_H_
 #define H6280_H_
 
+#include "cleantyp.h"
+
 /********************************************/
 /* function parameters:                     */
 /* --------------------                     */
@@ -263,5 +265,7 @@ extern int tya(void);
 #define	VEC_IRQ		0xFFF8
 #define	VEC_IRQ2	0xFFF6
 #define	VEC_BRK		0xFFF6
+
+extern UChar flnz_list[256];
 
 #endif

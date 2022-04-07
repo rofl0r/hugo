@@ -330,10 +330,10 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    " þ EAGLE mode wird nicht unterstuetzt\n",
    " þ DEUTSCH ausgewaehlt\n",
    " þ ISO file nicht gefunden : %s\n",
-   "VOLUME SET TO %d",
-   "SOUND OUTPUT AT %dHz",
-   "VIDEO DUMPING STARTED (%X)",
-   "VIDEO DUMPING STOPPED (%X)"
+   "LAUTSTAERKE NACH %d GESETZT",
+   "SOUND OUTPUT BETRAEGT %dHz",
+   "BILD AUFNAHME GESTARTET (%X)",
+   "BILD AUFNAHME GESTOPPED (%X)"
    },
   {				// Nederlandse Versie
    // Dutch version

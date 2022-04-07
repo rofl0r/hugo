@@ -31,10 +31,12 @@ char tmp_buf[100];
 #define	JOY_RIGHT	0x20
 #define	JOY_DOWN	0x40
 #define	JOY_LEFT	0x80
+#define JOY_AUTOI	0x100
+#define JOY_AUTOII	0x200
 
 extern int UPeriod;
 
-extern unsigned char joy_mapping[5][10];
+extern unsigned char joy_mapping[5][16];
 
 char auto_fire_A[5];
 
@@ -54,484 +56,192 @@ UInt16 noinput()
 
 /* For joypad */
  struct js_event e;
- js_status joypad[4];
+ js_status joypad[5];
 
 
 /* for keyboard */
-UInt16 keyboard1()
+UInt16 read_keyboard(int port)
 {
  UInt16 tmp=0;
 
-        /* TEST
-     if (key[KEY_V])
-       {
-        already_fired_A[0] = !already_fired_A[0];
-        if (already_fired_A[0])
-          tmp|= JOY_A;
-        else
-          tmp|= JOY_B;
-       } */
-
-     if (key[config[current_config].joy_mapping[0][J_DOWN]])
+     if (key[config[current_config].joy_mapping[port][J_DOWN]])
 		 tmp|=JOY_DOWN;
      else
-	    if (key[config[current_config].joy_mapping[0][J_UP]])
+	    if (key[config[current_config].joy_mapping[port][J_UP]])
 		   tmp|=JOY_UP;
 
-     if (key[config[current_config].joy_mapping[0][J_LEFT]])
+     if (key[config[current_config].joy_mapping[port][J_LEFT]])
 		 tmp|=JOY_LEFT;
      else
-       if (key[config[current_config].joy_mapping[0][J_RIGHT]])
+       if (key[config[current_config].joy_mapping[port][J_RIGHT]])
 		   tmp|=JOY_RIGHT;
 
-     if (key[config[current_config].joy_mapping[0][J_II]])
-		 if (!auto_fire_A[0])
+     if (key[config[current_config].joy_mapping[port][J_II]])
+		 if (!auto_fire_A[port])
 		   tmp|=JOY_A;
        else
 			{
- 			  already_fired_A[0]=!already_fired_A[0];
-			  if (!already_fired_A[0])
+ 			  already_fired_A[port]=!already_fired_A[port];
+			  if (!already_fired_A[port])
 				 tmp|=JOY_A;
 			 }
 
-     if (key[config[current_config].joy_mapping[0][J_I]])
-		 if (!auto_fire_B[0])
+     if (key[config[current_config].joy_mapping[port][J_I]])
+		 if (!auto_fire_B[port])
 		   tmp|=JOY_B;
        else
 			{
- 			  already_fired_B[0]=!already_fired_B[0];
-			  if (!already_fired_B[0])
+ 			  already_fired_B[port]=!already_fired_B[port];
+			  if (!already_fired_B[port])
 				 tmp|=JOY_B;
 			 }
 
-     if (key[config[current_config].joy_mapping[0][J_SELECT]])
+     if (key[config[current_config].joy_mapping[port][J_SELECT]])
 		 tmp|=JOY_SELECT;
 
-     if (key[config[current_config].joy_mapping[0][J_START]])
+     if (key[config[current_config].joy_mapping[port][J_START]])
 		 tmp|=JOY_START;
 
-     if (key[config[current_config].joy_mapping[0][J_AUTOI]])
+     if (key[config[current_config].joy_mapping[port][J_AUTOI]])
 	 if (!key_delay)
          {
-		     auto_fire_A[0]=!auto_fire_A[0];
+		     auto_fire_A[port]=!auto_fire_A[port];
 			  key_delay=10;
          }
 
-     if (key[config[current_config].joy_mapping[0][J_AUTOII]])
+     if (key[config[current_config].joy_mapping[port][J_AUTOII]])
 	 if (!key_delay)
 	 {
-		     auto_fire_B[0]=!auto_fire_B[0];
+		     auto_fire_B[port]=!auto_fire_B[port];
 			  key_delay=10;
          }
 
  return tmp;
+ }
+
+UInt16 keyboard1()
+{
+  return read_keyboard(0);
  }
 
 UInt16 keyboard2()
 {
- UInt16 tmp=0;
-
-	  if (key[config[current_config].joy_mapping[1][J_DOWN]])
-		 tmp|=JOY_DOWN;
-     else
-	    if (key[config[current_config].joy_mapping[1][J_UP]])
-		   tmp|=JOY_UP;
-
-     if (key[config[current_config].joy_mapping[1][J_LEFT]])
-		 tmp|=JOY_LEFT;
-     else
-       if (key[config[current_config].joy_mapping[1][J_RIGHT]])
-		   tmp|=JOY_RIGHT;
-
-     if (key[config[current_config].joy_mapping[1][J_II]])
-		 if (!auto_fire_A[1])
-		   tmp|=JOY_A;
-       else
-			{
- 			  already_fired_A[1]=!already_fired_A[1];
-			  if (!already_fired_A[1])
-				 tmp|=JOY_A;
-			 }
-
-     if (key[config[current_config].joy_mapping[1][J_I]])
-		 if (!auto_fire_B[1])
-		   tmp|=JOY_B;
-       else
-			{
- 			  already_fired_B[1]=!already_fired_B[1];
-			  if (!already_fired_B[1])
-				 tmp|=JOY_B;
-			 }
-
-     if (key[config[current_config].joy_mapping[1][J_SELECT]])
-		 tmp|=JOY_SELECT;
-
-     if (key[config[current_config].joy_mapping[1][J_START]])
-		 tmp|=JOY_START;
-
-     if (key[config[current_config].joy_mapping[1][J_AUTOI]])
-		 if (!key_delay)
-			{
-		     auto_fire_A[1]=!auto_fire_A[1];
-			  key_delay=10;
-         }
-
-     if (key[config[current_config].joy_mapping[1][J_AUTOII]])
-		 if (!key_delay)
-			{
-		     auto_fire_B[1]=!auto_fire_B[1];
-			  key_delay=10;
-         }
-
- return tmp;
+  return read_keyboard(1);
  }
 
 UInt16 keyboard3()
 {
- UInt16 tmp=0;
-
-	  if (key[config[current_config].joy_mapping[2][J_DOWN]])
-		 tmp|=JOY_DOWN;
-     else
-	    if (key[config[current_config].joy_mapping[2][J_UP]])
-		   tmp|=JOY_UP;
-
-     if (key[config[current_config].joy_mapping[2][J_LEFT]])
-		 tmp|=JOY_LEFT;
-     else
-       if (key[config[current_config].joy_mapping[2][J_RIGHT]])
-		   tmp|=JOY_RIGHT;
-
-     if (key[config[current_config].joy_mapping[2][J_II]])
-		 if (!auto_fire_A[2])
-		   tmp|=JOY_A;
-       else
-			{
- 			  already_fired_A[2]=!already_fired_A[2];
-			  if (!already_fired_A[2])
-				 tmp|=JOY_A;
-			 }
-
-     if (key[config[current_config].joy_mapping[2][J_I]])
-		 if (!auto_fire_B[2])
-		   tmp|=JOY_B;
-       else
-			{
- 			  already_fired_B[2]=!already_fired_B[2];
-			  if (!already_fired_B[2])
-				 tmp|=JOY_B;
-			 }
-
-     if (key[config[current_config].joy_mapping[2][J_SELECT]])
-		 tmp|=JOY_SELECT;
-
-     if (key[config[current_config].joy_mapping[2][J_START]])
-		 tmp|=JOY_START;
-
-     if (key[config[current_config].joy_mapping[2][J_AUTOI]])
-		 if (!key_delay)
-			{
-		     auto_fire_A[2]=!auto_fire_A[2];
-			  key_delay=10;
-         }
-
-     if (key[config[current_config].joy_mapping[2][J_AUTOII]])
-		 if (!key_delay)
-			{
-		     auto_fire_B[2]=!auto_fire_B[2];
-			  key_delay=10;
-         }
-
- return tmp;
+  return read_keyboard(2);
  }
 
 UInt16 keyboard4()
 {
- UInt16 tmp=0;
-
-	  if (key[config[current_config].joy_mapping[3][J_DOWN]])
-		 tmp|=JOY_DOWN;
-     else
-	    if (key[config[current_config].joy_mapping[3][J_UP]])
-		   tmp|=JOY_UP;
-
-     if (key[config[current_config].joy_mapping[3][J_LEFT]])
-		 tmp|=JOY_LEFT;
-     else
-       if (key[config[current_config].joy_mapping[3][J_RIGHT]])
-		   tmp|=JOY_RIGHT;
-
-     if (key[config[current_config].joy_mapping[3][J_II]])
-		 if (!auto_fire_A[3])
-		   tmp|=JOY_A;
-       else
-			{
- 			  already_fired_A[3]=!already_fired_A[3];
-			  if (!already_fired_A[3])
-				 tmp|=JOY_A;
-			 }
-
-     if (key[config[current_config].joy_mapping[3][J_I]])
-		 if (!auto_fire_B[3])
-		   tmp|=JOY_B;
-       else
-			{
- 			  already_fired_B[3]=!already_fired_B[3];
-			  if (!already_fired_B[3])
-				 tmp|=JOY_B;
-			 }
-
-     if (key[config[current_config].joy_mapping[3][J_SELECT]])
-		 tmp|=JOY_SELECT;
-
-     if (key[config[current_config].joy_mapping[3][J_START]])
-		 tmp|=JOY_START;
-
-     if (key[config[current_config].joy_mapping[3][J_AUTOI]])
-		 if (!key_delay)
-			{
-		     auto_fire_A[3]=!auto_fire_A[3];
-			  key_delay=10;
-         }
-
-     if (key[config[current_config].joy_mapping[3][J_AUTOII]])
-		 if (!key_delay)
-			{
-		     auto_fire_B[3]=!auto_fire_B[3];
-			  key_delay=10;
-         }
-
- return tmp;
+  return read_keyboard(3);
  }
 
 UInt16 keyboard5()
 {
- UInt16 tmp=0;
-
-	  if (key[config[current_config].joy_mapping[4][J_DOWN]])
-		 tmp|=JOY_DOWN;
-     else
-	    if (key[config[current_config].joy_mapping[4][J_UP]])
-		   tmp|=JOY_UP;
-
-     if (key[config[current_config].joy_mapping[4][J_LEFT]])
-		 tmp|=JOY_LEFT;
-     else
-       if (key[config[current_config].joy_mapping[4][J_RIGHT]])
-		   tmp|=JOY_RIGHT;
-
-     if (key[config[current_config].joy_mapping[4][J_II]])
-		 if (!auto_fire_A[4])
-		   tmp|=JOY_A;
-       else
-			{
- 			  already_fired_A[4]=!already_fired_A[4];
-			  if (!already_fired_A[4])
-				 tmp|=JOY_A;
-			 }
-
-     if (key[config[current_config].joy_mapping[4][J_I]])
-		 if (!auto_fire_B[4])
-		   tmp|=JOY_B;
-       else
-			{
- 			  already_fired_B[4]=!already_fired_B[4];
-			  if (!already_fired_B[4])
-				 tmp|=JOY_B;
-			 }
-
-     if (key[config[current_config].joy_mapping[4][J_SELECT]])
-		 tmp|=JOY_SELECT;
-
-     if (key[config[current_config].joy_mapping[4][J_START]])
-		 tmp|=JOY_START;
-
-     if (key[config[current_config].joy_mapping[4][J_AUTOI]])
-		 if (!key_delay)
-			{
-		     auto_fire_A[4]=!auto_fire_A[4];
-			  key_delay=10;
-         }
-
-     if (key[config[current_config].joy_mapping[4][J_AUTOII]])
-		 if (!key_delay)
-			{
-		     auto_fire_B[4]=!auto_fire_B[4];
-			  key_delay=10;
-         }
-
- return tmp;
+  return read_keyboard(4);
  }
 
 /* for joypad */
-
-
-poll_joypad()
+void poll_joypad(int port)
  {
   
-    while (read ((int)fd[0], &e, sizeof(e)) > 0) {
+    while (read ((int)fd[port], &e, sizeof(e)) > 0) {
       if (e.type & JS_EVENT_BUTTON)
-        joypad[0].button[e.number] = e.value;
+        joypad[port].button[e.number] = e.value;
       else if (e.type & JS_EVENT_AXIS)
-        joypad[0].axis[e.number] = e.value;
+        joypad[port].axis[e.number] = e.value;
     }
+  }
+
+UInt16 read_joypad(int port)
+ {
+  UInt16 tmp;
+
+  poll_joypad(port);
+
+  tmp=0;
+
+    if (joypad[port].axis[0] < 0)
+		tmp|=JOY_LEFT;
+
+    if (joypad[port].axis[0] > 0)
+		tmp|=JOY_RIGHT;
+
+    if (joypad[port].axis[1] < 0)
+		tmp|=JOY_UP;
+
+    if (joypad[port].axis[1] > 0)
+		tmp|=JOY_DOWN;
+
+    if (joypad[port].button[config[current_config].joy_mapping[port][J_PSTART]]
+        || key[config[current_config].joy_mapping[port][J_START]])
+		tmp|=JOY_START;
+    
+    if (joypad[port].button[config[current_config].joy_mapping[port][J_PSELECT]]
+	|| key[config[current_config].joy_mapping[port][J_SELECT]])
+		tmp|=JOY_SELECT;
+
+    // Set Autofire I to Autofire II button status
+    auto_fire_A[port]=(joypad[port].button[config[current_config].joy_mapping[port][J_PAUTOI]]
+	|| key[config[current_config].joy_mapping[port][J_AUTOI]]);
+
+    // Set Autofire II to Autofire II button status
+    auto_fire_B[port]=(joypad[port].button[config[current_config].joy_mapping[port][J_PAUTOII]]
+	|| key[config[current_config].joy_mapping[port][J_AUTOII]]);
+
+    // Button I, fixed Autofire
+    if (joypad[port].button[config[current_config].joy_mapping[port][J_PI]]
+	|| key[config[current_config].joy_mapping[port][J_I]])
+          {
+	    if (auto_fire_A[port])
+	        {
+	             already_fired_A[port]=!already_fired_A[port];
+    	             if (!already_fired_A[port])
+	                  tmp|=JOY_A;
+		}
+	    else
+	             tmp|=JOY_A;
+	  }
+
+    // Button II, fixed Autofire
+    if (joypad[port].button[config[current_config].joy_mapping[port][J_PII]]
+	|| key[config[current_config].joy_mapping[port][J_II]])
+	  {
+	    if (auto_fire_B[port])
+		 {
+	              already_fired_B[port]=!already_fired_B[port];
+	              if (!already_fired_B[port])
+	                   tmp|=JOY_B;
+		 }
+            else
+	              tmp|=JOY_B;
+	  }
+
+  return tmp;
   }
 
 UInt16 joypad1()
  {
-  UInt16 tmp;
-
-  poll_joypad();
-
-  tmp=0;
-
-    if (joypad[0].axis[0] == -32767)
-                tmp|=JOY_LEFT;
-
-    if (joypad[0].axis[0] == 32767)
-		tmp|=JOY_RIGHT;
-
-    if (joypad[0].axis[1] == -32767)
-		tmp|=JOY_UP;
-
-    if (joypad[0].axis[1] == 32767)
-		tmp|=JOY_DOWN;
-
-    if (joypad[0].button[0])
-		tmp|=JOY_A;
-
-    if (joypad[0].button[1])
-		tmp|=JOY_B;
-
-	if (joypad[0].button[8])
-		tmp|=JOY_START;
-
-	if (joypad[0].button[10])
-		tmp|=JOY_SELECT;
-	if (joypad[0].button[6])
-		auto_fire_A[0]=1;
-	else auto_fire_A[0]=0;
-	
-	if (joypad[0].button[7])
-		auto_fire_B[0]=1;
-	else auto_fire_B[0]=0;
-
-	/*
-	 if (key[config[current_config].joy_mapping[0][J_START]])
-		tmp=JOY_START;
-
-    if (key[config[current_config].joy_mapping[0][J_SELECT]])
-		tmp=JOY_SELECT;
-	*/
-
-  return tmp;
-  }
+  return read_joypad(0);
+ }
 
 UInt16 joypad2()
  {
-  UInt16 tmp;
-
-  poll_joypad();
-
-  tmp=0;
-
-    if (joypad[0].axis[0] == -32767)
-        tmp|=JOY_LEFT;
- 
-    if (joypad[0].axis[0] == 32767)
-        tmp|=JOY_RIGHT;
-
-    if (joypad[0].axis[1] == -32767)
-        tmp|=JOY_UP;
- 
-    if (joypad[0].axis[1] == 32767)
-        tmp|=JOY_DOWN;
- 
-    if (joypad[0].button[0])
-        tmp|=JOY_A;
-
-    if (joypad[0].button[1])
-        tmp|=JOY_B;
-
-    if (joypad[0].button[8])
-        tmp|=JOY_START;
-
-    if (joypad[0].button[9])
-        tmp|=JOY_SELECT;
-
-  return tmp;
-  }
+  return read_joypad(1);
+ }
 
 UInt16 joypad3()
  {
-    UInt16 tmp;
-
-  poll_joystick();
-
-  tmp=0;
-
-	 if (joy[2].stick[0].axis[0].d1)
-		tmp|=JOY_LEFT;
-
-    if (joy[2].stick[0].axis[0].d2)
-		tmp|=JOY_RIGHT;
-
-	 if (joy[2].stick[0].axis[1].d1)
-		tmp|=JOY_UP;
-
-    if (joy[2].stick[0].axis[1].d2)
-		tmp|=JOY_DOWN;
-
-    if (joy[2].button[0].b)
-		tmp|=JOY_A;
-
-    if (joy[2].button[1].b)
-		tmp|=JOY_B;
-
-	 if (key[config[current_config].joy_mapping[2][J_START]])
-		tmp|=JOY_START;
-
-    if (key[config[current_config].joy_mapping[2][J_SELECT]])
-		tmp|=JOY_SELECT;
-
-  return tmp;
-
-  }
+  return read_joypad(2);
+ }
 
 UInt16 joypad4()
  {
-    UInt16 tmp;
-
-  poll_joystick();
-
-  tmp=0;
-
-	 if (joy[3].stick[0].axis[0].d1)
-		tmp|=JOY_LEFT;
-
-    if (joy[3].stick[0].axis[0].d2)
-		tmp|=JOY_RIGHT;
-
-	 if (joy[3].stick[0].axis[1].d1)
-		tmp|=JOY_UP;
-
-    if (joy[3].stick[0].axis[1].d2)
-		tmp|=JOY_DOWN;
-
-    if (joy[3].button[0].b)
-		tmp|=JOY_A;
-
-    if (joy[3].button[1].b)
-		tmp|=JOY_B;
-
-	 if (key[config[current_config].joy_mapping[3][J_START]])
-		tmp|=JOY_START;
-
-    if (key[config[current_config].joy_mapping[3][J_SELECT]])
-		tmp|=JOY_SELECT;
-
-  return tmp;
-  }
+  return read_joypad(3);
+ }
 
 /* for mouse */
 UInt16 mouse1()

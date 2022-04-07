@@ -9,7 +9,7 @@ OBJ = pce.o gfx/sprite.o kernel_ds/h6280.o $(DEBUG_DIR)/view_zp.o $(DEBUG_DIR)/e
  $(DEBUG_DIR)/dis.o $(DEBUG_DIR)/optable.o\
  $(DEBUG_DIR)/view_inf.o misc/list_rom.o misc/config.o gfx/trans_fx.o misc/cheat.o gui/gui.o gui/interf.o misc/lang.o\
  $(MACHINE)/osd_cd.o $(MACHINE)/osd_keyboard.o $(MACHINE)/osd_gfx.o\
- $(MACHINE)/osd_machine.o data.s eagle.o
+ $(MACHINE)/osd_machine.o kernel_ds/bp.o kernel_ds/bios.o hard_pce.o eagle.o
 
 DEF = -DALLEGRO -fomit-frame-pointer -O6 -DFINAL_RELEASE -DEXTERNAL_DAT -DKERNEL_DS -g
 
@@ -126,7 +126,8 @@ sound.o : sound/sound.c
 
 clean :
 	$(RM) pce.o
-	$(RM) Hu-Go!
+	$(RM) hard_pce.o
+	$(RM) Hu-Go!.exe
 	$(RM) $(MACHINE)\*.o
 	$(RM) $(DEBUG_DIR)\*.o
 	$(RM) kernel_ds\*.o

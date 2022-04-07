@@ -323,86 +323,109 @@ display_reg ()
 
 #endif
 
-
-#define generate_satb(title,number_page,index_low,index_mid,index_hi) \
-void title() \
-{ int i; \
- char* tmp_buf=(char*)alloca(100); \
- clear(screen); \
- sprintf(tmp_buf,"        DISPLAY SATB #%d",number_page); \
- textoutshadow(screen,font,tmp_buf,blit_x,blit_y,3,2,1,1); \
- for (i=index_low; i<index_mid; i++) \
-    { \
- 	sprintf(tmp_buf,"#%02d: X=%4d : Y=%4d :PTN@0X%04X", \
-                i, \
-                (((SPR*)SPRAM)[i].x&1023)-32, \
-                (((SPR*)SPRAM)[i].y&1023)-64, \
-                ((SPR*)SPRAM)[i].no << 5); \
- 	textoutshadow(screen,font,tmp_buf,blit_x,blit_y+8+16*(i+1-index_low),(i&1?3:255),2,1,1); \
- 	sprintf(tmp_buf,"PRI=%c:PAL=%02d: FLX=%c: FLY=%c:", \
-                ((((SPR*)SPRAM)[i].atr >> 7) & 1?'X':'O'), \
-                ((SPR*)SPRAM)[i].atr & 0xF, \
-                ((((SPR*)SPRAM)[i].atr >> 11) & 1?'X':'O'), \
-                ((((SPR*)SPRAM)[i].atr >> 15) & 1?'X':'O')); \
-        switch ((((SPR*)SPRAM)[i].atr>>12) & 3) \
-          { \
-           case 00: \
-                strcat(tmp_buf,"16x"); \
-                break; \
-           case 01: \
-                strcat(tmp_buf,"32x"); \
-                break; \
-           default: \
-                strcat(tmp_buf,"64x"); \
-         } \
-         if ((((SPR*)SPRAM)[i].atr>>8)&1) \
-           strcat(tmp_buf,"32"); \
-         else \
-           strcat(tmp_buf,"16"); \
- 	textoutshadow(screen,font,tmp_buf,blit_x,blit_y+16+16*(i+1-index_low),(i&1?3:255),2,1,1); \
-    } \
- for (i=index_mid; i<index_hi; i++) \
-    { \
- 	sprintf(tmp_buf,"#%02d: X=%4d : Y=%4d :PTN@0X%04X", \
-                i, \
-                (((SPR*)SPRAM)[i].x&1023)-32, \
-                (((SPR*)SPRAM)[i].y&1023)-64, \
-                ((SPR*)SPRAM)[i].no << 5); \
- 	textoutshadow(screen,font,tmp_buf,blit_x,blit_y+16+8+16*(i+1-index_low),(i&1?3:255),2,1,1); \
- 	sprintf(tmp_buf,"PRI=%c:PAL=%02d: FLX=%c: FLY=%c:", \
-                ((((SPR*)SPRAM)[i].atr >> 7) & 1?'X':'O'), \
-                ((SPR*)SPRAM)[i].atr & 0xF, \
-                ((((SPR*)SPRAM)[i].atr >> 11) & 1?'X':'O'), \
-                ((((SPR*)SPRAM)[i].atr >> 15) & 1?'X':'O')); \
-        switch ((((SPR*)SPRAM)[i].atr>>12) & 3) \
-          { \
-           case 00: \
-                strcat(tmp_buf,"16x"); \
-                break; \
-           case 01: \
-                strcat(tmp_buf,"32x"); \
-                break; \
-           default: \
-                strcat(tmp_buf,"64x"); \
-         } \
-         if ((((SPR*)SPRAM)[i].atr>>8)&1) \
-           strcat(tmp_buf,"32"); \
-         else \
-           strcat(tmp_buf,"16"); \
- 	textoutshadow(screen,font,tmp_buf,blit_x,blit_y+32+16*(i+1-index_low),(i&1?3:255),2,1,1); \
-    } \
- sprintf(tmp_buf,"                 PAGE %d/%d",page+1,MAX_PAGES); \
- textoutshadow(screen,font,tmp_buf,blit_x,blit_y+10*19,3,2,1,1); \
+void 
+display_satb(UChar number_page, UChar index_low, UChar index_mid, UChar index_hi)
+{
+ int i;
+ char* tmp_buf=(char*)alloca(100);
+ clear(screen);
+ sprintf(tmp_buf,"        DISPLAY SATB #%d",number_page);
+ textoutshadow(screen,font,tmp_buf,blit_x,blit_y,3,2,1,1);
+ for (i=index_low; i<index_mid; i++)
+    {
+ 	sprintf(tmp_buf,"#%02d: X=%4d : Y=%4d :PTN@0X%04X",
+                i,
+                (((SPR*)SPRAM)[i].x&1023)-32,
+                (((SPR*)SPRAM)[i].y&1023)-64,
+                ((SPR*)SPRAM)[i].no << 5);
+ 	textoutshadow(screen,font,tmp_buf,blit_x,blit_y+8+16*(i+1-index_low),(i&1?3:255),2,1,1); 
+ 	sprintf(tmp_buf,"PRI=%c:PAL=%02d: FLX=%c: FLY=%c:", 
+                ((((SPR*)SPRAM)[i].atr >> 7) & 1?'X':'O'), 
+                ((SPR*)SPRAM)[i].atr & 0xF, 
+                ((((SPR*)SPRAM)[i].atr >> 11) & 1?'X':'O'), 
+                ((((SPR*)SPRAM)[i].atr >> 15) & 1?'X':'O')); 
+        switch ((((SPR*)SPRAM)[i].atr>>12) & 3) 
+          { 
+           case 00: 
+                strcat(tmp_buf,"16x"); 
+                break; 
+           case 01: 
+                strcat(tmp_buf,"32x"); 
+                break; 
+           default: 
+                strcat(tmp_buf,"64x"); 
+         } 
+         if ((((SPR*)SPRAM)[i].atr>>8)&1) 
+           strcat(tmp_buf,"32"); 
+         else 
+           strcat(tmp_buf,"16"); 
+ 	textoutshadow(screen,font,tmp_buf,blit_x,blit_y+16+16*(i+1-index_low),(i&1?3:255),2,1,1); 
+    } 
+ for (i=index_mid; i<index_hi; i++) 
+    { 
+ 	sprintf(tmp_buf,"#%02d: X=%4d : Y=%4d :PTN@0X%04X", 
+                i, 
+                (((SPR*)SPRAM)[i].x&1023)-32, 
+                (((SPR*)SPRAM)[i].y&1023)-64, 
+                ((SPR*)SPRAM)[i].no << 5); 
+ 	textoutshadow(screen,font,tmp_buf,blit_x,blit_y+16+8+16*(i+1-index_low),(i&1?3:255),2,1,1); 
+ 	sprintf(tmp_buf,"PRI=%c:PAL=%02d: FLX=%c: FLY=%c:", 
+                ((((SPR*)SPRAM)[i].atr >> 7) & 1?'X':'O'), 
+                ((SPR*)SPRAM)[i].atr & 0xF, 
+                ((((SPR*)SPRAM)[i].atr >> 11) & 1?'X':'O'), 
+                ((((SPR*)SPRAM)[i].atr >> 15) & 1?'X':'O')); 
+        switch ((((SPR*)SPRAM)[i].atr>>12) & 3) 
+          { 
+           case 00: 
+                strcat(tmp_buf,"16x"); 
+                break; 
+           case 01: 
+                strcat(tmp_buf,"32x"); 
+                break; 
+           default: 
+                strcat(tmp_buf,"64x"); 
+         } 
+         if ((((SPR*)SPRAM)[i].atr>>8)&1) 
+           strcat(tmp_buf,"32"); 
+         else 
+           strcat(tmp_buf,"16"); 
+ 	textoutshadow(screen,font,tmp_buf,blit_x,blit_y+32+16*(i+1-index_low),(i&1?3:255),2,1,1); 
+    } 
+ sprintf(tmp_buf,"                 PAGE %d/%d",page+1,MAX_PAGES); 
+ textoutshadow(screen,font,tmp_buf,blit_x,blit_y+10*19,3,2,1,1); 
  }
 
-generate_satb (display_satb1, 1, 0, 4, 8)
-generate_satb (display_satb2, 2, 8, 12, 16)
-generate_satb (display_satb3, 3, 16, 20, 24)
-generate_satb (display_satb4, 4, 24, 28, 32)
-generate_satb (display_satb5, 5, 32, 36, 40)
-generate_satb (display_satb6, 6, 40, 44, 48)
-generate_satb (display_satb7, 7, 48, 52, 56)
-generate_satb (display_satb8, 8, 56, 60, 64)
+void
+display_satb1()
+ { display_satb(1,  0,  4,  8); }
+
+void
+display_satb2()
+ { display_satb( 2,  8, 12, 16); }
+
+void
+display_satb3()
+{ display_satb( 3, 16, 20, 24); }
+
+void
+display_satb4()
+{ display_satb( 4, 24, 28, 32); }
+
+void
+display_satb5()
+{ display_satb( 5, 32, 36, 40); }
+
+void
+display_satb6()
+{ display_satb( 6, 40, 44, 48); }
+
+void
+display_satb7()
+{ display_satb( 7, 48, 52, 56); }
+
+void
+display_satb8()
+{ display_satb( 8, 56, 60, 64); }
 
 
 /* TODO : make this function display things so that it will be easier

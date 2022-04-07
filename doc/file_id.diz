@@ -2,7 +2,7 @@
    | |_| | _ _  _ /  _/ ___ | |
 .-=|  _  || | |(_)| ( |/ _ \|_/=-.
 |  |_| |_||___/   \___/\___/(_)  |
-|   Version 1.99  - 05-Dec-2000  |
+|   Version 2.00  - 31-Jan-2001  |
 |-==============================-|
 | PC Engine/Core-GraphX Emulator |
 |-=[ Features ]=================-|
@@ -12,5 +12,11 @@
 | o Cheat/Disassemble/Save State |
 | o CD/ISO/ISQ/HCD/BIN support   |
 |-=[ What's New? ]==============-|
-| o New kernel !!                |
+| o Improved joypad support      |
+| o Hard bios hooking reenabled  |
+| o Save/Load feature reenabled  |
+|     and improved               |
+| o Win File selector "working"  |
+| o eagle and scanline mode for  |
+|                 linux          |
 `---------------------------^cls-'

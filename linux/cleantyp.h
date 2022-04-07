@@ -7,6 +7,7 @@
 
 /* Unsigned */
 typedef unsigned char UChar;
+typedef signed char Char;
 
 #ifdef __AUDIO_H
 typedef unsigned char BYTE;
@@ -20,6 +21,7 @@ typedef signed char SChar;
 
 /* Unsigned */
 typedef unsigned short int UInt16;
+typedef signed short int Int16;
 
 #ifdef __AUDIO_H
 typedef unsigned short int WORD;
@@ -40,6 +42,7 @@ typedef unsigned int DWORD;
 
 /* Signed */
 typedef signed int SInt32;
+typedef signed int Int32;
 
 #endif
 

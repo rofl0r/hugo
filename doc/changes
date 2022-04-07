@@ -1,3 +1,14 @@
+Changes from HU-GO! 1.99 to HU-GO! 2.00
+
+Restored the hard bios support feature
+Improvement in the pad support and ability to remap button on pad or keyboard
+  (thanks to Lester)
+Hacking of the file selector so that it works a bit under win
+Eagle and Scanline mode enabled in linux version
+Restored save/load feature as well as improvement in it
+Auto fixing of damaged ISO headers
+Slight improvement in the german translation
+
 Changes from HU-GO! 1.29 to HU-GO! 1.99
 
 NEW KERNEL !!!! (short to say but long to implement :)

@@ -2,6 +2,8 @@
 #ifndef _DJGPP_INCLUDE_PCE_H
 #define _DJGPP_INCLUDE_PCE_H
 
+#include "hard_pce.h"
+
 #define	WIDTH	(360+64)
 
 /* TEST */
@@ -41,12 +43,6 @@
 
 #define Rd6502(A) _Rd6502(A)
 
-typedef union
-{
-  struct { UChar l,h; } B;
-  UInt16 W;
-} pair;
-
 #else
 
 #include "m6502.h"
@@ -67,7 +63,7 @@ typedef union
 #define	alleg_flic_unused
 #define	alleg_gui_unused
 
-#include <allegro.h>
+#include "allegro.h"
 #include "gfx.h"
 
 #endif
@@ -87,63 +83,6 @@ extern DATAFILE* datafile;
 
 #endif
 
-
-typedef struct tagIO {
-	pair VDC[32];
-	pair VCE[0x200];
-	pair vce_reg;
-	/* VDC */
-	UInt16 vdc_inc,vdc_raster_count;
-	UChar vdc_reg,vdc_status,vdc_ratch,vce_ratch;
-	UChar vdc_satb;
-	UChar vdc_pendvsync;
-	SInt32 bg_h,bg_w;
-	SInt32 screen_w,screen_h;
-	SInt32 scroll_y;
-	SInt32 minline, maxline;
-	/* joypad */
-	UChar JOY[16];
-	UChar joy_select,joy_counter;
-	/* PSG */
-	UChar PSG[6][8],wave[6][32],wavofs[6];
-        // PSG STRUCTURE
-        // 0 : dda_out
-        // 2 : freq (lo byte)  | In reality it's a divisor
-        // 3 : freq (hi byte)	 | 3.7 Mhz / freq => true snd freq
-        // 4 : dda_ctrl
-        //     000XXXXX
-        //     ^^  ^
-        //     ||  ch. volume
-        //     ||
-        //     |direct access (everything at byte 0)
-        //     |
-        //    enable
-        // 5 : pan (left vol = hi nibble, right vol = low nibble)
-        // 7 : noise_ctrl
-	UChar psg_ch,psg_volume,psg_lfo_freq,psg_lfo_ctrl;
-	/* TIMER */
-	UChar timer_reload,timer_start,timer_counter;
-	/* IRQ */
-	UChar irq_mask,irq_status;
-	/* CDROM extention */
-	SInt32 backup,adpcm_firstread;
-	pair adpcm_ptr;
-	UInt16 adpcm_rptr,adpcm_wptr;
-
-/* CAREFUL, added variable */
-   UInt16 adpcm_dmaptr;
-
-/* CAREFUL, added variable */
-   UChar adpcm_rate;
-
-/* CAREFUL, added variable */
-   UInt32 adpcm_pptr; /* to know where to begin playing adpcm (in nibbles) */
-
-/* CAREFUL, added variable */
-   UInt32 adpcm_psize; /* to know how many 4-bit samples to play */
-
-} IO;
-
 #ifdef __GNUC__
 UChar _Rd6502(UInt16 A) __attribute__ ((const,regparm (1)))  ;
 void _Wr6502(UInt16 A,UChar V) __attribute__ ((regparm (2))) ;
@@ -151,8 +90,6 @@ void bank_set(UChar P,UChar V) __attribute__ ((regparm (2)));
 #endif
 
 SInt32  CheckSprites(void);
-void    IO_write(UInt16 A,UChar V);
-UChar   IO_read(UInt16 A);
 void    RefreshLine(int Y1,int Y2);
 void    RefreshScreen(void);
 UInt32  CRC_file(char*);
@@ -170,12 +107,6 @@ void    fill_cd_info();
 void    nb_sect2msf(UInt32 lsn,UChar *min, UChar *sec, UChar *frm);
 void    Log(char*, ...);
 void    delete_file_tmp(char* name,int dummy,int dummy2);
-
-extern UChar RAM[0x8000];
-// mem where variables are stocked (well, RAM... )
-
-extern UChar *WRAM;
-// extra backup memory
 
 extern FILE* out_snd;
 // The file used to put sound into
@@ -206,15 +137,6 @@ extern char video_path[80];
 extern char ISO_filename[256];
 // the name of the ISO file
 
-extern UChar *VRAM;
-// Video mem
-
-extern UInt16 SPRAM[64*4];
-// SPRAM = sprite RAM
-
-extern UChar Pal[512];
-// PCE Palette
-
 extern UInt32 scanline;
 
 extern IO io;
@@ -235,13 +157,6 @@ extern UChar *PopRAM;
 
 extern const UInt32 PopRAMsize;
 // I don't really know if it must be 0x8000 or 0x10000
-
-extern UChar *vchange,*vchanges;
-//typedef char BOOL;
-//typedef unsigned char BYTE;
-
-extern UInt32 *VRAM2,*VRAMS;
-
 
 #ifdef ALLEGRO
 
@@ -286,35 +201,11 @@ extern UChar *Page[8],*ROMMap[256];
 extern UInt32 timer_60;
 // how many times do the interrupt have been called
 
-extern UChar *PCM;
-// ADPCM buffer
-
-extern UChar cd_port_1800;
-
-extern UChar cd_port_1801;
-
-extern UChar cd_port_1802;
-
-extern UChar cd_port_1804;
-
 extern UChar bcdbin[0x100];
 
 extern UChar binbcd[0x100];
 
-extern UChar *cd_sector_buffer;
-
-extern UChar *cd_extra_mem;
-// extra ram provided by the system CD card
-
-extern UChar *cd_read_buffer;
-
-extern UChar *cd_extra_super_mem;
-
-extern UInt32 pce_cd_read_datacnt;
-
 extern UInt32 pce_cd_sectoraddy;
-
-extern UChar cd_sectorcnt;
 
 typedef struct
     {
@@ -387,13 +278,6 @@ extern UChar cart_reload;
 
 extern UChar can_write_debug;
 
-#define	VRR	2
-enum _VDC_REG {
-	MAWR,MARR,VWR,vdc3,vdc4,CR,RCR,BXR,
-	BYR,MWR,HSR,HDR,VPR,VDW,VCR,DCR,
-	SOUR,DISTR,LENR,SATB};
-
-
 #define	SpHitON		   (io.VDC[CR].W&0x01)
 #define	OverON		   (io.VDC[CR].W&0x02)
 #define	RasHitON	   (io.VDC[CR].W&0x04)
@@ -402,10 +286,6 @@ enum _VDC_REG {
 #define	ScreenON	   (io.VDC[CR].W&0x80)
 
 #define	VRAMSIZE	   0x20000
-
-#define	NODATA	   0xff
-#define	ENABLE	   1
-#define	DISABLE	   0
 
 #define	VDC_CR	   0x01
 #define	VDC_OR	   0x02
@@ -440,6 +320,12 @@ enum _VDC_REG {
 #define J_START   7
 #define J_AUTOI   8
 #define J_AUTOII  9
+#define J_PI      10
+#define J_PII     11
+#define J_PSELECT 12
+#define J_PSTART  13
+#define J_PAUTOI  14
+#define J_PAUTOII 15
 
 // Post include to avoid circular definitions
 

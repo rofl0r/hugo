@@ -4,8 +4,8 @@
       ...:::||____|:|____||_______/::::\_________/\_______/(____)::::...
             `-*-- -  -   -    -      -            -              ^cls
                 Core-GraphX / PC Engine / Turbo GraphX Emulator
-                             Version 1.99
-                           5 December 2000
+                             Version 2.00
+                           31 January 2001
 
 
         N.B. When reading this .TXT - "(*)" indicates the main changes
@@ -270,6 +270,10 @@
     "RIGHT","I","II","SELECT","START","AUTOI","AUTOII") immediately followed
     by the number of the contoller. The value is then the scancode as you
     can find it in the SCANCODE.TXT.
+(*) When mapping a joypad related configuration, you can also use "PI","PII",
+   "PSELECT", "PSTART", "PAUTOI", "PAUTOII" to map button I, II, Select, Start
+    and autoI, autoII. The given value of the right being the number of the
+    button on your pad, of course.
     Now, you can create up to 15 different configs by using sections like
     [config5]. These sections must be at the end of the INI files. They
     contain key definitions as explained above but also info on controllers
@@ -398,7 +402,6 @@
    released together.
    So, what are the differences betwwen DOS and Linux version ?
    Under Linux :
-        o Only one screen mode (320x240 in ModeX)
         o File selector and gui doesn't work (in fact, now the fileselector work
      but isn't useful)
         o No more systematic crash when quiting, but no clean exit yet
@@ -622,8 +625,6 @@ X  -- New feature to help PCE developpers
  X -- Precalculation of sprites (may increase speed)
  X -- Way to make people understand I desperately need some feedback (did you
       love it, hate it, eat it?)
-  X-- Changing core sources (from Marat Fayzullin to Dave Shadoff one, or
-      maybe another)
   X-- Localisation of the bug which causes a sound channel not to get
       played
   X-- Ports to other platforms - BeOS, Amiga etc.

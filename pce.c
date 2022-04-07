@@ -4,7 +4,7 @@
 /*      1998 by BERO bero@geocities.co.jp                                 */
 /*                                                                        */
 /*    Modified 1998 by hmmx hmmx@geocities.co.jp                          */
-/*    Modified 1999-2000 by Zeograd (Olivier Jolly) zeograd@caramail.com  */
+/*    Modified 1999-2001 by Zeograd (Olivier Jolly) zeograd@caramail.com  */
 /**************************************************************************/
 
 /* Header section */
@@ -19,14 +19,11 @@
 
 /* Variable section */
 
-UChar minimum_bios_hooking = 1;
+UChar minimum_bios_hooking = 0;
 
 UChar can_write_debug = 0;
 
 UChar *cd_buf = NULL;
-
-UChar RAM[0x8000];
-// mem where variables are stocked (well, RAM... )
 
 UChar *PopRAM;
 // Now dynamicaly allocated
@@ -42,7 +39,7 @@ const UInt32 PopRAMsize = 0x8000;
 UChar *Page[8], *ROMMap[256];
 //BOOL IsROM[8];
 
-UChar *VRAM, *ROM, *vchange, *vchanges, *PCM, *WRAM, *DMYROM, *IOAREA;
+UChar *ROM, *PCM, *DMYROM, *IOAREA;
 // WRAM = backup RAM (~ the one on CD ROM drive)
 // IOAREA = a pointer to the emulated IO zone
 // vchange = array of boolean to know whether bg tiles have changed (i.e.
@@ -50,13 +47,6 @@ UChar *VRAM, *ROM, *vchange, *vchanges, *PCM, *WRAM, *DMYROM, *IOAREA;
 //    [to check !]
 // vchanges IDEM for sprites
 // ROM = the same thing as the ROM file (w/o header)
-
-UInt16 SPRAM[64 * 4];
-// SPRAM = sprite RAM
-
-UInt32 *VRAM2, *VRAMS;
-// VRAMS seems to be the result of the "linearisation" of PCE sprites
-// and so VRAM2 with background tiles
 
 UChar CDBIOS_replace[0x4d][2];
 // Used to know what byte do we have replaced to hook bios functions so that
@@ -141,6 +131,8 @@ char video_path[80];
 char ISO_filename[256] = "";
 // The name of the ISO file
 
+UChar force_header = 1;
+// Force the first sector of the code track to be the correct header
 
 #if defined(EXTERNAL_DAT) && defined(ALLEGRO)
 DATAFILE *datafile;
@@ -233,16 +225,8 @@ UChar language;
  * 8 -> Italian
  */
 
-UChar Pal[512];
-
-IO io;
-// variable containing the different port and others...
-
 UChar cd_fade;
 // the byte set by the fade function
-
-UChar *cd_extra_mem;
-// extra ram provided by the system CD card
 
 unsigned char binbcd[0x100] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
@@ -282,23 +266,11 @@ unsigned char bcdbin[0x100] = {
 };
 
 
-UChar cd_port_1800 = 0;
-
-UChar cd_port_1801 = 0;
-
-UChar cd_port_1802 = 0;
-
-UChar cd_port_1804 = 0;
-
 UChar cd_port_180b = 0;
 
 UChar pce_cd_adpcm_trans_done = 0;
 
-UChar pce_cd_curcmd;
-
 UChar pce_cd_cmdcnt;
-
-UChar cd_sectorcnt;
 
 FILE *iso_FILE = NULL;
 
@@ -310,15 +282,7 @@ UInt32 packed_iso_filesize = 0;
 
 UInt32 ISQ_position = 0;
 
-UChar *cd_sector_buffer;	// contain really data
-
-// UInt32 pce_cd_read_datacnt;
-
-UChar *cd_extra_super_mem;
-
 UInt32 pce_cd_sectoraddy;
-
-UInt32 pce_cd_read_datacnt;
 
 UChar pce_cd_sectoraddress[3];
 
@@ -327,8 +291,6 @@ UChar pce_cd_temp_dirinfo[4];
 UChar pce_cd_temp_play[4];
 
 UChar pce_cd_temp_stop[4];
-
-UChar *cd_read_buffer;
 
 UChar pce_cd_dirinfo[4];
 
@@ -347,7 +309,7 @@ UChar nb_max_track = 24;	//(NO MORE BCD!!!!!)
 UInt32 timer_60 = 0;
 // how many times do the interrupt have been called
 
-unsigned char joy_mapping[5][10];
+unsigned char joy_mapping[5][16];
 
 int UPeriod = 0;
 // Number of frame to skip
@@ -618,7 +580,7 @@ fill_cd_info ()
   CD_track[1].beg_lsn = 0;	// Number of sector since the
   // beginning of track 1
 
-  CD_track[1].length = 47 * CD_FRAMES + 65;
+  CD_track[1].length = 47 * CD_FRAMES + 65; // Most common
 
   // CD_track[0x01].length=53 * CD_FRAMES + 65;
 
@@ -927,6 +889,14 @@ read_sector_ISO (unsigned char *p, UInt32 sector)
       return;
     }
 
+  if (sector == CD_track[result].beg_lsn)
+    { /* We're reading the first sector, the header */
+      if  (force_header)
+        {
+          memcpy(p, ISO_header, 0x800);
+          return;
+         }
+     }
 
   fseek (iso_FILE, (sector - CD_track[result].beg_lsn) * 2048, SEEK_SET);
   fread (p, 2048, 1, iso_FILE);
@@ -953,8 +923,6 @@ pce_cd_read_sector (void)
   (*read_sector_method[CD_emulation]) (cd_sector_buffer, pce_cd_sectoraddy);
 
   pce_cd_sectoraddy++;
-
-
 
 #if 0
   for (result = 0; result < 2048; result++)
@@ -1721,12 +1689,15 @@ IO_write (UInt16 A, UChar V)
 
 #define BASE_FREQ 3700000
 
-#define ajust_vol { char j;\
-   fixed tmp=itofix((io.PSG[io.psg_ch][4]&15)*\
-                   ((io.PSG[io.psg_ch][5]&15)+(io.PSG[io.psg_ch][5]>>4))*\
-                   ((io.psg_volume&15)+(io.psg_volume>>4)))/(6*32*32) ;\
-   for (tmp2=0,j=0;j<32;j++,tmp2+=tmp)\
+#ifdef USE_MORE_SOUND_VAR
+
+#define ajust_vol { char j; \
+   fixed tmp=itofix((io.PSG[io.psg_ch][4]&15)* \
+                   ((io.PSG[io.psg_ch][5]&15)+(io.PSG[io.psg_ch][5]>>4))* \
+                   ((io.psg_volume&15)+(io.psg_volume>>4)))/(6*32*32) ; \
+   for (tmp2=0,j=0;j<32;j++,tmp2+=tmp) \
       snd_vol[io.psg_ch][j]=fixtoi(tmp2); }
+#endif
 
       switch (A & 15)
 	{
@@ -1784,7 +1755,8 @@ IO_write (UInt16 A, UChar V)
 	  ajust_vol;
 #endif
 	  break;
-
+	  
+	  /* Put a value into the channel sample or directly into the mixer */
 	case 6:
 	  if (io.PSG[io.psg_ch][4] & 0x40)
 	    {
@@ -2197,278 +2169,6 @@ IO_write (UInt16 A, UChar V)
 
 #endif
 //      DebugDumpTrace(4, TRUE);
-}
-
-/* read */
-UChar IO_read (UInt16 A)
-{
-  UChar ret;
-  //printf("r%04x ",A&0x3FFF);
-
-#ifndef FINAL_RELEASE
-  if (((A & 0x1CC0) == 0x1800) && ((A & 0x1CC8) != 0x1808))
-    fprintf (stderr, "\nRead %04x\n", A);
-#endif
-
-
-  /* BEWARE */
-  // switch(A&0x1C00){ // safe way but not for specials ports
-  /* BE CAREFUL, 0x1C00 is safe */
-
-  switch (A & 0x1CC0)
-    {				// MAY BE UNSAFE
-    case 0x0000:		/* VDC */
-      switch (A & 3)
-	{
-	case 0:
-	  ret = io.vdc_status;
-	  io.vdc_status = 0;	//&=VDC_InVBlank;//&=~VDC_BSY;
-	  return ret;
-	case 1:
-	  return 0;
-	case 2:
-	  if (io.vdc_reg == VRR)
-	    return VRAM[io.VDC[MARR].W * 2];
-	  else
-	    return io.VDC[io.vdc_reg].B.l;
-	case 3:
-	  if (io.vdc_reg == VRR)
-	    {
-	      ret = VRAM[io.VDC[MARR].W * 2 + 1];
-	      io.VDC[MARR].W += io.vdc_inc;
-//                      TRACE0("VRAM read\n");
-	      return ret;
-	    }
-	  else
-	    return io.VDC[io.vdc_reg].B.h;
-	}
-      break;
-
-    case 0x0400:		/* VCE */
-      switch (A & 7)
-	{
-	case 4:
-	  return io.VCE[io.vce_reg.W].B.l;
-	case 5:
-	  return io.VCE[io.vce_reg.W++].B.h;
-	}
-      break;
-    case 0x0800:		/* PSG */
-      switch (A & 15)
-	{
-	case 0:
-	  return io.psg_ch;
-	case 1:
-	  return io.psg_volume;
-	case 2:
-	  return io.PSG[io.psg_ch][2];
-	case 3:
-	  return io.PSG[io.psg_ch][3];
-	case 4:
-	  return io.PSG[io.psg_ch][4];
-	case 5:
-	  return io.PSG[io.psg_ch][5];
-	case 6:
-	  {
-	    int ofs = io.wavofs[io.psg_ch];
-	    io.wavofs[io.psg_ch] = (io.wavofs[io.psg_ch] + 1) & 31;
-	    return io.wave[io.psg_ch][ofs];
-
-#ifdef USE_MORE_SOUND_VAR
-	    int ofs = fixtoi (snd_pos[io.psg_ch]);
-	    snd_pos[io.psg_ch] =
-	      itofix ((fixtoi (snd_pos[io.psg_ch]) + 1) & 31);
-	    return io.wave[io.psg_ch][ofs];
-#endif
-
-	  }
-	case 7:
-	  return io.PSG[io.psg_ch][7];
-	case 8:
-	  return io.psg_lfo_freq;
-	case 9:
-	  return io.psg_lfo_ctrl;
-	default:
-	  return NODATA;
-	}
-      break;
-    case 0x0c00:		/* timer */
-      return io.timer_counter;
-
-    case 0x1000:		/* joypad */
-//        TRACE("js=%d\n", io.joy_counter);
-      ret = io.JOY[io.joy_counter] ^ 0xff;
-      if (io.joy_select & 1)
-	ret >>= 4;
-      else
-	{
-	  ret &= 15;
-	  io.joy_counter = (io.joy_counter + 1) % 5;
-	}
-      return ret | Country;	/* country 0:JPN 1<<6=US */
-
-    case 0x1400:		/* IRQ */
-      switch (A & 15)
-	{
-	case 2:
-	  return io.irq_mask;
-	case 3:
-	  ret = io.irq_status;
-	  io.irq_status = 0;
-	  return ret;
-	}
-      break;
-
-
-    case 0x18C0:		// Memory management ?
-      switch (A & 15)
-	{
-	case 5:
-	case 1:
-	  return 0xAA;
-	case 2:
-	case 6:
-	  return 0x55;
-	case 3:
-	case 7:
-	  return 0x03;
-
-//          case 15: // ACD support ?
-//              return 0x51;
-
-	}
-      break;
-
-    case 0x1800:		// CD-ROM extention
-      switch (A & 15)
-	{
-	case 0:		// return 0x40; // ready ?
-	  // return 0xFF;
-	  return cd_port_1800;
-	case 1:
-	  {
-	    UChar retval;
-
-	    if (cd_read_buffer)
-	      {
-		retval = *cd_read_buffer++;
-		if (pce_cd_read_datacnt == 2048)
-		  {
-		    pce_cd_read_datacnt--;
-
-#ifndef FINAL_RELEASE
-		    fprintf (stderr, "Data count fudge\n");
-#endif
-
-		  }
-		if (!pce_cd_read_datacnt)
-		  cd_read_buffer = 0;
-	      }
-	    else
-	      retval = 0;
-	    return retval;
-	  }
-
-	case 2:
-	  return cd_port_1802;
-
-	case 3:
-
-	  {
-
-	    static UChar tmp_res = 0x02;
-
-	    tmp_res = 0x02 - tmp_res;
-
-	    io.backup = DISABLE;
-
-/* TEST */// return 0x20;
-
-	    return tmp_res | 0x20;
-
-	  }
-
-/* TEST */
-	case 4:
-	  return cd_port_1804;
-
-/* TEST */
-	case 5:
-	  return 0x50;
-
-/* TEST */
-	case 6:
-	  return 0x05;
-
-	case 0x0A:
-#ifndef FINAL_RELEASE
-	  Log ("HARD : Read %x from ADPCM[%04X] to VRAM : 0X%04X\n",
-	       PCM[io.adpcm_rptr], io.adpcm_rptr, io.VDC[MAWR].W * 2);
-#endif
-
-	  if (!io.adpcm_firstread)
-	    return PCM[io.adpcm_rptr++];
-	  else
-	    {
-	      io.adpcm_firstread--;
-	      return NODATA;
-	    }
-
-	case 0x0B:		/* TEST */
-	  return 0x00;
-	case 0x0C:		/* TEST */
-	  return 0x01;		// 0x89
-	case 0x0D:		/* TEST */
-	  return 0x00;
-
-	case 8:
-	  if (pce_cd_read_datacnt)
-	    {
-	      UChar retval;
-
-	      if (cd_read_buffer)
-		{
-
-		  // TEST
-		  // cd_port_1800 &= ~0xF8;
-		  // cd_port_1800 |=  0xC8;
-		  // TEST
-
-		  retval = *cd_read_buffer++;
-		}
-	      else
-		retval = 0;
-
-	      if (!--pce_cd_read_datacnt)
-		{
-		  cd_read_buffer = 0;
-		  if (!--cd_sectorcnt)
-		    {
-#ifndef FINAL_RELEASE
-		      fprintf (stderr, "Sector data count over.\n");
-#endif
-		      cd_port_1800 |= 0x10;
-		      pce_cd_curcmd = 0;
-		    }
-		  else
-		    {
-#ifndef FINAL_RELEASE
-		      fprintf (stderr, "Sector data count %d.\n",
-			       cd_sectorcnt);
-#endif
-		      pce_cd_read_sector ();
-		    }
-		}
-	      return retval;
-	    }
-	  break;
-	}
-    }
-#ifndef FINAL_RELEASE
-  fprintf (stderr, "ignore I/O read %04X\nat PC = %04X\n", A, M.PC.W);
-#endif
-//      DebugDumpFp(4, TRUE);
-  return NODATA;
 }
 
 #ifndef KERNEL_DS
@@ -3150,9 +2850,9 @@ ResetPCE ()
       // We set illegal opcodes to handle CD Bios functions
       UInt16 x;
 
-      Log ("Will hook cd functions\nDisabled in this version\n");
+      Log ("Will hook cd functions\n");
 /* TODO : reenable minimum_bios_hooking when bios hooking rewritten */
-/*
+
       if (!minimum_bios_hooking)
 	for (x = 0x01; x < 0x4D; x++)
 	  if (x != 0x22)	// the 0x22th jump is special, points to a one byte routine
@@ -3168,7 +2868,7 @@ ResetPCE ()
 	      _Wr6502 (dest + 1, x);
 
 	    }
-*/
+
     }
   return 0;
 }
@@ -3824,7 +3524,7 @@ main (int argc, char *argv[])
   fprintf (stderr, "IPeriod = %d\n", IPeriod);
 #endif
 //      UPeriod = 0;
-  TimerPeriod = BaseClock / 1000 * 3 * 1024 / 21480;
+  // TimerPeriod = BaseClock / 1000 * 3 * 1024 / 21480;
 #ifndef FINAL_RELEASE
   fprintf (stderr, "TimerPeriod = %d\n", TimerPeriod);
 #endif

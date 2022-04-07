@@ -27,12 +27,12 @@
 typedef struct {
         UInt16 (*pad[5])();
         UChar input_type[5];
-        UChar joy_mapping[5][10];
+        UChar joy_mapping[5][16];
         } input_config;
 
 typedef struct {
-        __s16 axis[4];
-        __s16 button[16];
+        SInt16 axis[4];
+        SInt16 button[16];
         } js_status;
 
 extern input_config config[16];

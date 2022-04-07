@@ -7,8 +7,9 @@
                                 Emulateur
                  Core-GraphX / PC Engine / Turbo GraphX
 
-                            Version 1.99
-                      Version du 5 Decembre '00
+                            Version 2.00
+                      Version du 31 Janvier '01
+                            Dediee a Bwb
 
   (   (*) : changement principal dans ce texte )
 
@@ -286,6 +287,11 @@
   "LEFT","RIGHT","I","II","SELECT","START","AUTOI","AUTOII" suivi
   immédiatement par le numéro du pad concerné. La valeur est le scancode
   de la touche à assigner, voir SCANCODE.TXT.
+(*)Pour configurer un joypad, vous pouvez aussi utiliser "PI","PII",
+  "PSELECT", "PSTART", "PAUTOI", "PAUTOII" pour changer les boutons I, II,
+  Select, Start et autoI, autoII. La valeur donn‚e est le num‚ro du bouton
+  sur le pad.
+
   Vous pouvez désormais créer jusqu'à 15 configurations en utilisant des
   sections du style [config5]. Ces sections doivent se trouver à la fin du
   fichier de configuration. Ils contiennent de définitions de touches

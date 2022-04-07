@@ -1158,6 +1158,36 @@ RefreshScreen (void)
 
   (*osd_gfx_driver_list[video_driver].draw) ();
 
+  /* TEST
+
+  {
+    int x,y;
+    for (x = 0; x < 6; x++)
+       for (y = 0; y < 32; y++)
+          {
+            char buf[10];
+            itoa(io.wave[x][y], buf, 10);
+            textout(screen, font, buf, x * 24, y * 8, 255);
+          }
+
+    for (x = 0; x < 6; x++)
+       {
+        char buf[10];
+        itoa(io.PSG[x][2] + ((UInt32) io.PSG[x][3] << 8), buf, 10);
+        textout(screen, font, buf, 200, x * 8, 255);
+        }
+
+    for (x = 0; x < 8; x++)
+       {
+        char buf[10];
+        itoa(io.PSG[0][x], buf, 10);
+        textout(screen, font, buf, 200, 70 + 8 * x, 255);
+        }
+
+  }
+
+  /* TEST */
+
   // RefreshSprite();
 
   if (!silent)

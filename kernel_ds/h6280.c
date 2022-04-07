@@ -1,15 +1,12 @@
 //  h6280.c - Execute CPU instructions
 //
 
-#include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "interupt.h"
 #include "dis.h"
 #include "pce.h"
-
-#define DEBUG_KERNEL_DS1
 
 extern IO io;
 
@@ -19,30 +16,6 @@ extern UChar *ROMMap[];
 
 extern UChar* IOAREA;
 
-UChar* zp_base;
-UChar* sp_base;
-UChar mmr[8];
-
-UChar irequest;
-UChar aftercli;
-UInt32 cyclecount;
-UInt32 cyclecountold;
-UInt32 ibackup;
-
-const TimerPeriod = 1097;
-
-// registers:
-
-UInt16 reg_pc;
-UChar  reg_a;
-UChar  reg_x;
-UChar  reg_y;
-UChar  reg_p;
-UChar  reg_s;
-
-UChar  halt_flag=0;
-long   cycles=0;
-long   frames=0;
 
 // flag-value table (for speed)
 
@@ -91,8 +64,7 @@ FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N
 
 // Elementary flag check (flags 'N' and 'Z'):
 
-#define chk_flnz_8bit(x) \
-  reg_p = ((reg_p & (~(FL_N|FL_T|FL_Z))) | flnz_list[x]);
+#define chk_flnz_8bit(x) reg_p = ((reg_p & (~(FL_N|FL_T|FL_Z))) | flnz_list[x]);
 
 // This code ignores hardware-segment accesses; it should only be used
 // to access immediate data (hardware segment does not run code):

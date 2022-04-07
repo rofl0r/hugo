@@ -81,7 +81,6 @@ int osd_init_machine()
   printf (MESSAGE[language][clear_buffer]);
   clear (XBuf);
 
-/*
  switch (gamepad_driver)
    {
     case 0:
@@ -130,8 +129,11 @@ int osd_init_machine()
     default: // in particular, for gamepad_driver == -1
     result = install_joystick(JOY_TYPE_AUTODETECT);
    }
-*/
-  result = install_joystick (gamepad_driver);
+
+
+  // result = install_joystick (gamepad_driver);
+
+  // result = install_joystick (JOY_TYPE_WINGEX);
 
   if ((!result) && (joy_type != JOY_TYPE_NONE))
     {

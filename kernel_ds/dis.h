@@ -8,6 +8,7 @@
 #include "h6280.h"
 #include "globals.h"
 #include "bp.h"
+#include "bios.h"
 
 /* addressing modes: */
 
@@ -288,7 +289,7 @@ operation optable[256] = {
   { sbc_absy,   AM_ABSY,    "SBC" },      /* $F9 */
   { plx,        AM_IMPL,    "PLX" },      /* $FA */
   { handle_bp15,AM_IMPL,    "BPF" },      /* $FB */
-  { halt,       AM_IMPL,    "???" },      /* $FC */
+  { handle_bios,AM_IMPL,    "???" },      /* $FC */
   { sbc_absx,   AM_ABSX,    "SBC" },      /* $FD */
   { inc_absx,   AM_ABSX,    "INC" },      /* $FE */
   { bbs7,       AM_PSREL,   "BBS7"}       /* $FF */

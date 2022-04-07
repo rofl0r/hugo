@@ -1,3 +1,14 @@
+Changement de HU-GO! 1.99 à HU-GO! 2.00
+
+Remise en place du support Bios en hard
+Amelioration du support pad et possibilite de remapper les touches au pad
+   ou clavier (merci Lester)
+Bidouillage du selecteur de fichier pour qu'il marche sous le port Win
+Modes Eagle et Scanline dispo dans la version linux
+Remise en place de la possibilite de sauvegarde et amelioration
+Correction automatique de l'entete des ISO endommages
+Legere amelioration de la version allemande
+
 Changements de HU-GO! 1.29 alpha à HU-GO! 1.99
 
 NOUVEAU NOYAU !!!! (c'est court mais y'a du boulot derriere :)
