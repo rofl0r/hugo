@@ -17,24 +17,19 @@ char dump_snd = 0;
 // Do we write sound to file
 
 char synchro;
-// à fond, à fond, à fond? (french joke ;)
+// … fond, … fond, … fond? (french joke ;)
 
 int vwidth, vheight;
 // size of visible part of the screen (I got troubles with allegro screen->* values!)
 
-int vmode = 0;
-// video mode to use
-// 1 -> first 224*240 then 256*240 then 256*256 then 320*240 and 320*200
-// 2 -> first 256*240 then 256*256 then 320*240 and 320*200
-// 3 -> first 256*256 then 320*240 and 320*200
-// 4 -> first 320*240 and 320*200
-// 5 -> only try 320*200
-// 6 -> only 800*600
-// If you think others modes would be interesting, let me know
-
 int *fd[4];
 // handle for joypad devices
 
+SDL_TimerID timerId;
+// handle for the timer callback
+
+UInt32 interrupt_60hz(UInt32, void*);
+// declaration of the actual callback to call 60 times a second
 int osd_init_machine()
 {
 
@@ -42,7 +37,7 @@ int osd_init_machine()
 
   Log ("\n--[ INITIALISE MACHINE ]--------------------------\n");
 		
-  if (SDL_Init (SDL_INIT_VIDEO)) {
+  if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO)) {
 	  Log("Could not initialise SDL : %s\n",SDL_GetError());
 	  return 0;
   }	
@@ -63,6 +58,18 @@ int osd_init_machine()
   Log ("Initiating sound\n");
   printf (MESSAGE[language][init_sound]);
   InitSound ();
+	
+  if (osd_snd_init_sound ())
+  {
+	  Log("Sound ok\n");
+	  printf(MESSAGE[language][audio_inited],0,"SDL sound card",0);
+	  SDL_PauseAudio(0);
+  }
+  else
+  {	  
+	  Log("Sound not initialized\n");
+	  printf(MESSAGE[language][audio_init_failed]);
+  }
 
 #warning enable eagle with sdl
 /*
@@ -98,6 +105,12 @@ int osd_init_machine()
 
   SDL_WM_SetCaption("Hu-Go! (www.zeograd.com)",NULL);	
 	
+  timerId = SDL_AddTimer(1000 / 60, interrupt_60hz, NULL);
+  if (timerId)
+	  Log("Timer initialised\n");
+  else
+	  Log("Timer non initialised\n");	
+	
   Log ("End of initialisation of the machine\n");
   return 1;
 
@@ -127,11 +140,14 @@ osd_shut_machine (void)
   if (sound_driver == 1)
     osd_snd_set_volume (0);
 
+   if (timerId != NULL)
+	  SDL_RemoveTimer(timerId);
+  
   /* closing joypad device */
   close ((int)fd[0]);
     
 /*  (*fade_out_proc[rand () % nb_fadeout]) (0, 0, vwidth, vheight); */
-
+  osd_snd_trash_sound ();
   TrashSound ();
 
   SDL_Quit();

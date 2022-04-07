@@ -236,8 +236,8 @@ RefreshLine (int Y1, int Y2)
 		  vchange[no] = 0;
 		  plane2pixel (no);
 		}
-	      C2 = &VRAM2[no * 8 + offset];
-	      C = &VRAM[no * 32 + offset * 2];
+	      C2 = (unsigned long*)(VRAM2 + (no * 8 + offset));
+	      C = VRAM + (no * 32 + offset * 2);
 	      P = PP;
 	      for (i = 0; i < h; i++, P += WIDTH, C2++, C += 2 )
 		{
@@ -851,8 +851,8 @@ RefreshSpriteExact (int Y1, int Y2, UChar bg)
 	  if (!cgx)
 	    i++;
 	}
-      C = &VRAM[no * 128];
-      C2 = &VRAMS[no * 32];	/* TEST */
+      C = VRAM + (no * 128);
+      C2 = (unsigned long*)(VRAMS + (no * 32));	/* TEST */
       pos =
 	WIDTH * (HEIGHT - FC_H) / 2 + (WIDTH - FC_W) / 2 + WIDTH * (y + 0) +
 	x;
@@ -1037,14 +1037,14 @@ RefreshSpriteSpeedy (int Y1, int Y2, UChar bg)
 	  if (atr & V_FLIP)
 	    {
 	      inc = -2;
-	      C = &VRAM[no * 128 + 15 * 2];
-	      C2 = &VRAMS[no * 32 + 15 * 2];
+	      C = VRAM + (no * 128 + 15 * 2);
+	      C2 = (unsigned long*)(VRAMS + (no * 32 + 15 * 2));
 	    }
 	  else
 	    {
 	      inc = 2;
-	      C = &VRAM[no * 128];
-	      C2 = &VRAMS[no * 32];
+	      C = VRAM + (no * 128);
+	      C2 = (unsigned long*)(VRAMS + (no * 32));
 	    }
 
 
@@ -1088,14 +1088,14 @@ RefreshSpriteSpeedy (int Y1, int Y2, UChar bg)
 	  if (atr & V_FLIP)
 	    {
 	      inc = -2;
-	      C = &VRAM[no * 128 + 15 * 2 + cgy * 256];
-	      C2 = &VRAMS[no * 32 + 15 * 2 + cgy * 64];
+	      C = VRAM + (no * 128 + 15 * 2 + cgy * 256);
+	      C2 = (unsigned long*)(VRAMS + (no * 32 + 15 * 2 + cgy * 64));
 	    }
 	  else
 	    {
 	      inc = 2;
-	      C = &VRAM[no * 128];
-	      C2 = &VRAMS[no * 32];
+	      C = VRAM + (no * 128);
+	      C2 = (unsigned long*)(VRAMS + (no * 32));
 	    }
 
 
@@ -1173,6 +1173,8 @@ void
 RefreshScreen (void)
 {
 
+  // static double lasttime = 0, lastcurtime = 0, frametime = 0.1;	
+	
   frame += UPeriod + 1;
 
   HCD_handle_subtitle ();
@@ -1222,6 +1224,7 @@ RefreshScreen (void)
 	   (MaxLine - MinLine) * WIDTH);
   memset (SPM + MinLine * WIDTH, 0, (MaxLine - MinLine) * WIDTH);
 
+  /*
 #ifdef MSDOS
   if (synchro)
     {
@@ -1237,6 +1240,29 @@ RefreshScreen (void)
       can_blit = 0;
     }
 #endif
+  */
+  /*
+	{
+        double curtime;
+		const double deltatime = (1.0 / 60.0);
 
+         curtime = osd_getTime();
+		
+		 printf("lasttime = %8f, curtime = %8f, aimed = %8f\n", lasttime, curtime, lasttime + deltatime);
+		
+          osd_sleep(lasttime + deltatime - curtime);
+          curtime = osd_getTime();
+
+          // make average time 
+          // frametime = (frametime * 4.0 + curtime - lastcurtime) * 0.2;
+          // fps = 1.0 / frametime;
+          lastcurtime = curtime;
+
+          lasttime += deltatime;
+          if ((lasttime + deltatime) < curtime)
+            lasttime = curtime;
+
+	}
+  */
   return;
 }

@@ -3,6 +3,7 @@
 
 #include "cleantyp.h"
 #include "sys_snd.h"
+#include "sound.h"
 
 #if defined(ALLEGRO)
 
@@ -11,6 +12,8 @@
 #endif
 
 #if defined(SDL)
+
+#include <SDL.h>
 
 #endif
 

@@ -1,8 +1,5 @@
 #include "osd_gfx.h"
 
-/* TEST, to handle allegro wip errors .. */
-#define GFX_SVGALIB              AL_ID('S','V','G','A')   
-
 SDL_Surface *screen;
 
 int blit_x,blit_y;
@@ -169,7 +166,7 @@ void osd_gfx_set_message(char* mess)
 */
  
 	 #warning implement set_message
-  printf(mess);
+  printf("%s\n",mess);
 	
  return;
 

@@ -3,65 +3,151 @@
 char sCfgFileLine[BUFSIZ];
 // line buffer for config reading
 
+char temp_result[BUFSIZ];
+// temporary return value for get_config_var function
+
 char config_file[PATH_MAX];
 // name of the config file
 
-char* config_buffer;
-// content of the config file
+const int config_ar_size_max = 100;
+// number max of variable read off the configuration file
 
-UInt32 config_buffer_length;
-// size of config_buffer
+int config_ar_index = 0;
+// next entry where to insert variable / size of the config variable array
 
-char*
-get_config_var(char* section, char* cfgId )
+typedef struct {
+  char* section;
+  char* variable;
+  char* value;
+  } config_var;
+
+config_var *config_ar;
+// actual array toward the entries
+
+int config_var_cmp(const void* lhs,
+		   const void* rhs)
+{
+  int section_cmp = stricmp(((config_var*)lhs)->section, ((config_var*)rhs)->section);
+  if (section_cmp != 0)
+    return section_cmp;
+  return stricmp(((config_var*)lhs)->variable, ((config_var*)rhs)->variable);
+}
+
+
+char
+init_config()
 {
 
    FILE*  FCfgFile = NULL;
    char* pWrd = NULL;
    char* pRet;
-	
+   char* pTmp;
+   char* section = NULL;
+
+   config_ar_index = 0;
+   if ((config_ar = (config_var*)malloc(sizeof(config_var) * config_ar_size_max)) == NULL)
+     return 0;
+
    /* open config file for reading */
    if ((FCfgFile = fopen(config_file, "r")) != NULL)
    {
-      /* read through the file looking for our keyword */
       do
       {
 	 memset( sCfgFileLine, '\0', BUFSIZ );
-	 /* scan for keyword */
 	 /* note.. line must NOT be a comment */
 	 pRet = fgets(sCfgFileLine, BUFSIZ, FCfgFile );
-		  
-     if (section == NULL)
-	 {	 
-	   if((( pWrd = strstr( sCfgFileLine, cfgId ) ) != NULL && sCfgFileLine[0] != '#' ) 
-		     && pWrd != NULL  && pWrd == sCfgFileLine )
-	   {
-	      // pWrd = strchr( sCfgFileLine, ' ' ) + 1;
-		   pWrd = strchr( sCfgFileLine, '=' ) + 1;
 
-	      pRet =  strchr(pWrd, '\n' );
-	      if( pRet != NULL )
-	         *pRet = '\0';
+	 if (sCfgFileLine[0] == '#')
+	   continue;
 
-	      break;
-	   }
-   }
-	 else
-		 if (!strncmp(section,sCfgFileLine + 1,strlen(section)) && sCfgFileLine[0] == '[' && sCfgFileLine[strlen(section) + 1] == ']')
-			 section = NULL;
+	 if (sCfgFileLine[0] == '[')
+	 {
+	   int section_size;
+	   pWrd = strrchr( sCfgFileLine, ']');
+	   if (pWrd == NULL) /* Badly formed section line */
+	     continue;
+
+	   if (section != NULL)
+	     free(section);
+
+	   section_size = pWrd - sCfgFileLine;
+	   section = (char*)malloc( section_size );
+	   strncpy( section, sCfgFileLine + 1, section_size - 1);
+	   section[section_size - 1] = '\0';
+	   continue;
+	 }
+
+	 pWrd = strchr( sCfgFileLine, '=');
+	 if (pWrd == NULL)
+	   continue;
+
+	 pTmp =  strchr(pWrd, '\n');
+	 if( pTmp != NULL )
+	   *pTmp = '\0';
+
+	 if (config_ar_index < config_ar_size_max)
+	 {
+	   config_ar[config_ar_index].section=(char*)strdup(section);
+
+	   *pWrd = '\0';
+	   pTmp = pWrd - 1;
+	   while (*pTmp == '\t' || *pTmp == ' ')
+	     *(pTmp --) = '\0';
+	   config_ar[config_ar_index].variable=(char*)strdup(sCfgFileLine);
+
+	   while (*pWrd == '\t' || *pWrd == ' ')
+	     pWrd ++;
+
+	   config_ar[config_ar_index].value=(char*)strdup(pWrd+1);
+
+	   config_ar_index ++;
+	 }
 
       } while ( pRet != NULL);
 
       fclose( FCfgFile );
    }
-   if(pWrd != NULL)
-   { 
-      while( (*pWrd==' ') || *pWrd=='\t')
-                                pWrd++;
-   }
+
+   if (section != NULL)
+     free(section);
+
+   qsort(config_ar, config_ar_index, sizeof(config_var), config_var_cmp);
    
-   return pWrd;
+   return 1;
 }
+
+void dispose_config()
+{
+  int index;
+
+  for (index = 0; index < config_ar_index; index ++)
+    {
+      free(config_ar[index].section);
+      free(config_ar[index].variable);
+      free(config_ar[index].value);
+    }
+
+  free(config_ar);
+}
+
+char* get_config_var(char* section, char* variable)
+{
+  int index = 0;
+	config_var key, *result;
+	
+	key.section = section;
+	key.variable = variable;
+	
+	result = bsearch(&key, config_ar, config_ar_index, sizeof(config_var), config_var_cmp);
+	
+	if (result != NULL)
+	{
+		strcpy(temp_result, result->value);
+		return temp_result;
+	}
+	return NULL;
+}
+
 
 #if !defined(ALLEGRO)
 
@@ -124,7 +210,7 @@ read_joy_mapping ()
 #endif
 
   memset (tmp_str, 0, 16);
-
+/*
   for (x = 1; x <= 5; x++)
     {				// for each joystick
       for (y = 0; y < 16; y++)
@@ -141,7 +227,7 @@ read_joy_mapping ()
 
 	}
     }
-
+*/
 
   strcpy (section_name, "CONFIG1");
   for (z = 1; z < 16; z++)
@@ -259,10 +345,12 @@ set_arg (char nb_arg, char *val)
       US_encoded_card = atoi (val);
       Log ("US Card encoding set to %d\n", US_encoded_card);
       return 0;
+#if defined(ALLEGRO)	
     case 'v':
       vmode = atoi (val);
       Log ("Video mode set to %d\n", vmode);
       return 0;
+#endif	
     case 't':
       nb_max_track = atoi (val);
       Log ("Number of tracks set to %d\n", nb_max_track);
@@ -375,6 +463,8 @@ parse_INIfile ()
   }
 #endif
 
+  init_config();
+  
   Log ("Looking in %s\n", config_file);
 
   read_joy_mapping ();
@@ -406,17 +496,11 @@ parse_INIfile ()
 
   Log ("Setting language to %d\n", language);
 
+#if defined(ALLEGRO)
   vmode = get_config_int ("main", "vmode", 0);
   // video mode setting
 
   Log ("Setting video mode to %d\n", vmode);
-
-  smode = get_config_int ("main", "smode", -1);
-  // sound mode setting
-
-  Log ("Setting sound mode to %d\n", smode);
-
-#if defined(ALLEGRO)
 
   static_refresh = get_config_int ("main", "static_refresh", 0);
   // file selector refreshment
@@ -424,6 +508,11 @@ parse_INIfile ()
   Log ("Setting static refresh to %d\n", static_refresh);
 
 #endif
+
+  smode = get_config_int ("main", "smode", -1);
+  // sound mode setting
+
+  Log ("Setting sound mode to %d\n", smode);
 
   use_eagle = get_config_int ("main", "eagle", 0);
   // do we use EAGLE ?
@@ -435,12 +524,12 @@ parse_INIfile ()
 
   Log ("Setting scanline mode to %d\n", use_scanline);
 
-  freq_int = get_config_int ("main", "snd_freq", 11025);
+  freq_int = get_config_int ("main", "snd_freq", 44100);
   // frequency of the sound generator
 
   Log ("Setting default frequency to %d\n", freq_int);
 
-  sbuf_size = get_config_int ("main", "buffer_size", 10 * 1024);
+  sbuf_size = get_config_int ("main", "buffer_size", 1024);
   // size of the sound buffer
 
   Log ("Setting sound buffer size to %d bytes\n", sbuf_size);
@@ -518,6 +607,8 @@ parse_INIfile ()
     }
 
   Log ("End of parsing INI file\n\n");
+	
+	dispose_config();
 
   return;
 }

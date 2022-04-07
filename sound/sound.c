@@ -10,6 +10,10 @@
 
 #include "sound.h"
 
+#include <SDL_audio.h>
+SDL_AudioSpec wanted; /* For SDL Audio */
+extern void sdl_fill_audio(void *data, Uint8 *stream, int len);
+
 /* Variables definition */
 
 UChar sound_driver = 1;
@@ -30,7 +34,7 @@ char *adpcmbuf;
 UChar new_adpcm_play = 0;
 // Have we begun a new adpcm sample (i.e. must be reset adpcm index/prev value)
 
-char main_buf[SBUF_SIZE_BYTE];
+unsigned char main_buf[SBUF_SIZE_BYTE];
 // the mixed buffer, may be removed later for hard mixing...
 
 UInt32 CycleOld;
@@ -91,6 +95,9 @@ UInt32 sbuf_size = 10 * 1024;
 int
 InitSound ()
 {
+
+  sound_driver=3; // USE SDL!
+  
   for (silent = 0; silent < 6; silent++)
     {
       sbuf[silent] = (char *) malloc (SBUF_SIZE_BYTE);
@@ -104,6 +111,35 @@ InitSound ()
 
   if (smode == 0)		// No sound
     return TRUE;
+
+/* SDL Audio Begin */
+  if (sound_driver == 3)
+    {
+		/*
+	  SDL_AudioSpec obtained;
+      Log ("Initialisation of SDL sound... ");
+      wanted.freq = freq_int; // Frequency
+      printf("Frequency = %d\n", freq_int);
+      wanted.format = AUDIO_U8; // Unsigned 8 bits
+      wanted.channels = 1; // Mono
+      wanted.samples = 512; //SBUF_SIZE_BYTE;
+//      wanted.size = SBUF_SIZE_BYTE;
+ //     printf("wanted.size = %d\n",wanted.size);
+      wanted.callback = sdl_fill_audio;
+      wanted.userdata = main_buf;//NULL;
+      
+      if (SDL_OpenAudio(&wanted,&obtained) < 0) {
+        printf("Couldn't Open SDL Audio: %s\n",SDL_GetError());
+	return FALSE;
+      }
+      Log ("OK\nObtained frequency = %d\n",obtained.freq);
+      silent=0;
+      SDL_PauseAudio(0);
+	  */
+	  silent = 0;
+    }
+/* End of SDL Audio */
+
 #ifdef MSDOS
   if (sound_driver == 2)	// Seal Sound
     {
@@ -266,7 +302,6 @@ InitSound ()
     }
 #endif
 
-
   return 0;
 }
 
@@ -277,6 +312,11 @@ TrashSound (void)		/* Shut down sound  */
 
   if (!silent)
     {
+      if (sound_driver == 3) // SDL
+	{
+		SDL_PauseAudio(1);
+		SDL_CloseAudio();
+	}
 #ifdef MSDOS
       if (sound_driver == 2)	// Seal sound
 	{
@@ -339,7 +379,16 @@ write_psg (int ch)
   Log ("Nouvelle pos : %d\n", dwNewPos);
 #endif
 
-  if (sound_driver == 2)
+/*  SDL makes clipping automagicaly
+ *  if (sound_driver == 3) {
+	if (dwNewPos > wanted.size) {
+		dwNewPos = wanted.size;
+		fprintf(stderr, "overrun: %d\n",dwNewPos);
+	}
+  }
+*/
+  
+  if (sound_driver == 2) // || sound_driver == 3) /* Added 3 (SDL) */
     if (dwNewPos > (UInt32) freq_int * SOUND_BUF_MS / 1000)
       {
 #ifndef FINAL_RELEASE
@@ -372,7 +421,7 @@ write_psg (int ch)
   Log ("Buffer %d will be filled\n", ch);
 #endif
 
-  WriteBuffer (sbuf[ch], ch, dwNewPos * ds_nChannels);
+  WriteBuffer (&sbuf[ch][0], ch, dwNewPos * ds_nChannels);
   // write DATA 'til dwNewPos
 
 #ifndef FINAL_RELEASE

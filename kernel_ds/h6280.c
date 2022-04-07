@@ -2905,6 +2905,59 @@ void exe_go(void) {
 */
 #endif
 
+/*
+{
+	static char in_rom = 0;	
+		if (reg_pc == 0x3800) in_rom = 1;
+			
+		if (in_rom)
+		  Log("PC = %04X\n",reg_pc, in_rom);	
+		
+		if (reg_pc == 0x3837)
+		{
+			int i;
+			for (i = 0; i < 8; i++)
+				Log("tmm[%d] = %d\n",i,mmr[i]);
+			for (i = 0xE000; i < 0xFFFE; i++)
+				Log("%02x%s",Page[i>>13][i],i & 0xf?"":"\n");
+		}
+		
+		if (reg_pc >= 0xE000)
+			in_rom = 0;
+		
+		if (reg_pc == 0x4000)
+		{
+			int i;
+			for (i = 0; i < 8; i++)
+				Log("tmm[%d] = %d\n",i,mmr[i]);
+			for (i = 0x68; i < 0x7F; i++)
+			{
+				int x;
+				Log("bank %d :",i);
+					for (x = 0; x < 20; x++)
+						Log("%02X",ROMMap[i][x]);
+					Log("\n");
+			}
+		}
+		
+		
+}
+*/
+
+#if defined(TEST_ROM_RELOCATED)
+#warning REMOVE ME (anyway the speed will be terrible, you ll notice me quickly :)
+   Log("PC = %04X\n",reg_pc);
+{
+	extern UChar* ROM;
+	
+	int i;
+	for (i = 0xE000; i < 0xFFFF; i++)
+	{
+		Op6502(i);
+		Log("ROM[0x%x] = %d(0x%x)\n",i & 0x1FFF,ROM[i & 0x1FFF],ROM[i & 0x1FFF]);
+	}
+}
+#endif
 
     err = (*optable[Page[reg_pc>>13][reg_pc]].func_exe)();
     // err = (*optable[Page[reg_pc>>13][reg_pc]].func_exe)();

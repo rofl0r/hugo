@@ -291,26 +291,16 @@ unsigned char binbcd[0x100] = {
 
 
 unsigned char bcdbin[0x100] = {
-  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0, 0, 0, 0, 0,
-  0,
-  0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0, 0, 0, 0, 0,
-  0,
-  0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0, 0, 0, 0, 0,
-  0,
-  0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0, 0, 0, 0, 0,
-  0,
-  0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0, 0, 0, 0, 0,
-  0,
-  0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0, 0, 0, 0, 0,
-  0,
-  0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0, 0, 0, 0, 0,
-  0,
-  0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0, 0, 0, 0, 0,
-  0,
-  0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0, 0, 0, 0, 0,
-  0,
-  0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, 0x60, 0x61, 0x62, 0x63, 0, 0, 0, 0, 0,
-  0,
+  0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0, 0, 0, 0, 0, 0,
+  0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0, 0, 0, 0, 0, 0,
+  0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0, 0, 0, 0, 0, 0,
+  0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0, 0, 0, 0, 0, 0,
+  0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0, 0, 0, 0, 0, 0,
+  0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0, 0, 0, 0, 0, 0,
+  0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45, 0, 0, 0, 0, 0, 0,
+  0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0, 0, 0, 0, 0, 0,
+  0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0, 0, 0, 0, 0, 0,
+  0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, 0x60, 0x61, 0x62, 0x63, 0, 0, 0, 0, 0, 0,
 };
 
 
@@ -463,8 +453,14 @@ stricmp (char *s1, char *s2)
 }
 #endif
 
+#if defined(ALLEGRO)
 void
 interrupt_60hz ()
+#else
+  #if defined(SDL)
+  UInt32 interrupt_60hz (UInt32 interval, void *param)
+  #endif
+#endif
 {
 
   /* Refresh freezed values in RAM */
@@ -474,10 +470,6 @@ interrupt_60hz ()
   /* Make the system understand it can blit */
   can_blit = 1;
 
-  /* If we've pressed a key recently, make it less recent =) */
-  if (key_delay)
-    key_delay--;
-
   /* If we've displayed a message recently, make it less recent */
   if (message_delay)
     message_delay--;
@@ -485,7 +477,18 @@ interrupt_60hz ()
   /* number of call of this function */
   timer_60++;
 
+#if defined(ALLEGRO)  
+  
+  /* If we've pressed a key recently, make it less recent =) */
+  if (key_delay)
+    key_delay--;
+    
   return;
+#else
+   #if defined(SDL)
+      return interval;
+   #endif
+ #endif
 };
 
 /*
@@ -591,14 +594,14 @@ init_log_file ()
   getdate (&Date);
   gettime (&Time);
   Log
-    ("Creating Dos Hu-Go! log file on %02d:%02d:%02d.%02d, the %d/%d/%d\nVersion 1.99 alpha of %s\n",
+    ("Creating Dos Hu-Go! log file on %02d:%02d:%02d.%02d, the %d/%d/%d\nVersion 2.09 alpha of %s\n",
      Time.ti_hour, Time.ti_min, Time.ti_sec, Time.ti_hund, Date.da_day,
      Date.da_mon, Date.da_year, __DATE__);
 
 #elif defined(LINUX)
-  Log ("Creating Linux log file version 1.99 alpha of %s\n", __DATE__);
+  Log ("Creating Linux log file version 2.09 alpha of %s\n", __DATE__);
 #elif defined(WIN32)
-  Log ("Creating Win32 log file version 1.99 alpha of %s\n", __DATE__);
+  Log ("Creating Win32 log file version 2.09 alpha of %s\n", __DATE__);
 #endif
 
 }
@@ -617,10 +620,12 @@ bank_set (UChar P, UChar V)
 
   // bank_set_nb ++;
 
+#if !defined(FINAL_RELEASE)
 #warning REMOVE ME
   if ((V >= 0x40) && (V <= 0x43))
     printf ("AC bank access : %X\n", V);
-
+#endif
+  
   if (ROMMap[V] == IOAREA)
     Page[P] = IOAREA;
   else
@@ -1024,6 +1029,7 @@ read_sector_ISO (unsigned char *p, UInt32 sector)
     ("Loading sector nø%d.\nAX=%02x%02x\nBX=%02x%02x\nCX=%02x%02x\nDX=%02x%02x\n\n",
      pce_cd_sectoraddy, RAM[0xf9], RAM[0xf8], RAM[0xfb], RAM[0xfa], RAM[0xfd],
      RAM[0xfc], RAM[0xff], RAM[0xfe]);
+  Log("temp+2-5 = %x %x %x\ntemp + 1 = %02x\n",RAM[5], RAM[6], RAM[7], RAM[4]);
   Log ("ISO : seek at %d\n", (sector - CD_track[result].beg_lsn) * 2048);
   Log ("Track nø%d begin at %d\n", result, CD_track[result].beg_lsn);
 #endif
@@ -2493,6 +2499,47 @@ IO_write (UInt16 A, UChar V)
 //      DebugDumpTrace(4, TRUE);
 }
 
+static double osd_getTime(void)
+{
+#ifdef WIN32
+  return SDL_GetTicks() * 1e-3;
+#elif defined(DJGPP)
+  return uclock() * (1.0 / UCLOCKS_PER_SEC);
+#else
+  struct timeval tp;
+
+  gettimeofday(&tp, NULL);
+  // printf("current microsec = %f\n",tp.tv_sec + 1e-6 * tp.tv_usec);
+  return tp.tv_sec + 1e-6 * tp.tv_usec;
+#endif
+}
+
+static void osd_sleep(double s)
+{
+  // emu_too_fast = 0;
+	// printf("Sleeping %d micro seconds\n", s);
+	// Log("Sleeping %f micro seconds\n", s);
+  if (s > 0)
+  {
+#ifdef linux
+    struct timeval tp;
+
+    tp.tv_sec = 0;
+    tp.tv_usec = 1e6 * s;
+    select(1,NULL,NULL,NULL,&tp);
+#elif defined(WIN32)
+    SDL_Delay(s * 1e3);
+#elif defined(DJGPP)
+    double curtime = osd_time();
+    while ((curtime + s) > osd_time());
+#else
+    usleep(s * 1e6);
+#endif
+    // emu_too_fast = 1;
+  }
+}
+
+
 #ifndef KERNEL_DS
 
 /* write */
@@ -2506,6 +2553,8 @@ UChar
 Loop6502 ()
 #endif
 {
+  static double lasttime = 0, lastcurtime = 0, frametime = 0.1;	
+	
   static int UCount = 0;
   static int prevline;
   int dispmin, dispmax;
@@ -2628,6 +2677,29 @@ Loop6502 ()
 
       if (osd_keyboard ())
 	return INT_QUIT;
+	 
+	  	{
+        double curtime;
+		const double deltatime = (1.0 / 60.0);
+
+         curtime = osd_getTime();
+		
+		 // printf("lasttime = %8f, curtime = %8f, aimed = %8f\n", lasttime, curtime, lasttime + deltatime);
+		
+          osd_sleep(lasttime + deltatime - curtime);
+          curtime = osd_getTime();
+
+          /* make average time */
+          // frametime = (frametime * 4.0 + curtime - lastcurtime) * 0.2;
+          // fps = 1.0 / frametime;
+          lastcurtime = curtime;
+
+          lasttime += deltatime;
+          if ((lasttime + deltatime) < curtime)
+            lasttime = curtime;
+
+	}
+	  
 
       /* VRAM to SATB DMA */
       if (io.vdc_satb == 1 || io.VDC[DCR].W & 0x0010)
@@ -2640,11 +2712,9 @@ Loop6502 ()
 	io.vdc_pendvsync = 1;
       else
 	{
-	  //TRACE("vsync\n");
 	  //io.vdc_status|=VDC_InVBlank;
 	  if (VBlankON)
 	    {
-	      //TRACE("vsync=%d\n", scanline);
 	      ret = INT_IRQ;
 	    }
 	}
@@ -2657,7 +2727,6 @@ Loop6502 ()
 	  io.vdc_satb = 0;
 	  if (SATBIntON)
 	    {
-	      //TRACE("SATB=%d\n", scanline);
 	      ret = INT_IRQ;
 	    }
 /*              } else {
@@ -2722,17 +2791,19 @@ TimerInt ()
 
 #ifdef EXTERNAL_DAT
 
-#define LOAD_INTEGRATED_SYS_FILE ROM_size = 48; ROM = malloc(48*0x2000 + 512 ); memcpy(ROM,datafile[Built_in_cdsystem].dat,48*0x2000 + 512); ROM += 512; builtin_system_used=1;
+#define LOAD_INTEGRATED_SYS_FILE ROM_size = 48; ROM = malloc(48*0x2000 + 512 ); memcpy(ROM,datafile[Built_in_cdsystem].dat,48*0x2000 + 512); ROM += 512; builtin_system_used=1; return 0;
 
 #else
 
-#define LOAD_INTEGRATED_SYS_FILE ROM_size = 48; ROM = malloc(48*0x2000 + 512 ); memcpy(ROM,data[Built_in_cdsystem].dat,48*0x2000 + 512); ROM += 512; builtin_system_used=1;
+#define LOAD_INTEGRATED_SYS_FILE ROM_size = 48; ROM = malloc(48*0x2000 + 512 ); memcpy(ROM,data[Built_in_cdsystem].dat,48*0x2000 + 512); ROM += 512; builtin_system_used=1; return 0;
 
 #endif
 
 #else
 
-#define LOAD_INTEGRATED_SYS_FILE
+// #define LOAD_INTEGRATED_SYS_FILE ROM_size = 32; ROM = malloc(32 * 0x2000); {FILE* f = fopen("syscard.pce","rb");fread(ROM,32,0x2000,f); fclose(f);}; builtin_system_used = 1;
+
+#define LOAD_INTEGRATED_SYS_FILE return search_syscard();
 
 #endif
 /*
@@ -2746,6 +2817,57 @@ TimerInt ()
 ####################################
 ####################################
 */
+
+/*****************************************************************************
+
+    Function: search_syscard
+
+    Description: Search for a system card rom
+    Parameters: none
+    Return: -1 on error else 0
+             set true_file_name
+
+*****************************************************************************/
+SInt32
+search_syscard()
+{
+	#define POSSIBLE_LOCATION_COUNT 4
+	const char* POSSIBLE_LOCATION[POSSIBLE_LOCATION_COUNT] = {
+		"./","../","/usr/local/lib/hugo/","/usr/lib/hugo/"
+	};
+	
+	#define POSSIBLE_FILENAME_COUNT  4
+	const char* POSSIBLE_FILENAME[POSSIBLE_FILENAME_COUNT] = {
+		"syscard.pce","syscard3.pce","syscard30.pce","cd-rom~1.pce"
+	};
+	
+	int location, filename;
+	char temp_buffer[PATH_MAX];
+	
+	for (location = 0; location < POSSIBLE_LOCATION_COUNT; location++)
+		for (filename = 0; filename < POSSIBLE_FILENAME_COUNT; filename++)
+		{
+			FILE* f;
+			strcpy(temp_buffer, POSSIBLE_LOCATION[location]);
+			strcat(temp_buffer, POSSIBLE_FILENAME[filename]);
+			Log("Testing syscard location : %s\n",temp_buffer);
+			if ((f = fopen(temp_buffer,"rb")) != NULL)
+			{
+				int CD_emulation_bak = CD_emulation;
+				int return_value;
+				
+				fclose(f);
+				
+				return_value = CartLoad(temp_buffer);
+				
+				CD_emulation = CD_emulation_bak;
+				
+				return return_value;
+			}
+		}
+		
+	return -1;
+}
 
 /*****************************************************************************
 
@@ -2776,7 +2898,7 @@ CartLoad (char *name)
  *
  *       return 0;
  */
-      LOAD_INTEGRATED_SYS_FILE return 0;
+      LOAD_INTEGRATED_SYS_FILE;
 
     }
 
@@ -2794,7 +2916,7 @@ CartLoad (char *name)
       if (!fill_HCD_info (name))
 	return 1;
 
-      LOAD_INTEGRATED_SYS_FILE return 0;
+      LOAD_INTEGRATED_SYS_FILE;
 
     }
   else if (strcasestr (name, ".ISO"))
@@ -2805,10 +2927,8 @@ CartLoad (char *name)
 
       // Load correct ISO filename
       strcpy (ISO_filename, name);
-
-      LOAD_INTEGRATED_SYS_FILE
-	// return CartLoad("h:/jeu/pce/cd_ge_93.pce");
-	return 0;
+		
+      LOAD_INTEGRATED_SYS_FILE;
     }
   else if (strcasestr (name, ".ISQ"))
     {
@@ -2819,7 +2939,7 @@ CartLoad (char *name)
       // Load correct ISO filename
       strcpy (ISO_filename, name);
 
-      LOAD_INTEGRATED_SYS_FILE return 0;
+      LOAD_INTEGRATED_SYS_FILE;
     }
   else if (strcasestr (name, ".BIN"))
     {
@@ -2830,7 +2950,7 @@ CartLoad (char *name)
       // Load correct ISO filename
       strcpy (ISO_filename, name);
 
-      LOAD_INTEGRATED_SYS_FILE return 0;
+      LOAD_INTEGRATED_SYS_FILE;
     }
   else if (strcasestr (name, ".ZIP"))
     {
@@ -2904,6 +3024,10 @@ CartLoad (char *name)
 
   fclose (fp);
 
+#if defined(TEST_ROM_RELOCATED)
+	printf("ROM = %x %x %x %x ....\n",ROM[0],ROM[1],ROM[2],ROM[3]);
+#endif
+	
   return 0;
 }
 
@@ -3120,10 +3244,15 @@ ResetPCE ()
       io.PSG[i][4] = 0x80;
     }
   CycleOld = 0;
-
+	
+#if !defined(TEST_ROM_RELOCATED)
   mmr[7] = 0x00;
   bank_set (7, 0x00);
-
+#else
+  mmr[7] = 0x68;
+  bank_set (7, 0x68);	
+#endif
+	
   mmr[6] = 0x05;
   bank_set (6, 0x05);
 
@@ -3521,6 +3650,8 @@ InitPCE (char *name, char *backmemname)
   fprintf (stderr, "ROMmask=%02X, ROM_size=%02X\n", ROMmask, ROM_size);
 #endif
 
+#if !defined(TEST_ROM_RELOCATED)
+  
   for (i = 0; i < 0xF7; i++)
     {
       if (ROM_size == 0x30)
@@ -3548,6 +3679,14 @@ InitPCE (char *name, char *backmemname)
       else
 	ROMMap[i] = ROM + (i & ROMmask) * 0x2000;
     }
+#else
+	  #warning TEST_ROM_RELOCATED is on !
+	
+	for (i = 0; i < ROM_size; i++)
+		ROMMap[0x68 + i] = ROM + i * 0x2000;
+	
+#endif
+	
 //              ROMMap[i]=ROM+(i%ROM_size+i/ROM_size*0x10)*0x2000;
 /*              if (((i&ROMmask)+i/(ROMmask+1)) < ROM_size)
                         ROMMap[i]=ROM+((i&ROMmask)+i/(ROMmask+1)*0x20)*0x2000;
@@ -3818,6 +3957,12 @@ main (int argc, char *argv[])
 	}
 #endif
 
+#ifdef WIN32
+
+	strcpy(log_filename,"c:\\hugo.log");
+	
+#endif
+	
 #ifdef MSDOS
 
   _crt0_startup_flags |= _CRT0_FLAG_NO_LFN;

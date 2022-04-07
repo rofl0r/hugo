@@ -839,7 +839,8 @@ osd_keyboard (void)
 			}
 			
 			case SDLK_F9:
-				ToggleFullScreen();
+				if (ToggleFullScreen())
+						SDL_ShowCursor(0);
 				break;
 
 #warning reenable file selection on the fly

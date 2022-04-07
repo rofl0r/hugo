@@ -62,8 +62,17 @@ extern char* adpcmbuf;
 extern UChar new_adpcm_play;
 // Have we begun a new adpcm sample (i.e. must be reset adpcm index/prev value)
 
+#ifndef SDL
+
 extern char main_buf[SBUF_SIZE_BYTE];
 // the mixed buffer, may be removed later for hard mixing...
+
+#else
+
+extern UChar main_buf[SBUF_SIZE_BYTE];
+// the mixed buffer, may be removed later for hard mixing...
+
+#endif
 
 extern UInt32	CycleOld;
 extern UInt32   CycleNew;

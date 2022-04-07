@@ -1,4 +1,5 @@
 #include "mix.h"
+#include <SDL_audio.h>
 
 #ifndef MSDOS
 
@@ -7,6 +8,9 @@ update_sound_null ()
 {
 };
 
+void update_sound_sdl();
+
+
 void update_sound_allegro ();
 
 #warning clean this
@@ -14,11 +18,78 @@ void update_sound_allegro ();
   void update_sound_allegro() {};
 #endif
 
-void (*update_sound[3]) () =
+void (*update_sound[4]) () =
 {
-update_sound_null, update_sound_allegro, update_sound_allegro};
+update_sound_null, update_sound_allegro, update_sound_allegro, update_sound_sdl
+};
 
-#else
+/* SDL Audio Stuff */
+
+unsigned char old;
+Uint32 audio_len=0;
+
+/* Callback for SDL Audio */
+void sdl_fill_audio(void *data, Uint8 *stream, int len) {
+	int i;
+	
+	for (i = 0; i < 6; i++)
+	  WriteBuffer(sbuf[i], i, len);
+
+	write_adpcm();
+	
+	SDL_LockAudio();	
+	for (i = 0; i < len ; i++)
+		stream[i] = 128 + ((sbuf[0][i] + sbuf[1][i] + sbuf[2][i] + sbuf[3][i] +
+	sbuf[4][i] + sbuf[5][i] + adpcmbuf[i]) >> 3);
+	SDL_UnlockAudio();
+	
+}
+
+void update_sound_sdl() {
+  int dum;
+  char ch;
+
+	return;
+	
+//  while (audio_len > 0) SDL_Delay(1);//return;
+//  if (audio_len == 0) SDL_PauseAudio(1);
+ 
+  for (ch = 0; ch < 6; ch++) {
+    write_psg (ch); 
+  }
+
+  write_adpcm ();
+
+  SDL_LockAudio();  
+  
+  if (audio_len < SBUF_SIZE_BYTE)
+  {
+  
+  if (audio_len + dwNewPos > SBUF_SIZE_BYTE)
+	  dwNewPos = SBUF_SIZE_BYTE - audio_len;
+  
+  Log("Filling from %d to %d\n", audio_len, audio_len + dwNewPos);
+  
+    for (dum = audio_len; dum < audio_len + dwNewPos; dum++) {
+	    int i;
+            main_buf[dum] = //(unsigned char)((sbuf[0][dum]+128));
+	 (unsigned char)(((sbuf[0][dum] + sbuf[1][dum] + sbuf[2][dum] + sbuf[3][dum] +
+	  sbuf[4][dum] + sbuf[5][dum]) >> 2)+128);
+    }
+
+    //   fprintf(stderr,"-*-*-*-*-----------------\n");
+
+   audio_len += dwNewPos;
+	
+	}
+	
+   SDL_UnlockAudio();
+//   SDL_PauseAudio(0);
+}
+
+/* SDL Audio Update End */
+
+#else /* MSDOS? */
 
 void
 update_sound_null ()
@@ -27,9 +98,9 @@ update_sound_null ()
 void update_sound_seal ();
 void update_sound_allegro ();
 
-void (*update_sound[3]) () =
+void (*update_sound[4]) () =
 {
-update_sound_null, update_sound_allegro, update_sound_seal};
+update_sound_null, update_sound_allegro, update_sound_seal, update_sound_sdl};
 
 void
 update_sound_seal ()
@@ -60,7 +131,7 @@ update_sound_seal ()
 			 + sbuf[3][dum]
 			 + sbuf[4][dum]
 			 + sbuf[5][dum] + adpcmbuf[dum]) >> 2));
-  // main_buf[dum] = (adpcmbuf[dum])^0x80;
+   main_buf[dum] = (adpcmbuf[dum])^0x80;
   else
     for (dum = 0; dum < dwNewPos; dum++)
       main_buf[dum] =
@@ -416,16 +487,20 @@ void
 WriteBuffer (char *buf, int ch, unsigned dwSize)
 {
 
-//      static DWORD    n[6] = {0,0,0,0,0,0};
+//     static DWORD    n[6] = {0,0,0,0,0,0};
+//     static long n[6] = {0,0,0,0,0,0};
 // represent the current pointer in the ring buffer of the given chanel
 
 
+
      /* TODO: remove allegro reference here too */
-#ifdef ALLEGRO
-  static fixed fixed_n[6] = { 0, 0, 0, 0, 0, 0 };
+//#ifdef ALLEGRO
+//LK  static fixed fixed_n[6] = { 0, 0, 0, 0, 0, 0 };
+static unsigned long fixed_n[6] = { 0, 0, 0, 0, 0, 0 };
   // current pointer in fixed mode
 
-  fixed fixed_inc;
+//LK  fixed fixed_inc;
+unsigned long fixed_inc;
 
 #define	N	32
   static UInt32 k[6] = { 0, 0, 0, 0, 0, 0 };
@@ -559,7 +634,7 @@ WriteBuffer (char *buf, int ch, unsigned dwSize)
 	    //lvol = (wave[0] * lvol) / 12;
 
 
-	    for (dwPos = 0; dwPos < dwSize; dwPos++)
+	    for (dwPos = 0; dwPos < 512; dwPos++)
 	      {
 		k[ch] += 3000 + Np * 512;
 
@@ -573,7 +648,7 @@ WriteBuffer (char *buf, int ch, unsigned dwSize)
 
 		*buf++ =
 		  (signed char) ((r[ch] ? 10 * 702 : -10 * 702) * lvol / 256 /
-				 16);
+				 16); // Level 0
 		//sbuf[ch][dum++] = (WORD)((r[ch] ? 10*702 : -10*702)*lvol/64/256);
 		//*buf++ = (r[ch] ? 32 : -32) * lvol / 24;
 	      }
@@ -608,41 +683,52 @@ WriteBuffer (char *buf, int ch, unsigned dwSize)
 	// get cooked volume
 
 //                      lvol = (((io.psg_volume>>4)&0x0F) + ((io.psg_volume)&0x0F))
-//                                + (io.PSG[ch][4]&0x1F)
-//                                + (((io.PSG[ch][5]>>4)&0x0F) + ((io.PSG[ch][5])&0x0F));
+  //                              + (io.PSG[ch][4]&0x1F)
+    //                            + (((io.PSG[ch][5]>>4)&0x0F) + ((io.PSG[ch][5])&0x0F));
 	// lvol = [| 0..95 |]
 
 //                      lvol = (wave[0] * lvol) / 12;
 
 
-	fixed_inc = ftofix (3.2 * 1118608 / freq_int / Tp);
+//LK	fixed_inc = ftofix (3.2 * 1118608 / freq_int / Tp);
+        fixed_inc = (((unsigned long)((3.2 * 1118608 / freq_int))) <<16) / Tp;
 
 //         fixed_inc = ftofix(3.2 * 1220300 / freq_int / Tp);
+//        fixed_inc = (((unsigned long)((3.2 * 1220300 / freq_int))) << 16) / Tp;
 
-	for (dwPos = 0; dwPos < dwSize; dwPos++)
+
+	for (dwPos = 0; dwPos < 512; dwPos++)
 	  {			// fill the buffer
+		int kct;
+//	     *buf++ = (char)(wave[n[ch] >> 16]*lvol/16);
 
-	    // *buf++ = (char)(wave[n[ch]]*lvol/16);
+	    *buf++ = (char) ((wave[fixed_n[ch] >> 16] * lvol) / 16);
 
-	    *buf++ = (char) wave[fixed_n[ch] >> 16] * lvol / 16;
+	    /* Debug: Draw ASCII waveform */
+//if (ch == 0) {
+//	    fprintf(stderr,"ch%d: ",ch);
+//	   for (kct=0;kct<((char)*buf+128)%70;kct++) 
+//		fprintf(stderr,".");
+//	   fprintf(stderr,".\n"); }
 
 	    fixed_n[ch] += fixed_inc;
 	    fixed_n[ch] &= (31 << 16) + 65535;
+//	    fixed_n[ch] &= (31<<6) + 63;
 
 /*
 				k[ch] += N*1118608/Tp;
 
-				t = k[ch] / (10*(DWORD)freq_int);
+				t = k[ch] / (10*(long)freq_int);
 				// the value to advance in the ring buffer
 #ifndef FINAL_RELEASE
 //            fprintf(stderr,"true advance %f\nfixed one : %f\n\n",N*1118608/Tp);
 #endif
 
 
-				n[ch] = (n[ch]+t)%N;
+//				n[ch] = (n[ch]+t)%N;
 				// advancing the pointer
 
-				k[ch] -= 10*freq_int*t;
+//				k[ch] -= 10*freq_int*t;
 
 #ifndef FINAL_RELEASE
             fprintf(stderr,"true N = %d\nFixed N = %d\n\n",n[ch],fixed_n[ch] >> 16);
@@ -654,10 +740,10 @@ WriteBuffer (char *buf, int ch, unsigned dwSize)
       }
     }
 
-#endif
+//#endif
 
 };
 
-#ifdef ALLEGRO
-END_OF_FUNCTION (WriteBuffer);
-#endif
+//#ifdef ALLEGRO
+//END_OF_FUNCTION (WriteBuffer);
+///#endif

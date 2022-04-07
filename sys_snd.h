@@ -16,5 +16,18 @@
    */
    void osd_snd_set_volume(UChar);
 
+	/*
+	* osd_snd_init_sound
+	*
+	* Allocates ressources to output sound
+	* returns 0 on error else non zero value
+	*/
+	int osd_snd_init_sound ();
 
+	/*
+	* osd_snd_trash_sound
+	*
+	* Frees all sound ressources allocated in osd_snd_init_sound
+	*/
+	void osd_snd_trash_sound ();
 #endif

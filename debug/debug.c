@@ -63,6 +63,10 @@ Op6502 (register unsigned A)
 unsigned char
 Op6502 (register unsigned A)
 {
+#if defined(TEST_ROM_RELOCATED)
+  #warning REMOVE ME !!!
+  Log("Op6502 at %04x (Page %d, physical bank 0x%x) returns %d(0x%x)\n", A, A>>13,mmr[A>>13],Page[A >> 13][A],Page[A >> 13][A]);
+#endif	
   return (Page[A >> 13][A]);
 
 }

@@ -1,28 +1,60 @@
 --[ INITIALISATION ]--------------------------------
-Creating Linux log file version 1.99 alpha of Dec 30 2001
-
---[ INITIALISE MACHINE ]--------------------------
-Initiating sound
-End of initialisation of the machine
+Creating Linux log file version 1.99 alpha of Feb 21 2001
 --[ PARSING INI FILE ]------------------------------
 Looking in /etc/hugo.ini
 --[ JOYPAD MAPPING ]-------------------------------
 Loading default values
  * Looking for section CONFIG1
-Setting PCE pad 1 to 
+Setting PCE pad 1 to joy1
+    SELECT set to 64
+    START set to 67
+    PI set to 0
+    PII set to 1
+    PSELECT set to 2
+    PSTART set to 3
+    PAUTOI set to 4
+    PAUTOII set to 5
 Setting PCE pad 2 to 
 Setting PCE pad 3 to 
 Setting PCE pad 4 to 
 Setting PCE pad 5 to 
  * Looking for section CONFIG2
-Setting PCE pad 1 to 
+Setting PCE pad 1 to key1
+    UP set to 23
+    DOWN set to 19
+    LEFT set to 1
+    RIGHT set to 4
+    I set to 7
+    II set to 8
+    SELECT set to 64
+    START set to 67
 Setting PCE pad 2 to 
 Setting PCE pad 3 to 
 Setting PCE pad 4 to 
 Setting PCE pad 5 to 
  * Looking for section CONFIG3
-Setting PCE pad 1 to 
-Setting PCE pad 2 to 
+Setting PCE pad 1 to key1
+    UP set to 42
+    DOWN set to 39
+    LEFT set to 38
+    RIGHT set to 40
+    I set to 73
+    II set to 74
+    SELECT set to 68
+    START set to 69
+    AUTOI set to 16
+    AUTOII set to 16
+Setting PCE pad 2 to key2
+    UP set to 25
+    DOWN set to 8
+    LEFT set to 7
+    RIGHT set to 10
+    I set to 75
+    II set to 100
+    SELECT set to 17
+    START set to 23
+    AUTOI set to 16
+    AUTOII set to 16
 Setting PCE pad 3 to 
 Setting PCE pad 4 to 
 Setting PCE pad 5 to 
@@ -100,27 +132,48 @@ Setting PCE pad 4 to
 Setting PCE pad 5 to 
 End of joypad mapping
 
-Setting initial path to ./
+Setting initial path to c:\jeu\pce/
+Skin filename set to matrix.bmp
 Setting joypad config number to 0
 Setting language to 0
 Setting video mode to 0
 Setting sound mode to -1
+Setting static refresh to 1
 Setting eagle mode to 0
 Setting scanline mode to 0
-Setting default frequency to 11025
-Setting sound buffer size to 10240 bytes
+Setting default frequency to 22050
+Setting sound buffer size to 1000 bytes
 Setting joy type to -1
 Setting sound driver to 1
+Setting zip support in File Selector to 0
 Setting fps limitation to 0
 Minimum Bios hooking set to 0
 End of parsing INI file
 
 --[ PARSING COMMAND LINE ]--------------------------
-Setting card name to /mnt/win_c/prog/Hu-Go!/sstrsold.pce
+Setting card name to ../nanami/nanami_menu
 End of parsing command line
-Saved path is /home/olivier/.hugo/sstrsold.sav
-Cd_emulation is 0
-./BACKUP.DAT used for saving RAM
+
+--[ INITIALISE MACHINE ]--------------------------
+Following cpu info are exact
+Machine is a 556, sub model : 8
+Machine got a fpu
+Machine got a MMX cpu
+Machine got a 3dNow! cpu compatible
+Vendor : AuthenticAMD
+Allocating sprite array
+Initiating sound
+Installing allegro driver
+Changing video mode to 256x224
+PCE screen size is 256x224
+Now blit_x = 0
+blit_y = 0
+screen_blit_x = 84
+screen_blit_y = 0
+
+End of initialisation of the machine
+I'll unload datafile, @ = 0x8163ca8
+I've unloaded datafile
 
 --[ END OF PROGRAM ]----------------------------------
 Execution completed successfully

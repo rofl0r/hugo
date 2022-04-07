@@ -21,7 +21,7 @@ $(MACHINE)/osd_machine_sdl.o $(MACHINE)/osd_gfx_sdl.o gfx/gfx.o kernel_ds/bp.o h
 
 
 # DEF = -DLINUX -DALLEGRO -fomit-frame-pointer -O6 -DFINAL_RELEASE -DEXTERNAL_DAT -DKERNEL_DS
-DEF = -DLINUX -DSDL -fomit-frame-pointer -O6 -DFINAL_RELEASE -DEXTERNAL_DAT -DKERNEL_DS `sdl-config --cflags` -g
+DEF = -DLINUX -DSDL -fomit-frame-pointer -O6 -DFINAL_RELEASE -DEXTERNAL_DAT -DKERNEL_DS `sdl-config --cflags` -g -DTEST_ROM_RELOCATE
 
 CC := gcc
 RM := rm
