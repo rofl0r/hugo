@@ -7,4 +7,6 @@
 #include "gtk_main.h"
 #endif
 
+int play_game(void);
+
 #endif

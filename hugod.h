@@ -109,6 +109,8 @@ extern "C"
     UInt32 next_frame_asked[5];   //!< 5 stands for MAX_NUMBER_PLAYER
   } global_status_type;
 
+void serve_dispatch (global_option_type * global_option);
+
 #ifdef __cplusplus
 }
 #endif

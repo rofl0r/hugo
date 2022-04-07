@@ -4,6 +4,7 @@
 #include "callbacks.h"
 #include "sys_inp.h"
 #include "iniconfig.h"
+#include "utils.h"
 
 
 #if defined(SDL)

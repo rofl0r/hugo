@@ -1,4 +1,6 @@
 #include "osd_sdl_gfx.h"
+#include "utils.h"
+#include "gfx.h"
 
 //! PC Engine rendered screen
 SDL_Surface *screen = NULL;

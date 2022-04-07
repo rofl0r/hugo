@@ -39,6 +39,8 @@ void parse_INIfile();
 void parse_commandline(int argc, char** argv);
 /* check the command line for options */
 
+void save_config (void);
+
 extern unsigned char joy_mapping[5][16];
 
 extern SInt32 smode,vmode;

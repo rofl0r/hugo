@@ -76,6 +76,9 @@ UChar Loop6502();
 
 #if defined(GFX_DEBUG)
 void gfx_debug_printf(char *format, ...);
-#endif														
+#endif
+
+void SetPalette(void);
+void dump_rgb_frame(char*);
 
 #endif

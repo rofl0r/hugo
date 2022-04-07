@@ -24,6 +24,8 @@
 #include "pce.h"
 #include "utils.h"
 #include "config.h"
+#include <gtk/gtk.h>
+#include <arpa/inet.h> /* htons */
 
 typedef struct {
   UChar r,g,b;

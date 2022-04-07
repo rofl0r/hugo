@@ -16,6 +16,8 @@
 #include "gtk_main-server.h"
 #include "interface-server.h"
 #include "config.h"
+#include "support.h"
+#include <string.h>
 
 GtkWidget* window_main;
 GtkWidget* window_help;

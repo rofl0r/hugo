@@ -1,5 +1,5 @@
 #include "hugo.h"
-
+#include "utils.h" /* Log */
 
 //! name of the backup ram filename
 static char backup_mem[PATH_MAX];

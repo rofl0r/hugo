@@ -15,6 +15,7 @@
  */
 
 #include "netplay.h"
+#include <gtk/gtk.h>
 
 extern int gtk_stop_asked;
 

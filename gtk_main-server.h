@@ -12,5 +12,6 @@ extern gboolean gtk_stop_asked;
 #endif
 
 void build_gtk_interface (int argc, char* argv[]);
+void printf_screen (char *format, ...);
 
 #endif

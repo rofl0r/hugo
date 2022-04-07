@@ -1,6 +1,7 @@
 #include "osd_keyboard.h"
 #include "hard_pce.h"
 #include "sound.h"
+#include "utils.h"
 
 #if defined(NETPLAY_DEBUG)
 #include <sys/timeb.h>
