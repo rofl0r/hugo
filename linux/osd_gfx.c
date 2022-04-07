@@ -1,5 +1,8 @@
 #include "osd_gfx.h"
 
+/* TEST, to handle allegro wip errors .. */
+#define GFX_SVGALIB              AL_ID('S','V','G','A')   
+
 BITMAP* OSD_MESSAGE_SPR = NULL;
 
 int blit_x,blit_y;

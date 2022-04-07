@@ -1,7 +1,7 @@
 #ifndef _INCLUDE_LANG_H
 #define _INCLUDE_LANG_H
 
-#define  NB_LANG 9
+#define  NB_LANG 10
 #define  NB_MESSAGES 53
 
 extern char* MESSAGE[NB_LANG][NB_MESSAGES];

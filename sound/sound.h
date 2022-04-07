@@ -1,5 +1,5 @@
-#ifndef _DJGPP_INCLUDE_SOUND_H
-#define _DJGPP_INCLUDE_SOUND_H
+#ifndef _SOUND_H_
+#define _SOUND_H_
 
 #include "pce.h"
 

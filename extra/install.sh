@@ -1,215 +1,258 @@
-#! /bin/sh
-# script d'installation de Hu-go!
-# BBP 30/04/00 (bbp@via.ecp.fr)
+#!/bin/sh
+# Hu-go! installation script
+# BBP  30/04/00 (bbp@via.ecp.fr)
+# MooZ 13/01/01 (mooz@free.fr)
 
-############################# Liste des fichiers ##############################
-# NE PAS UTILISER DE FICHIERS DONT LE NOM CONTIENT UN ESPACE OU RETOUR CHARIOT !
-
-# fichiers de doc, vont par défaut dans /usr/share/doc/hugo
-DOCFILES='changemt.fr changes faq hugo.es hugo.fr hugo.txt cheat.txt'
-DOCPATH='/usr/share/doc/hugo'
-
-# roms, vont par défaut dans /usr/share/hugo
-ROMFILES='dracx.hcd pong.pce'
-ROMPATH='/usr/share/hugo'
-
-# binaires, vont par défaut dans /usr/share/bin
-BINFILES='hugo'
-BINPATH='/usr/share/bin'
-
-# fichiers de config, donnés par paires : le premier élément de la paire va est
-# renommé en le deuxième élément de la paire et va dans le /etc
-CONFIGFILES='hu-go\!.dat /etc/hugo.dat hu-go\!.ini /etc/hugo.ini'
-CONFIGPATH='/etc'
-
-# fichiers inutiles sous linux, seront effacés
-USELESSFILES='file_id.diz matrix.bmp'
-
-############################# Autres variables ################################
-
-# créer un fichier uninstall.sh ? 1 pour oui (défaut), 0 pour non
-CREATEUNINSTALL=1
-
-############################# Fonction Help ###################################
-
-# Cette fonction affiche un message d'aide sur l'utilisation de install
-
-function Help
+# Help/Usage function
+Usage()
 {
-  echo 'usage : install.sh [option1 [option2 [option3 ...]]]'
-  echo 'where optionx is one of the following :'
-  echo '  --help		this help screen'
-  echo '  --nouninstallscript	do not generate the uninstallation script'
-  echo '  --rompath={path}	path for roms (default : /usr/share/hugo)'
-  echo '  --docpath={path}	path for doc (default : /usr/share/doc/hugo)'
-  echo '  --binpath={path}	path for binaries (default : /usr/share/bin)'
-  echo '  --configpath={path}	path for configuration files (default : /etc) - DO NOT USE THIS OPTION ! Hu-go! does not support it yet'
+    echo 'Usage: install.sh [option1 [option2 [option3 ...]]]'
+    echo
+    echo '  --help		this help screen'
+    echo '  --version           show version'
+    echo '  --default           default installation'
+    echo '  --prefix            install hu-go! in the specified directory '
+    echo '                      (default : /usr/share)'
+    echo '  --nouninstallscript	do not generate the uninstallation script'
+    echo '  --rompath={path}	path for roms (default : /usr/share/hugo)'
+    echo '  --docpath={path}	path for doc (default : /usr/share/doc/hugo)'
+    echo '  --binpath={path}	path for binaries (default : /usr/share/bin)'
+    echo '  --configpath={path}	path for configuration files (default : /etc) @@@@ UNSUPPORTED @@@@ '
 }
 
-############################# Analyse des options de la ligne de commande #####
-
-while [ "$#" != '0' ]; do
-
-  if [ "$1" = '--help' ]; then
-    Help
-    exit 0
-  fi
-
-  if echo "$1" | grep -- '^--docpath=' >/dev/null; then
-    DOCPATH=$(echo "$1" | sed 's/^--docpath=//g')
-    if [ "$DOCPATH" = '' ]; then
-      echo 'Invalid documentation files path'
-      exit 2
-    fi
-    echo "Documentation files path set to $DOCPATH"
-    shift
-    continue
-  fi
-
-  if echo "$1" | grep -- '^--binpath=' >/dev/null; then
-    BINPATH=$(echo "$1" | sed 's/^--binpath=//g')
-    if [ "$BINPATH" = '' ]; then
-      echo 'Invalid binary files path'
-      exit 2
-    fi
-    echo "Binary files path set to $BINPATH"
-    shift
-    continue
-  fi
-
-  if echo "$1" | grep -- '^--configpath=' >/dev/null; then
-    CONFIGPATH=$(echo "$1" | sed 's/^--configpath=//g')
-    if [ "$CONFIGPATH" = '' ]; then
-      echo 'Invalid config files path'
-      exit 2
-    fi
-    echo "Config files path set to $CONFIGPATH"
-    shift
-    continue
-  fi
-
-  if echo "$1" | grep -- '^--rompath=' >/dev/null; then
-    ROMPATH=$(echo "$1" | sed 's/^--rompath=//g')
-    if [ "$ROMPATH" = '' ]; then
-      echo 'Invalid rom files path'
-      exit 2
-    fi
-    echo "Rom files path set to $ROMPATH"
-    shift
-    continue
-  fi
-
-  if [ "$1" = '--nouninstallscript' ]; then
-    echo 'Canceling creation of uninstall.sh'
-    CREATEUNINSTALL='0'
-    shift
-    continue
-  fi
-
-  echo "Invalid option $1, use install.sh --help for usage"
-  Help
-  exit 1
-
-done
-
-############################# Création si nécessaire du fichier uninstall.sh ##
-
-if [ "$CREATEUNINSTALL" = '1' ]; then
-  rm -f uninstall.sh 2>&1 >/dev/null
-  rm -f tmp-end-of-uninstall 2>&1 >/dev/null
-  touch uninstall.sh
-  chmod 744 uninstall.sh
-  touch tmp-end-of-uninstall
-  chmod 644 tmp-end-of-uninstall
-  echo '#! /bin/sh' >> uninstall.sh
-  echo '' >> uninstall.sh
-  echo '' >> tmp-end-of-uninstall.sh
-fi
-
-############################# Création des répertoires ########################
-
-# fonction qui créé un répertoire s'il n'existe pas déjà, et affiche un message
-# d'erreur si on a pas les droits d'écriture ou d'exécution dessus
-
-function MKDIR
+# Version function
+Version()
 {
-  if [ -d "$1" ]; then
-    if ! [ -w "$1" -a -x "$1" ]; then
-      echo "Directory $1 is not writeable or not executable, aborting installation"
-      echo 'May be you should execute this script as root or change its arguments'
-      exit 3
-    fi
-  else
-    echo "Creating directory $1"
-    if ! mkdir "$1"; then
-      echo "Unable to create directory $1, aborting installation"
-      echo 'May be you should execute this script as root or change its arguments'
-      echo '(using default values requires root privileges on most systems)'
-      exit 4
-    fi
-    chmod 755 "$1"
-    if echo "$1" | grep '^/' >/dev/null; then
-      echo "rmdir '$1'" >>tmp-end-of-uninstall
-    else
-      echo "rmdir '$(pwd)/${1}'" >>tmp-end-of-uninstall
-    fi
-  fi
+    echo 'install.sh (HuGo!)'
+    echo 'original version : BBP  (bbp@via.ecp.fr)'
+    echo 'custom   version : MooZ (vcruz@free.fr)'
 }
 
-if [ "$DOCFILES" != '' ]; then
-  MKDIR "$DOCPATH"
-  for i in $(echo "$DOCFILES"); do
-    cp "$i" "$DOCPATH"
-    chmod 644 "$DOCPATH/$i"
-    echo "rm -f '$DOCPATH/$i'" >>uninstall.sh
-  done
-fi
+# Error handling
+Error()
+{
+    case $mesg in
 
-if [ "$ROMFILES" != '' ]; then
-  MKDIR "$ROMPATH"
-  for i in $(echo "$ROMFILES"); do
-    cp "$i" "$ROMPATH"
-    chmod 644 "$ROMPATH/$i"
-    echo "rm -f '$ROMPATH/$i'" >>uninstall.sh
-  done
-fi
+	missing)
+	    echo 'Error : install.sh: missing parameter(s) !!!'
+	    echo
+	    Usage
+	    ;;
 
-if [ "$BINFILES" != '' ]; then
-  MKDIR "$BINPATH"
-  for i in $(echo "$BINFILES"); do
-    cp "$i" "$BINPATH"
-    chmod 755 "$BINPATH/$i"
-    echo "rm -f '$BINPATH/$i'" >>uninstall.sh
-  done
-fi
+	invalid)
+	    echo 'Error : install.sh: invalid parameter(s) !!!'
+	    echo
+	    Usage
+	    ;;
 
-if [ "$CONFIGFILES" != '' ]; then
-  MKDIR "$CONFIGPATH"
-  name1=$(echo "$CONFIGFILES" | awk '{ print $1 }')
-  name2=$(echo "$CONFIGFILES" | awk '{ print $2 }')
-  CONFIGFILES=$(echo "$CONFIGFILES" | sed 's/^[ 	]*[^ 	]*[ 	]*[^ 	]*[ 	]*//g')
-    if [ "$i" = 'hu-go!.ini' ]; then
-      awk '{ if ($0 ~ /^rom_path=/) { print rom_path='"$ROMPATH"' } else { print $0 } }' "$name1" > "$CONFIGPATH/$name2"
-    else
-      cp "$i" "$CONFIGPATH"
-    fi
-    chmod 644 "$CONFIGPATH/$i"
-    echo "rm -f '$CONFIGPATH/$i'" >>uninstall.sh
-fi
+	abort)
+	    echo 'Error : install.sh: installation aborted by user'
+	    ;;
 
-############################# fin de la génération de uninstall.sh et nettoyage
+	conflict)
+	    echo 'Error : install.sh: conflicting parameters !!!'
+	    echo
+	    Usage
+	    ;;
+    esac
+    exit 1
+}
 
-if [ "$CREATEUNINSTALL" = '1' ]; then
-  cat tmp-end-of-uninstall >>uninstall.sh
-  rm -f tmp-end-of-uninstall
-  echo "Uninstallation script generated in $(pwd)/uninstall.sh"
-fi
+# Extract parameters
+Parameters()
+{
+    case $flag_mode in
 
-for i in $(echo "$USELESSFILES"); do
-  rm -f "$i"
-done
+	--default)
+	    echo 'Running standard installation...'
+	    bin_path="/usr/share/bin"
+	    doc_path="/usr/share/doc/hugo"
+	    rom_path="/usr/share/hugo"
+	    cfg_path="/etc"
+	    ;;
 
-echo ''
-echo 'Installation succeded'
-echo "Don't forget to read the docs in $DOCPATH :)"
+	--prefix=)
+	    echo 'Running prefix installation...'
+	    if test "$prefix"; then 
+		bin_path="$prefix/bin"
+		doc_path="$prefix/doc"
+		rom_path="$prefix/hugo"
+	        cfg_path="$prefix/cfg"
+	    fi
+	    if test "$binpath"; then bin_path="$binpath"; fi
+	    if test "$docpath"; then doc_path="$rompath"; fi
+	    if test "$rompath"; then rom_path="$docpath"; fi
+	    if test "$cfgpath"; then cfg_path="$cfgpath"; fi
+	    ;;
+        *) # no install type defined, check envir
+	    if test -z "$prefix" && ( test -z "$binpath" || test -z "$docpath" || test -z "$rompath" || test -z "$cfgpath" )
+	      then mesg="missing"; Error
+	      else flag_mode="--prefix="; Parameters
+	    fi
+	    ;;
+    esac
+}
+
+# Check permition for instalation
+Permitions()
+{
+    mkdir -p $bin_path || test ! -w "$bin_path" || (echo "You don't have write access to $bin_path, please change to appropriate user or ask your sysadmin."; exit 1)
+    mkdir -p $doc_path || test ! -w "$doc_path" || (echo "You don't have write access to $doc_path, please change to appropriate user or ask your sysadmin."; exit 1)
+    mkdir -p $rom_path || test ! -w "$rom_path" || (echo "You don't have write access to $rom_path, please change to appropriate user or ask your sysadmin."; exit 1)
+    mkdir -p $cfg_path || test ! -w "$cfg_path" || (echo "You don't have write access to $cfg_path, please change to appropriate user or ask your sysadmin."; exit 1)
+
+}
+
+# Copy files to the apropriate location
+GoInstall()
+{
+    doc_files='changemt.fr changes faq hugo.es hugo.fr hugo.txt cheat.txt'
+    rom_files='dracx.hcd pong.pce'
+    cfg_files='hu-go!.dat hu-go!.ini'
+
+    # Binary
+	cp $v -fp hugo $bin_path/
+        chmod $vv 755 $bin_path/hugo
+
+    # Config files
+	mkdir $v -p $cfg_path/
+	chmod $vv 755 $cfg_path
+	for i in $(echo "$cfg_files"); do
+	    cp -fp $i $cfg_path;
+	    chmod 644 $cfg_path/$i;
+	done
+
+
+    # Documentation
+	mkdir $v -p $doc_path/
+	chmod $vv 755 $doc_path
+	for i in $(echo "$doc_files"); do
+	    cp -fp $i $doc_path
+	    chmod 644 $doc_path/$i
+	done
+	
+
+    # Roms
+	mkdir $v -p $rom_path/
+	chmod $vv 755 $rom_path/
+	for i in $(echo "$rom_files"); do
+	    cp -fp $i $rom_path
+	    chmod 644 $rom_path/$i
+	done
+
+    echo
+    echo 'Installation complete.'
+    echo "Start with \$PATH/hugo, $exec_dir/hugo or ./hugo"
+}
+
+# Execution start point (parameter loop)
+echo "@"
+
+v=""
+vv=""
+flag_mode=""
+
+echo "@"
+
+prefix=`printenv prefix`
+binpath=`printenv binpath`
+docpath=`printenv docpath`
+rompath=`printenv rompath`
+cfgpath=`printenv cfgpath`
+
+echo "@"
+
+if test "$#" = 0 && test -z "$prefix" && ( test -z "$binpath" || test -z "$docpath" || test -z "$sharpath" || test -z "$cfgpath" ) then mesg="missing"; error ; fi
+
+echo "@"
+
+while test x"$1" != x ; do
+case $1 in
+
+    -h|--help) Usage; exit 0 ;;
+
+    -V|--version) Version; exit 0 ;;
+
+    -v|--verbose)
+	v='--verbose'
+	shift
+	;;
+
+    -vv)
+	v='--verbose'
+	vv='--verbose'
+	shift
+	;;
+
+    --prefix=*)
+	if test "$flag_mode" = "--prefix=" ||  test -z "$flag_mode" ; then
+	    flag_mode="--prefix="
+
+	    param=`echo "$1" | sed -e 's/--prefix=//'`
+	    if test $param; then prefix=$param; fi
+	    shift
+	  else
+	  mesg="conflict" ; Error
+	fi
+	;;
+
+    --binpath=*)
+	if test "$flag_mode" = "--prefix=" || test -z "$flag_mode" ; then
+	    flag_mode="--prefix="
+
+	    param=`echo "$1" | sed -e 's/--binpath=//'`
+	    if test $param; then binpath=$param; fi
+	    shift
+	  else
+	  mesg="conflict" ; Error
+	fi
+	;;
+
+    --docpath=*)
+	if test "$flag_mode" = "--prefix=" || test -z "$flag_mode" ; then
+	    flag_mode="--prefix="
+
+	    param=`echo "$1" | sed -e 's/--docpath=//'`
+	    if test $param; then docpath=$param; fi
+	    shift
+	  else
+	  mesg="conflict" ; Error
+	fi
+	;;
+
+    --rompath=*)
+	if test "$flag_mode" = "--prefix=" || test -z "$flag_mode" ; then
+	    flag_mode="--prefix="
+
+	    param=`echo "$1" | sed -e 's/--rompath=//'`
+	    if test $param; then rompath=$param; fi
+	    shift
+	  else
+	  mesg="conflict" ; Error
+	fi
+	;;
+
+    --cfgpath=*)
+	if test "$flag_mode" = "--prefix=" || test -z "$flag_mode" ; then
+	    flag_mode="--prefix="
+
+	    param=`echo "$1" | sed -e 's/--cfgpath=//'`
+	    if test $param; then cfgpath=$param; fi
+	    shift
+	  else
+	  mesg="conflict" ; Error
+	fi
+	;;
+
+     *) mesg="invalid"; Error ;;
+esac
+done # Parameter loop
+
+    Parameters
+    Permitions
+    GoInstall
+exit 0
+
+
+
 

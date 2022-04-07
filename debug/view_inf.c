@@ -18,6 +18,8 @@ static UChar page = 0;
 
 static UChar out = 0;
 
+#if defined(ALLEGRO)
+
 void (*info_display[MAX_PAGES]) () =
 {
   display_reg,
@@ -29,6 +31,12 @@ void (*info_display[MAX_PAGES]) () =
     display_satb4,
     display_satb5, display_satb6, display_satb7, display_satb8};
 
+#else
+	
+void (*info_display[MAX_PAGES])();	
+	
+#endif
+	
 UChar nb_choices[MAX_PAGES] = { 11,
   12
 };
@@ -504,6 +512,7 @@ key_info ()
 void
 view_info ()
 {
+#if defined(ALLEGRO)	
   out = 0;
 
   do
@@ -512,6 +521,6 @@ view_info ()
        key_info ();
     }
   while (!out);
-
+#endif
   return;
 }

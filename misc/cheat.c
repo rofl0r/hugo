@@ -1,5 +1,20 @@
 #include "cheat.h"
 
+#if !defined(ALLEGRO)
+
+long file_size (char* file_name)
+{
+	FILE* f = fopen(file_name,"rb");
+	long position;
+	if (f == NULL)
+		return 0;
+	fseek(f,0,SEEK_END);
+	position = ftell(f);
+	fclose(f);
+	return position;
+}
+#endif
+
 inline void fputw (UInt16 value, FILE* F)
 {
  fputc(value & 0xFF, F);
@@ -144,13 +159,17 @@ searchbyte ()
   strcpy (data_filename, short_cart_name);
   strcat (data_filename, "FP1");
 
+  O = fopen ((char *) strcat (old_filename, "FP0"), "rb");
+  if (O == NULL)
+	  first_research = 1;
+/*  
   if (exists ((char *) strcat (old_filename, "FP0")))
     {
       if (!(O = fopen (old_filename, "rb")))
 	return 1;
       first_research = 0;
     }
-
+*/
   if (!(D = fopen (data_filename, "wb")))
     return 1;
   tmp_str[9] = 0;

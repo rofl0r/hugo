@@ -1,0 +1,122 @@
+--[ INITIALISATION ]--------------------------------
+Creating Linux log file version 1.99 alpha of Dec 30 2001
+
+--[ INITIALISE MACHINE ]--------------------------
+Initiating sound
+End of initialisation of the machine
+--[ PARSING INI FILE ]------------------------------
+Looking in /etc/hugo.ini
+--[ JOYPAD MAPPING ]-------------------------------
+Loading default values
+ * Looking for section CONFIG1
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIG2
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIG3
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIG4
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIG5
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIG6
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIG7
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIG8
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIG9
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIGa
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIGb
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIGc
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIGd
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIGe
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+ * Looking for section CONFIGf
+Setting PCE pad 1 to 
+Setting PCE pad 2 to 
+Setting PCE pad 3 to 
+Setting PCE pad 4 to 
+Setting PCE pad 5 to 
+End of joypad mapping
+
+Setting initial path to ./
+Setting joypad config number to 0
+Setting language to 0
+Setting video mode to 0
+Setting sound mode to -1
+Setting eagle mode to 0
+Setting scanline mode to 0
+Setting default frequency to 11025
+Setting sound buffer size to 10240 bytes
+Setting joy type to -1
+Setting sound driver to 1
+Setting fps limitation to 0
+Minimum Bios hooking set to 0
+End of parsing INI file
+
+--[ PARSING COMMAND LINE ]--------------------------
+Setting card name to /mnt/win_c/prog/Hu-Go!/sstrsold.pce
+End of parsing command line
+Saved path is /home/olivier/.hugo/sstrsold.sav
+Cd_emulation is 0

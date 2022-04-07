@@ -83,9 +83,9 @@ int Country;
 int IPeriod;
 // Number of cycle between two interruption calls
 
-static int TimerCount;
+UInt32 TimerCount;
 // int CycleOld;
-int TimerPeriod;
+// int TimerPeriod;
 int scanlines_per_frame = 263;
 UInt32 scanline;
 
@@ -134,11 +134,33 @@ char ISO_filename[256] = "";
 UChar force_header = 1;
 // Force the first sector of the code track to be the correct header
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #if defined(EXTERNAL_DAT) && defined(ALLEGRO)
 DATAFILE *datafile;
 // A pointer to the datafile where we keep bitmaps...
 // Make things looks cleaner.
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
 char *bmdefault = NULL;
 // Name of the backup memory
@@ -189,6 +211,17 @@ Track CD_track[0x100];
 // beg_lsn -> beginning in number of sector (2048 bytes)
 // length -> number of sector
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifndef ALLEGRO
   // #error "It's not compulsory but you should implement fixed type by yourself"
 #else
@@ -196,6 +229,17 @@ fixed snd_inc[6], snd_pos[6] = { 0, 0, 0, 0, 0, 0 };
 // how mush do we have to advance the index of each voice
 // limit the use of division in sound mixing and position
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
 UInt32 freq_int = 22050;
 // frequency of interrupt to be used to make sound
@@ -274,9 +318,31 @@ UChar pce_cd_cmdcnt;
 
 FILE *iso_FILE = NULL;
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
 PACKFILE *packed_iso_FILE = NULL;
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
 UInt32 packed_iso_filesize = 0;
 
@@ -332,7 +398,7 @@ void read_sector_HCD (unsigned char *, UInt32);
 
 void (*read_sector_method[6]) (unsigned char *, UInt32) =
 {
-  read_sector_dummy,
+read_sector_dummy,
     read_sector_CD,
     read_sector_ISO, read_sector_ISQ, read_sector_BIN, read_sector_HCD};
 
@@ -342,15 +408,28 @@ check_char (char *s, char c)
   while ((*s) && (*s != c))
     s++;
 
-  return *s==c?s:NULL;
+  return *s == c ? s : NULL;
 
 }
+
+char*
+strupr(char *s)
+{
+	char* t = s;
+	while (*s)
+	{
+		*s = toupper(*s);
+		s++;
+	}
+	return t;
+}
+
 char *
 strcasestr (char *s1, char *s2)
 {
 
-  char *tmps1 = strupr (strdup (s1));
-  char *tmps2 = strupr (strdup (s2));
+  char *tmps1 = (char *) strupr (strdup (s1));
+  char *tmps2 = (char *) strupr (strdup (s2));
 
   char *result = strstr (tmps1, tmps2);
 
@@ -360,6 +439,23 @@ strcasestr (char *s1, char *s2)
   return result;
 
 }
+
+int
+stricmp (char *s1, char *s2)
+{
+
+  char *tmps1 = (char *) strupr (strdup (s1));
+  char *tmps2 = (char *) strupr (strdup (s2));
+
+  int result = strcmp (tmps1, tmps2);
+
+  free (tmps1);
+  free (tmps2);
+
+  return result;
+
+}
+
 
 void
 interrupt_60hz ()
@@ -386,6 +482,17 @@ interrupt_60hz ()
   return;
 };
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
 
 /*
@@ -396,6 +503,19 @@ interrupt_60hz ()
 END_OF_FUNCTION (interrupt_60hz);
 
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
+
+#if defined(ALLEGRO)
 
 void
 delete_file_tmp (char *name, int dummy, int dummy2)
@@ -403,6 +523,8 @@ delete_file_tmp (char *name, int dummy, int dummy2)
   delete_file (name);
   return;
 };
+
+#endif
 
 /*****************************************************************************
 
@@ -489,13 +611,18 @@ bank_set (UChar P, UChar V)
 
   // bank_set_nb ++;
 
+#warning REMOVE ME
+  if ((V >= 0x40) && (V <= 0x43))
+    printf ("AC bank access : %X\n", V);
+
   if (ROMMap[V] == IOAREA)
     Page[P] = IOAREA;
   else
     Page[P] = ROMMap[V] - P * 0x2000;
 }
 
-UChar _Rd6502 (UInt16 A)
+UChar
+_Rd6502 (UInt16 A)
 {
   if (Page[A >> 13] != IOAREA)
     return Page[A >> 13][A];
@@ -580,7 +707,7 @@ fill_cd_info ()
   CD_track[1].beg_lsn = 0;	// Number of sector since the
   // beginning of track 1
 
-  CD_track[1].length = 47 * CD_FRAMES + 65; // Most common
+  CD_track[1].length = 47 * CD_FRAMES + 65;	// Most common
 
   // CD_track[0x01].length=53 * CD_FRAMES + 65;
 
@@ -615,6 +742,7 @@ fill_cd_info ()
       CD_track[0x02].length = 140000;
       break;
     default:
+      break;
     }
 
 
@@ -686,6 +814,7 @@ fill_cd_info ()
       CD_track[nb_max_track].length = 14000;
       break;
     default:
+      break;
     }
 
   return;
@@ -767,6 +896,18 @@ read_sector_ISQ (unsigned char *p, UInt32 sector)
   int result;
   UInt32 dummy;
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
+
 #ifdef ALLEGRO
 
   for (result = bcdbin[nb_max_track]; result > 0x01; result--)
@@ -808,6 +949,17 @@ read_sector_ISQ (unsigned char *p, UInt32 sector)
   ISQ_position += 2048;
 
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
 }
 
@@ -890,13 +1042,13 @@ read_sector_ISO (unsigned char *p, UInt32 sector)
     }
 
   if (sector == CD_track[result].beg_lsn)
-    { /* We're reading the first sector, the header */
-      if  (force_header)
-        {
-          memcpy(p, ISO_header, 0x800);
-          return;
-         }
-     }
+    {				/* We're reading the first sector, the header */
+      if (force_header)
+	{
+	  memcpy (p, ISO_header, 0x800);
+	  return;
+	}
+    }
 
   fseek (iso_FILE, (sector - CD_track[result].beg_lsn) * 2048, SEEK_SET);
   fread (p, 2048, 1, iso_FILE);
@@ -914,7 +1066,7 @@ pce_cd_read_sector (void)
 {
   /* Avoid sound jiggling when accessing some sectors */
   if (sound_driver == 1)
-    set_volume (0, 0);
+    osd_snd_set_volume (0);
 
 #ifndef FINAL_RELEASE
   Log ("Will read sectors using function #%d\n", CD_emulation);
@@ -980,7 +1132,7 @@ pce_cd_read_sector (void)
 
   /* restore sound volume */
   if (sound_driver == 1)
-    set_volume (gen_vol, 0);
+    osd_snd_set_volume (0);
 }
 
 void
@@ -1043,7 +1195,8 @@ lba2msf (int lba, unsigned char *msf)
 }
 
 
-UInt32 msf2nb_sect (UChar min, UChar sec, UChar frm)
+UInt32
+msf2nb_sect (UChar min, UChar sec, UChar frm)
 {
   UInt32 result = frm;
   result += sec * CD_FRAMES;
@@ -1409,15 +1562,15 @@ IO_write (UInt16 A, UChar V)
   //printf("w%04x,%02x ",A&0x3FFF,V);
 
 #ifndef FINAL_RELEASE
-  if ((A & 0x1C00) == 0x1800)
-    fprintf (stderr, "\nWrite %02x at %04x\n", V, A);
+  if ((A & 0x1F00) == 0x1A00)
+    Log ("\nAC Write %02x at %04x\n", V, A);
 #endif
 
   /* CAREFUL */
   // switch(A&0x1CC0) { /* BE CAREFUL, MAY BE VERY VERY UNSTABLE !!!!!!! */
   /* DANGER */
 
-  switch (A & 0x1C00)
+  switch (A & 0x1F00)
     {
     case 0x0000:		/* VDC */
       /* TEST */
@@ -1451,12 +1604,35 @@ IO_write (UInt16 A, UChar V)
 		if (io.screen_w == old_value)
 		  break;
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 		/* TODO: checking if needed, this could remove an ALLEGRO 
 		 * related piece of code
 		 */
 #ifdef ALLEGRO
 		clear (screen);
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
+
 		// (*init_normal_mode[video_driver]) ();
 		(*osd_gfx_driver_list[video_driver].init) ();
 
@@ -1551,9 +1727,32 @@ IO_write (UInt16 A, UChar V)
 		if (temp_h == io.screen_h)
 		  return;
 		/* TODO: check utility here too, cf upper */
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
 		clear (screen);
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
+
 		// (*init_normal_mode[video_driver]) ();
 		(*osd_gfx_driver_list[video_driver].init) ();
 
@@ -1755,7 +1954,7 @@ IO_write (UInt16 A, UChar V)
 	  ajust_vol;
 #endif
 	  break;
-	  
+
 	  /* Put a value into the channel sample or directly into the mixer */
 	case 6:
 	  if (io.PSG[io.psg_ch][4] & 0x40)
@@ -1826,6 +2025,123 @@ IO_write (UInt16 A, UChar V)
 	  io.irq_status = (io.irq_status & ~TIRQ) | (V & 0xF8);
 	  return;
 	}
+      break;
+
+    case 0x1A00:
+      {
+
+	if ((A & 0x1AF0) == 0x1AE0)
+	  {
+	    switch (A & 15)
+	      {
+	      case 0:
+		io.ac_shift = (io.ac_shift & 0xffffff00) | V;
+		break;
+	      case 1:
+		io.ac_shift = (io.ac_shift & 0xffff00ff) | (V << 8);
+		break;
+	      case 2:
+		io.ac_shift = (io.ac_shift & 0xff00ffff) | (V << 16);
+		break;
+	      case 3:
+		io.ac_shift = (io.ac_shift & 0x00ffffff) | (V << 24);
+		break;
+	      case 4:
+		io.ac_shiftbits = V & 0x0f;
+		if (io.ac_shiftbits != 0)
+		  {
+		    if (io.ac_shiftbits < 8)
+		      {
+			io.ac_shift <<= io.ac_shiftbits;
+		      }
+		    else
+		      {
+			io.ac_shift >>= (16 - io.ac_shiftbits);
+		      }
+		  }
+	      default:
+		break;
+	      }
+	    return;
+	  }
+	else
+	  {
+	    UChar ac_port = (A >> 4) & 3;
+	    switch (A & 15)
+	      {
+	      case 0:
+	      case 1:
+
+		if (io.ac_control[ac_port] & AC_USE_OFFSET)
+		  {
+		    // Log("Write %d to 0x%04X (base + offset)\n",V,
+		    //           io.ac_offset[ac_port] + io.ac_base[ac_port]);
+		    ac_extra_mem[((io.ac_base[ac_port] +
+				   io.ac_offset[ac_port]) & 0x1fffff)] = V;
+		  }
+		else
+		  {
+		    // Log("Write %d to 0x%04X (base)\n",V, io.ac_base[ac_port]);
+		    ac_extra_mem[((io.ac_base[ac_port]) & 0x1fffff)] = V;
+		  }
+
+		if (io.ac_control[ac_port] & AC_ENABLE_INC)
+		  {
+		    if (io.ac_control[ac_port] & AC_INCREMENT_BASE)
+		      io.ac_base[ac_port] =
+			(io.ac_base[ac_port] +
+			 io.ac_incr[ac_port]) & 0xffffff;
+		    else
+		      io.ac_offset[ac_port] =
+			(io.ac_offset[ac_port] +
+			 io.ac_incr[ac_port]) & 0xffffff;
+		  }
+
+	      case 2:
+		io.ac_base[ac_port] = (io.ac_base[ac_port] & 0xffff00) | V;
+		return;
+	      case 3:
+		io.ac_base[ac_port] =
+		  (io.ac_base[ac_port] & 0xff00ff) | (V << 8);
+		return;
+	      case 4:
+		io.ac_base[ac_port] =
+		  (io.ac_base[ac_port] & 0x00ffff) | (V << 16);
+		return;
+	      case 5:
+		io.ac_offset[ac_port] = (io.ac_offset[ac_port] & 0xff00) | V;
+		return;
+	      case 6:
+		io.ac_offset[ac_port] =
+		  (io.ac_offset[ac_port] & 0x00ff) | (V << 8);
+		if (io.ac_control[ac_port] & (AC_ENABLE_OFFSET_BASE_6))
+		  io.ac_base[ac_port] =
+		    (io.ac_base[ac_port] + io.ac_offset[ac_port]) & 0xffffff;
+		return;
+	      case 7:
+		io.ac_incr[ac_port] = (io.ac_incr[ac_port] & 0xff00) | V;
+		return;
+	      case 8:
+		io.ac_incr[ac_port] =
+		  (io.ac_incr[ac_port] & 0x00ff) | (V << 8);
+		return;
+	      case 9:
+		io.ac_control[ac_port] = V;
+		return;
+	      case 0xa:
+		if (io.
+		    ac_control[ac_port] & (AC_ENABLE_OFFSET_BASE_A |
+					   AC_ENABLE_OFFSET_BASE_6) ==
+		    (AC_ENABLE_OFFSET_BASE_A | AC_ENABLE_OFFSET_BASE_6))
+		  io.ac_base[ac_port] =
+		    (io.ac_base[ac_port] + io.ac_offset[ac_port]) & 0xffffff;
+		return;
+	      default:
+		Log ("\nUnknown AC write %d into 0x%04X\n", V, A);
+	      }
+
+	  }
+      }
       break;
 
     case 0x1800:		/* CD-ROM extention */
@@ -2162,7 +2478,7 @@ IO_write (UInt16 A, UChar V)
 	   "ignore I/O write %04x,%02x\tBase adress of port %X\nat PC = %04X\n",
 	   A, V, A & 0x1CC0,
 #ifdef KERNEL_DS
-           reg_pc);
+	   reg_pc);
 #else
 	   M.PC.W);
 #endif
@@ -2177,9 +2493,11 @@ IO_write (UInt16 A, UChar V)
 M6502 M;
 
 
-UChar Loop6502 (M6502 * R)
+UChar
+Loop6502 (M6502 * R)
 #else
-UChar Loop6502 ()
+UChar
+Loop6502 ()
 #endif
 {
   static int UCount = 0;
@@ -2362,7 +2680,8 @@ UChar Loop6502 ()
   return INT_NONE;
 }
 
-UChar TimerInt ()
+UChar
+TimerInt ()
 {
   if (io.timer_start)
     {
@@ -2382,6 +2701,17 @@ UChar TimerInt ()
   return INT_NONE;
 }
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
 
 #ifdef EXTERNAL_DAT
@@ -2399,6 +2729,17 @@ UChar TimerInt ()
 #define LOAD_INTEGRATED_SYS_FILE
 
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
 /*****************************************************************************
 
@@ -2429,9 +2770,7 @@ CartLoad (char *name)
  *
  *       return 0;
  */
-      LOAD_INTEGRATED_SYS_FILE 
-
-	return 0;
+      LOAD_INTEGRATED_SYS_FILE return 0;
 
     }
 
@@ -2489,6 +2828,7 @@ CartLoad (char *name)
     }
   else if (strcasestr (name, ".ZIP"))
     {
+#ifdef MSDOS		
       char tmp_char[128], tmp_char2[128], tmp_char3[128];
       char *array_arg[6] =
 	{ tmp_char3, tmp_char, "-Cjoqq", tmp_char2, "*.pce", NULL };
@@ -2500,9 +2840,8 @@ CartLoad (char *name)
       sprintf (tmp_char2, "%s", name);
       sprintf (tmp_char3, "%sHU-GO!.TMP/REDIR.RDF", short_exe_name);
 
-#ifdef MSDOS
       DecompressArchive (5, array_arg);
-#endif
+
 
       if (!strcmp (name_to_extract, ""))
 	sprintf (tmp_path, "%sHU-GO!.TMP/%sPCE", short_exe_name,
@@ -2511,6 +2850,8 @@ CartLoad (char *name)
 	sprintf (tmp_path, "%sHU-GO!.TMP/%s", short_exe_name,
 		 name_to_extract);
 
+#endif	  
+	  
       strcpy (true_file_name, tmp_path);
       fp = fopen (tmp_path, "rb");
     }
@@ -2644,6 +2985,17 @@ ResetPCE (M6502 * M)
       fill_cd_info ();
 
     }
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
   else if (CD_emulation == 3)
     {
@@ -2671,6 +3023,17 @@ ResetPCE (M6502 * M)
 
     }
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
   Log ("Cd_emulation is %d\n", CD_emulation);
 
@@ -2815,6 +3178,17 @@ ResetPCE ()
       fill_cd_info ();
 
     }
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
   else if (CD_emulation == 3)
     {
@@ -2842,6 +3216,17 @@ ResetPCE ()
 
     }
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
   Log ("Cd_emulation is %d\n", CD_emulation);
 
@@ -2905,8 +3290,16 @@ InitPCE (char *name, char *backmemname)
 	short_cart_name[strlen (short_cart_name)] = '.';
       }
 
-
+#warning homogeneize calls
+#if defined(ALLEGRO)
   fix_filename_slashes (ISO_filename);
+#else
+	    #if defined(SDL)
+	    osd_fix_filename_slashes(ISO_filename);
+	  #else
+	    #error unknown lib
+	  #endif
+#endif
 
   if (!(tmp_dummy = (char *) (strrchr (ISO_filename, '\\'))))
     tmp_dummy = &ISO_filename[0];
@@ -2944,7 +3337,7 @@ InitPCE (char *name, char *backmemname)
       break;
     }
 
-    Log ("Saved path is %s\n", sav_path);
+  Log ("Saved path is %s\n", sav_path);
 
 #else
 
@@ -2996,12 +3389,12 @@ InitPCE (char *name, char *backmemname)
 
   WRAM = (UChar *) malloc (0x2000);
   memset (WRAM, 0, 0x2000);
-  WRAM[0] = 0x48; /* 'H' */
-  WRAM[1] = 0x55; /* 'U' */
-  WRAM[2] = 0x42; /* 'B' */
-  WRAM[3] = 0x4D; /* 'M' */
-  WRAM[5] = 0xA0; /* WRAM[4-5] = 0xA000, end of free mem ? */
-  WRAM[6] = 0x10; /* WRAM[6-7] = 0x8010, beginning of free mem ? */
+  WRAM[0] = 0x48;		/* 'H' */
+  WRAM[1] = 0x55;		/* 'U' */
+  WRAM[2] = 0x42;		/* 'B' */
+  WRAM[3] = 0x4D;		/* 'M' */
+  WRAM[5] = 0xA0;		/* WRAM[4-5] = 0xA000, end of free mem ? */
+  WRAM[6] = 0x10;		/* WRAM[6-7] = 0x8010, beginning of free mem ? */
   WRAM[7] = 0x80;
 
   VRAM = (UChar *) malloc (VRAMSIZE);
@@ -3065,12 +3458,25 @@ InitPCE (char *name, char *backmemname)
       cd_extra_super_mem = (UChar *) malloc (0x30000);
       memset (cd_extra_super_mem, 0, 0x30000);
 
+      ac_extra_mem = (UChar *) malloc (0x200000);
+      memset (ac_extra_mem, 0, 0x200000);
+
       cd_sector_buffer = (UChar *) malloc (0x2000);
 
       // cd_read_buffer = (UChar *)malloc(0x2000);
 
     }
-
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
 
   if ((NO_ROM != 0xFFFF) && (ROM_LIST[NO_ROM].flags & PINBALL_KEY))
@@ -3084,6 +3490,17 @@ InitPCE (char *name, char *backmemname)
       }
 
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
   if ((NO_ROM != 0xFFFF) && (ROM_LIST[NO_ROM].flags & TWO_PART_ROM))
     ROM_size = 0x30;
@@ -3254,11 +3671,17 @@ TrashPCE (char *backmemname)
       fwrite (WRAM, 0x2000, 1, fp);
       fclose (fp);
       Log ("%s used for saving RAM\n", backmemname);
-    }
-
+    }	
+	
+#if defined(ALLEGRO)	
   sprintf (tmp_buf, "%s/HU-GO!.TMP/*.*", short_exe_name);
   for_each_file (tmp_buf, 32, delete_file_tmp, 0);
-
+#else
+	#if defined(LINUX)
+		sprintf (tmp_buf, "rm -rf %s/HU-GO!.TMP/*", short_exe_name);
+	    system(tmp_buf);
+	#endif
+#endif
   sprintf (tmp_buf, "%s/HU-GO!.TMP", short_exe_name);
   rmdir (tmp_buf);
 
@@ -3268,10 +3691,32 @@ TrashPCE (char *backmemname)
   if ((CD_emulation == 2) || (CD_emulation == 4))
     fclose (iso_FILE);
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
   if (CD_emulation == 3)
     pack_fclose (packed_iso_FILE);
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
   if (CD_emulation == 5)
     HCD_shutdown ();
@@ -3347,8 +3792,7 @@ main (int argc, char *argv[])
 
 #endif
 
-  init_log_file ();
-
+  init_log_file ();  
 
 #ifdef MSDOS
 
@@ -3359,7 +3803,38 @@ main (int argc, char *argv[])
 
   srand (time (NULL));
 
-  allegro_init ();
+#warning check if ALLEGRO is ok with initializing the machine here  
+  if (!osd_init_machine ())
+    return -1;
+    
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
+#if defined(ALLEGRO)
+#else
+	#if defined(SDL)
+	
+	#endif
+#endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
 #ifndef LINUX
 
@@ -3378,6 +3853,17 @@ main (int argc, char *argv[])
 
 #endif
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #if defined(EXTERNAL_DAT) && defined(ALLEGRO)
 
 #ifndef LINUX
@@ -3394,6 +3880,17 @@ main (int argc, char *argv[])
     }
 
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
   strcpy (tmp_path, short_exe_name);
   strcat (tmp_path, "HU-GO!.TMP");
@@ -3404,12 +3901,15 @@ main (int argc, char *argv[])
   mkdir (tmp_path);
 #endif
 
+#ifdef ALLEGRO
+
 #if defined(MSDOS) || defined(WIN32)
 
   set_gfx_mode (GFX_AUTODETECT, 320, 200, 0, 0);
 
 #elif defined(LINUX)
 
+#if defined(ALLEGRO)
   if (set_gfx_mode (GFX_SAFE, 320, 200, 0, 0))
     {
       printf ("Error setting mode!\n");
@@ -3417,8 +3917,23 @@ main (int argc, char *argv[])
       exit (-2);
     }
 
+#endif // ALLEGRO	
+	
 #endif
 
+#endif // ALLEGRO
+
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
 
 #if defined(EXTERNAL_DAT)
@@ -3426,8 +3941,10 @@ main (int argc, char *argv[])
   set_palette (datafile[INTRO_PAL].dat);
 
 
-  (*fade_in_proc[rand () % nb_fadein]) (datafile[INTRO_PICTURE].dat, 0, 0,
-					320, 200);
+  /*
+     (*fade_in_proc[rand () % nb_fadein]) (datafile[INTRO_PICTURE].dat, 0, 0,
+     320, 200);
+   */
   // Now the logo is displayed, let's be useful instead of wait
 
 #else
@@ -3438,8 +3955,9 @@ main (int argc, char *argv[])
 
 # ifndef LINUX
 
-  (*fade_in_proc[rand () % nb_fadein]) (data[INTRO_PICTURE].dat, 0, 0, 320, 200);
-  // Now the logo is displayed, let's be useful instead of wait
+  (*fade_in_proc[rand () % nb_fadein]) (data[INTRO_PICTURE].dat, 0, 0, 320,
+					200);
+  // Now the logo is displayed, let's be useful instead of waiting
 
 #else
 
@@ -3455,6 +3973,17 @@ main (int argc, char *argv[])
 #endif
 #endif
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
   parse_INIfile ();
 
@@ -3478,6 +4007,17 @@ main (int argc, char *argv[])
   }
 #endif
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
   /* TODO: make this allegro independant */
 #ifdef ALLEGRO
   if (!file_exists (sav_path, FA_DIREC, 0))
@@ -3499,25 +4039,38 @@ main (int argc, char *argv[])
 #endif
   // Create a place for output images if not exist
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
 
   atexit (TrashSound);
 
   // In case of crash, try to free as many resources as we can
 
-  getchar ();
+  //  getchar ();
 
-  (*fade_out_proc[rand () % nb_fadeout]) (0, 0, 320, 200);
+  // (*fade_out_proc[rand () % nb_fadeout]) (0, 0, 320, 200);
 
   BaseClock = 7800000;		//7160000; //3.58-21.48;
   //  7.8 Mhz  ^
 
+#if defined(ALLEGRO)
   LOCK_VARIABLE (key_delay);
   LOCK_VARIABLE (timer_60);
   LOCK_VARIABLE (can_blit);
   LOCK_VARIABLE (RAM);
   LOCK_VARIABLE (list_to_freeze);
   LOCK_FUNCTION (interrupt_60hz);
+#endif
 
   IPeriod = BaseClock / (scanlines_per_frame * 60);
 #ifndef FINAL_RELEASE
@@ -3529,35 +4082,40 @@ main (int argc, char *argv[])
   fprintf (stderr, "TimerPeriod = %d\n", TimerPeriod);
 #endif
 
-#ifndef PROFILING
-  install_timer ();
-#endif
-
 /* TEST */
   io.screen_h = 224;
 /* TEST */
   io.screen_w = 256;
 
+/*
   if (!osd_init_machine ())
     return -1;
+*/
 
   do
     {
 
+#warning reenable card selection without allegro
+#if defined(ALLEGRO)
       if ((!cart_name[0]) && (CD_emulation != 1))
 	strcpy (cart_name, (char *) select_rom ("*.pce"));
-
+#endif
+	  
       if (strcmp (cart_name, "NO FILE"))
 	if (!InitPCE (cart_name, backup_mem))
 	  {
 	    effectively_played = 1;
 	    cart_reload = 0;
-
+		
+		#if defined(ALLEGRO)
 	    install_int_ex (interrupt_60hz, BPS_TO_TIMER (60));
+		#endif
 
 	    RunPCE ();
 
+		#if defined(ALLEGRO)
 	    remove_int (interrupt_60hz);
+		#endif
 
 	    TrashPCE (backup_mem);
 	  }
@@ -3613,26 +4171,64 @@ main (int argc, char *argv[])
 
   if (dump_snd)
     fclose (out_snd);
-
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #if defined(EXTERNAL_DAT) && defined(ALLEGRO)
   Log ("I'll unload datafile, @ = %p\n", datafile);
 //      if (datafile)
 //      unload_datafile(datafile);
   Log ("I've unloaded datafile\n");
 #endif
-
 /*
-  Log("%d bank_set\n%d op6502\n",
-      bank_set_nb,
-      op6502_nb);
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
 */
+
   Log
     ("\n--[ END OF PROGRAM ]----------------------------------\nExecution completed successfully\n");
   return 0;
 }
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
 
 END_OF_MAIN ();
 
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/

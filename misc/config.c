@@ -1,5 +1,79 @@
 #include "config.h"
 
+char sCfgFileLine[BUFSIZ];
+char config_file[PATH_MAX];
+
+char*
+get_config_var(char* section, char* cfgId )
+{
+
+   FILE*  FCfgFile = NULL;
+   char* pWrd = NULL;
+   char* pRet;
+	
+   /* open config file for reading */
+   if ((FCfgFile = fopen(config_file, "r")) != NULL)
+   {
+      /* read through the file looking for our keyword */
+      do
+      {
+	 memset( sCfgFileLine, '\0', BUFSIZ );
+	 /* scan for keyword */
+	 /* note.. line must NOT be a comment */
+	 pRet = fgets(sCfgFileLine, BUFSIZ, FCfgFile );
+		  
+     if (section == NULL)
+	 {	 
+	   if((( pWrd = strstr( sCfgFileLine, cfgId ) ) != NULL && sCfgFileLine[0] != '#' ) 
+		     && pWrd != NULL  && pWrd == sCfgFileLine )
+	   {
+	      // pWrd = strchr( sCfgFileLine, ' ' ) + 1;
+		   pWrd = strchr( sCfgFileLine, '=' ) + 1;
+
+	      pRet =  strchr(pWrd, '\n' );
+	      if( pRet != NULL )
+	         *pRet = '\0';
+
+	      break;
+	   }
+   }
+	 else
+		 if (!strncmp(section,sCfgFileLine,strlen(section)) && sCfgFileLine[0] == '[' && sCfgFileLine[strlen(section) + 1] == ']')
+			 section = NULL;
+
+      } while ( pRet != NULL);
+
+      fclose( FCfgFile );
+   }
+   if(pWrd != NULL)
+   { 
+      while( (*pWrd==' ') || *pWrd=='\t')
+                                pWrd++;
+   }
+   
+   return pWrd;
+}
+
+#if !defined(ALLEGRO)
+
+// Let's redefine the old allegro parsing function
+
+int get_config_int(char* section, char* keyword, int default_value)
+{
+	char* p = get_config_var(section, keyword);
+	if (p == NULL)
+		return default_value;
+	return atoi(p);
+}
+
+char* get_config_string(char* section, char* keyword, char* default_value)
+{
+	char* p = get_config_var(section, keyword);
+	return (p == NULL ? default_value : p);
+}
+
+#endif
+
 const char *joy_str[] =
   { "UP", "DOWN", "LEFT", "RIGHT", "I", "II", "SELECT", "START", "AUTOI",
   "AUTOII", "PI", "PII", "PSELECT", "PSTART", "PAUTOI", "PAUTOII"
@@ -269,26 +343,30 @@ parse_INIfile ()
   Log ("--[ PARSING INI FILE ]------------------------------\n");
 
 #ifndef LINUX
-  strcpy (tmp_path, short_exe_name);
-  strcat (tmp_path, "HU-GO!.INI");
+  strcpy (config_file, short_exe_name);
+  strcat (config_file, "HU-GO!.INI");
 #else
   {
 
     char tmp_home[256];
+	  FILE* f;
 
     sprintf (tmp_home, "%s/.hugo/hugo.ini", getenv ("HOME"));
 
-    if (exists (tmp_home))
-      strcpy (tmp_path, tmp_home);
+	  f = fopen(tmp_home,"rb");
+	  
+    if (f != NULL)
+	{
+		strcpy (config_file, tmp_home);
+		fclose(f);		
+	}
     else
-      strcpy (tmp_path, "/etc/hugo.ini");
-
+      strcpy (config_file, "/etc/hugo.ini");
+	
   }
 #endif
 
-  set_config_file (tmp_path);
-
-  Log ("Looking in %s\n", tmp_path);
+  Log ("Looking in %s\n", config_file);
 
   read_joy_mapping ();
 
@@ -300,11 +378,15 @@ parse_INIfile ()
 
   Log ("Setting initial path to %s\n", initial_path);
 
+#if defined(ALLEGRO)
+  
   strcpy (skin_filename, get_config_string ("main", "skin", "skin_h~1.bmp"));
   // skin filename to look for
 
   Log ("Skin filename set to %s\n", skin_filename);
 
+#endif  
+  
   current_config = get_config_int ("main", "config", 0);
   // choose input config
 
@@ -325,10 +407,14 @@ parse_INIfile ()
 
   Log ("Setting sound mode to %d\n", smode);
 
+#if defined(ALLEGRO)
+
   static_refresh = get_config_int ("main", "static_refresh", 0);
   // file selector refreshment
 
   Log ("Setting static refresh to %d\n", static_refresh);
+
+#endif
 
   use_eagle = get_config_int ("main", "eagle", 0);
   // do we use EAGLE ?
@@ -358,9 +444,13 @@ parse_INIfile ()
 
   Log ("Setting sound driver to %d\n", sound_driver);
 
+#if defined(ALLEGRO)
+
   zip_support_in_fs = get_config_int ("main", "zip_support", 1);
 
   Log ("Setting zip support in File Selector to %d\n", zip_support_in_fs);
+
+#endif
 
   synchro = get_config_int ("main", "limit_fps", 0);
 

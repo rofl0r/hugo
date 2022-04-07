@@ -88,6 +88,31 @@ typedef struct tagIO {
         UInt32 adpcm_pptr; /* to know where to begin playing adpcm (in nibbles) */
         UInt32 adpcm_psize; /* to know how many 4-bit samples to play */
 
+        /* Arcade Card variables */
+        UInt32 ac_base[4];     /* base address for AC ram accessing */
+        UInt16 ac_offset[4];   /* offset address for AC ram accessing */
+        UInt16 ac_incr[4];     /* incrment value after read or write accordingly to the control bit */
+
+        UChar  ac_control[4];  /* bit 7: unused */
+
+                               /* bit 6: only $1AX6 hits will add offset to base*/
+                               /* bit 5 + bit 6: either hit to $1AX6 or $1AXA will add offset to base */
+
+                               /* bit 4: auto increment offset if 0, and auto */
+                               /* increment base if 1 */
+                               /* bit 3: unknown */
+                               /* bit 2: unknown */
+                               /* bit 1: use offset address in the effective address */
+                               /*   computation */
+
+                               /* bit 0: apply autoincrement if set */
+
+        UInt32 ac_shift;
+        UChar  ac_shiftbits;   /* number of bits to shift by */
+
+/*        UChar  ac_unknown3; */
+        UChar  ac_unknown4;
+
 } IO;
 
 /**
@@ -158,6 +183,9 @@ extern UChar *cd_extra_mem;
 extern UChar *cd_extra_super_mem;
 // extra ram provided by the super system CD card
 
+extern UChar *ac_extra_mem;
+// extra ram provided by the Arcade card
+
 extern UInt32 pce_cd_read_datacnt;
 // remaining useful data in cd_read_buffer
 
@@ -191,7 +219,7 @@ UInt32 cyclecountold;
 UInt32 ibackup;
 // Backup value for elapsed cycle when executing interrupts
 
-extern const TimerPeriod;
+extern const UInt32 TimerPeriod;
 // Base period for the timer
 
 // registers:
@@ -223,5 +251,10 @@ enum _VDC_REG {
 #define	ENABLE	   1
 #define	DISABLE	   0
 
+#define AC_ENABLE_OFFSET_BASE_6 0x40
+#define AC_ENABLE_OFFSET_BASE_A 0x20
+#define AC_INCREMENT_BASE 0x10
+#define AC_USE_OFFSET 0x02
+#define AC_ENABLE_INC 0x01
 
 #endif

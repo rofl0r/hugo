@@ -6,7 +6,13 @@ void
 update_sound_null ()
 {
 };
+
 void update_sound_allegro ();
+
+#warning clean this
+#if defined(SDL)
+  void update_sound_allegro() {};
+#endif
 
 void (*update_sound[3]) () =
 {

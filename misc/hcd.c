@@ -1,40 +1,8 @@
-/**************************************************************************/
-/*                                                                        */
-/*             'Hu-Go! Compact disk Definition' handling code             */
-/*                                                                        */
-/* This is 'copyleft'. Use and abuse it as you want.                      */
-/*                                                                        */
-/**************************************************************************/
-
-#include "hcd.h"
-
-UInt32 HCD_first_track;
-
-UInt32 HCD_last_track;
-
-char HCD_cover_filename[256] = "";
-
-FILE *HCD_iso_FILE = 0;
-
-
+/**************************************************************************//*                                                                        *//*             'Hu-Go! Compact disk Definition' handling code             *//*                                                                        *//* This is 'copyleft'. Use and abuse it as you want.                      *//*                                                                        *//**************************************************************************/#include "hcd.h"UInt32 HCD_first_track;UInt32 HCD_last_track;char HCD_cover_filename[256] = "";FILE *HCD_iso_FILE = 0;
 #ifdef ALLEGRO
+PACKFILE *HCD_packed_iso_FILE = 0;#endif
 
-PACKFILE *HCD_packed_iso_FILE = 0;
-
-#endif
-
-UInt32 HCD_current_subtitle = 0;
-
-UInt32 HCD_frame_at_beginning_of_track = 0;
-
-UChar HCD_current_played_track = 0;
-
-
-
-int
-fill_HCD_info (char *name)
-{
-
+UInt32 HCD_current_subtitle = 0;UInt32 HCD_frame_at_beginning_of_track = 0;UChar HCD_current_played_track = 0;intfill_HCD_info (char *name){
 #ifdef ALLEGRO
 
   int current_track;
@@ -402,8 +370,10 @@ HCD_play_track (int track, char repeat)
   if (CD_track[track].source_type == HCD_SOURCE_CD_TRACK)
     {
      osd_cd_play_audio_track(CD_track[track].filename[0]);
-     }
-#if defined(LINUX) || defined(MSDOS)
+     }
+	 
+#warning reenable mp3 with sdl	 	 
+#if (defined(LINUX) || defined(MSDOS)) && defined(ALLEGRO)
   else
   if ((CD_track[track].source_type == HCD_SOURCE_REGULAR_FILE) &&
      (strcasestr (CD_track[track].filename, ".MP3")))
@@ -495,8 +465,10 @@ HCD_play_sectors (int begin_sect, int sect_len, char repeat)
                               sec_to,
                               fra_to);
 
-     }
-#if defined(LINUX) || defined(MSDOS)
+     }
+
+#warning reenable mp3 with sdl	 
+#if (defined(LINUX) || defined(MSDOS)) && defined(ALLEGRO)
   else
   if ((CD_track[result].source_type == HCD_SOURCE_REGULAR_FILE) &&
       (strcasestr (CD_track[result].filename, ".MP3")))

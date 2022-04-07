@@ -1,11 +1,14 @@
-#include "osd_machine.h"
+#include "osd_machine_sdl.h"
+
+char initial_path[128] = "";
+// prefered path for for searching
 
 UChar* osd_gfx_buffer = NULL;
 
 UChar gamepad = 0;
 // gamepad detected ?
 
-BITMAP *XBuf;
+UChar* XBuf;
 // The screen buffer where we draw before blitting it on screen
 
 int gamepad_driver = 0;
@@ -38,68 +41,25 @@ int osd_init_machine()
 
   int result;
 
-  allegro_init ();	
-
-#warning check if allegro is ok when install timer here	
-#ifndef PROFILING
-  install_timer ();
-#endif
-	
-	
   Log ("\n--[ INITIALISE MACHINE ]--------------------------\n");
-  check_cpu ();
-  if (cpu_cpuid)
-    Log ("Following cpu info are exact\n");
-  else
-    Log ("Following cpu info may be inaccurate\n");
+		
+  if (SDL_Init (SDL_INIT_VIDEO)) {
+	  Log("Could not initialise SDL : %s\n",SDL_GetError());
+	  return 0;
+  }	
 
-  Log ("Machine is a %d56, sub model : %d\n", cpu_family, cpu_model);
-
-  if (cpu_fpu)
-    Log ("Machine got a fpu\n");
-  else
-    Log ("No fpu available\n");
-
-  if (cpu_mmx)
-    Log ("Machine got a MMX cpu\n");
-  else
-    Log ("Machine doesn't have a MMX cpu\n");
-
-  if (cpu_3dnow)
-    Log ("Machine got a 3dNow! cpu compatible\n");
-  else
-    Log ("Machine doesn't have a 3dNow! cpu compatible\n");
-
-  Log ("Vendor : %s\n", cpu_vendor);
-
-  set_gfx_mode (GFX_TEXT, 0, 0, 0, 0);
   printf (MESSAGE[language][init_allegro]);
 
   printf (MESSAGE[language][translated_by]);
 
-  if (!(XBuf = create_bitmap (XBUF_WIDTH, XBUF_HEIGHT)))
+  if (!(XBuf = (UChar*)malloc(XBUF_WIDTH* XBUF_HEIGHT)))
     {
       printf (MESSAGE[language][failed_init]);
       return (0);
     }
 
   printf (MESSAGE[language][clear_buffer]);
-  clear (XBuf);
-
-  Log ("Allocating sprite array\n");
-  printf (MESSAGE[language][alloc_spr]);
-  {
-    UInt32 x;
-    for (x = 0; x < VRAMSIZE / 32; x++)
-      {
-	if (!(dirty_spr[x] = create_bitmap (16, 16)))
-	  {
-	    printf (MESSAGE[language][failed_init]);
-	    return 0;
-	  }
-	clear (dirty_spr[x]);
-      }
-  }
+  bzero (XBuf, XBUF_WIDTH * XBUF_HEIGHT);
 
   Log ("Initiating sound\n");
   printf (MESSAGE[language][init_sound]);
@@ -108,6 +68,8 @@ int osd_init_machine()
   /* Opening joypad number 0 */
   (int)fd[0] = open ("/dev/js0", O_NONBLOCK);
 
+#warning enable eagle with sdl
+/*
   if (use_eagle)
     {
       printf (MESSAGE[language][eagle_asked]);
@@ -126,18 +88,17 @@ int osd_init_machine()
       else
 	printf (MESSAGE[language][eagle_mode_not_init]);
     }
-  else if (!(*osd_gfx_driver_list[video_driver].init) ())
+  else
+  */
+  
+  if (!(*osd_gfx_driver_list[video_driver].init) ())
     {
       Log ("Can't set graphic mode\n");
       printf (MESSAGE[language][cant_set_gmode]);
       return 0;
     }
 
-  text_mode (-1);
-  install_keyboard ();
-  clear (screen);
-
-  osd_gfx_buffer = XBuf->line[0];
+  osd_gfx_buffer = XBuf;
 
   Log ("End of initialisation of the machine\n");
   return 1;
@@ -157,34 +118,26 @@ void
 osd_shut_machine (void)
 {
  
-  destroy_bitmap (XBuf);
+	free(XBuf);
 
-  if (OSD_MESSAGE_SPR)
-    destroy_bitmap (OSD_MESSAGE_SPR);
-
+#warning enable eagle with sdl
+/*	
   if (EAGLE_buf)
     destroy_bitmap (EAGLE_buf);
-
+*/
+  
   if (sound_driver == 1)
-    set_volume (0, 0);
+    osd_snd_set_volume (0);
 
   /* closing joypad device */
   close ((int)fd[0]);
     
-  (*fade_out_proc[rand () % nb_fadeout]) (0, 0, vwidth, vheight);
-
-  {
-    UInt32 x;
-    for (x = 0; x < VRAMSIZE / 32; x++)
-      destroy_bitmap (dirty_spr[x]);
-  }
-
-  set_gfx_mode (GFX_TEXT, 0, 0, 0, 0);
+/*  (*fade_out_proc[rand () % nb_fadeout]) (0, 0, vwidth, vheight); */
 
   TrashSound ();
 
-  allegro_exit ();
-
+  SDL_Quit();
+  
   return;
 }
 
@@ -200,7 +153,9 @@ osd_shut_machine (void)
 *****************************************************************************/
 SChar osd_keypressed(void)
 {
- return keypressed();
+
+#warning implement keypressed with sdl	
+	
  }
 
 /*****************************************************************************
@@ -214,6 +169,34 @@ SChar osd_keypressed(void)
 *****************************************************************************/
 UInt16 osd_readkey(void)
 {
- return readkey();
+	SDL_Event event;
+	while ( SDL_PollEvent( &event ))
+	{
+		switch (event.type)
+		{
+			case SDL_KEYDOWN:
+				return event.key.keysym.unicode;
+			case SDL_QUIT:
+				return 0;
+		}
+	}
  }
 
+ /*****************************************************************************
+
+    Function: osd_fix_filename_slashes
+
+    Description: Changes slashes in a filename to correspond to an os need
+    Parameters: char* s
+    Return: nothing but the char* is updated
+
+*****************************************************************************/
+void osd_fix_filename_slashes(char* s)
+{
+	while (*s)
+	{
+		if (*s == '\\')
+			*s = '/';
+		s++;
+	}
+}

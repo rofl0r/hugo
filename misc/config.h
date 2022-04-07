@@ -10,6 +10,7 @@
 #include "interf.h"
 #include "lang.h"
 #include "osd_machine.h"
+#include "sys/param.h"
 
 void parse_INIfile();
 /* check the configuration file for options

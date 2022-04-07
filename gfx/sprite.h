@@ -1,5 +1,5 @@
-#ifndef _DJGPP_INCLUDE_SPRITE_H
-#define _DJGPP_INCLUDE_SPRITE_H
+#ifndef _SPRITE_H_
+#define _SPRITE_H_
 
 #include "pce.h"
 #include "cleantyp.h"
@@ -58,12 +58,34 @@ extern UInt32 spr_init_pos[1024];
 
 extern UChar SPM[WIDTH*HEIGHT];
 
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: BEGIN
+####################################
+####################################
+####################################
+####################################
+*/
 #ifdef ALLEGRO
 
 extern BITMAP* dirty_spr[0x20000/32];
 // Used for precalculation of sprites, VRAMSIZE/32 is for # of sprite
 
 #endif
+/*
+####################################
+####################################
+####################################
+####################################
+2KILL :: END
+####################################
+####################################
+####################################
+####################################
+*/
 
 extern char exact_putspritem;
 // do we use a slow but precise function to draw certain sprites

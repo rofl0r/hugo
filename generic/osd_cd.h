@@ -1,8 +1,8 @@
-#ifndef _INCLUDE_GENERIC_OSD_CD_H
-#define _INCLUDE_GENERIC_OSD_CD_H
-
-#include "sys_dep.h"
-#include "cd.h"
-
-
-#endif
+#ifndef _INCLUDE_GENERIC_OSD_CD_H_
+#define _INCLUDE_GENERIC_OSD_CD_H_
+
+#include "sys_dep.h"
+#include "cd.h"
+
+
+#endif

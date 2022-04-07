@@ -35,6 +35,7 @@ UChar *cd_read_buffer;
 UChar *cd_sector_buffer;
 UChar *cd_extra_mem;
 UChar *cd_extra_super_mem;
+UChar *ac_extra_mem;
 
 UInt32 pce_cd_read_datacnt; /**/
 UChar cd_sectorcnt;
@@ -50,7 +51,7 @@ UInt32 cyclecount;
 UInt32 cyclecountold;
 UInt32 ibackup;
 
-const int TimerPeriod = 1097;
+const UInt32 TimerPeriod = 1097;
 
 // registers
 
@@ -74,9 +75,16 @@ UChar IO_read (UInt16 A)
 {
   UChar ret;
 
+/*  Replaced below...
 #ifndef FINAL_RELEASE
-  if (((A & 0x1CC0) == 0x1800) && ((A & 0x1CC8) != 0x1808))
-    fprintf (stderr, "\nRead %04x\n", A);
+  if (((A & 0x1FFF) > 0x1A00) && ((A & 0x1FFF) < 0x1B00))
+    Log("AC Read at %04x\n", A);
+#endif
+*/
+
+#ifndef FINAL_RELEASE
+  if ((A & 0x1F00) == 0x1A00)
+    Log("AC Read at %04x\n", A);
 #endif
 
 
@@ -84,7 +92,7 @@ UChar IO_read (UInt16 A)
   // switch(A&0x1C00){ // safe way but not for specials ports
   /* BE CAREFUL, 0x1C00 is safe */
 
-  switch (A & 0x1CC0)
+  switch (A & 0x1FC0)
     {				// MAY BE UNSAFE
     case 0x0000:		/* VDC */
       switch (A & 3)
@@ -201,13 +209,102 @@ UChar IO_read (UInt16 A)
 	case 3:
 	case 7:
 	  return 0x03;
-
-//          case 15: // ACD support ?
-//              return 0x51;
-
 	}
       break;
+      
+    case 0x1AC0:
+     switch (A & 15)
+     {
+            case 0:
+                 return (UChar)(io.ac_shift);
+            case 1:
+                 return (UChar)(io.ac_shift >> 8);
+            case 2:
+                 return (UChar)(io.ac_shift >> 16);
+            case 3:
+                 return (UChar)(io.ac_shift >> 24);
+            case 4:
+                 return io.ac_shiftbits;
+            case 5:
+                 return io.ac_unknown4;
+            case 14:
+              return 0x10;
+            case 15:
+              return 0x51;
+            default:
+              Log("Unknown Arcade card port access : 0x%04X\n", A);
+     }
+     break;
+      
+    case 0x1A00:
+    {
+     UChar ac_port = (A >> 4) & 3;
+     switch (A & 15)
+     {
+      case 0:
+      case 1:
+	/*
+           switch (io.ac_control[ac_port] & (AC_USE_OFFSET | AC_USE_BASE))
+             {
+              case 0:
+                   return ac_extra_mem[0];
+              case AC_USE_OFFSET:
+                   ret = ac_extra_mem[io.ac_offset[ac_port]];
+                   if (!(io.ac_control[ac_port] & AC_INCREMENT_BASE))
+                     io.ac_offset[ac_port]+=io.ac_incr[ac_port];
+                   return ret;
+              case AC_USE_BASE:
+                   ret = ac_extra_mem[io.ac_base[ac_port]];
+                   if (io.ac_control[ac_port] & AC_INCREMENT_BASE)
+                     io.ac_base[ac_port]+=io.ac_incr[ac_port];
+                   return ret;
+              default:
+                   ret = ac_extra_mem[io.ac_base[ac_port] + io.ac_offset[ac_port]];
+                   if (io.ac_control[ac_port] & AC_INCREMENT_BASE)
+                     io.ac_base[ac_port]+=io.ac_incr[ac_port];
+                   else
+                     io.ac_offset[ac_port]+=io.ac_incr[ac_port];
+                   return ret;
+              }
+           return 0;
+*/
+           if (io.ac_control[ac_port] & AC_USE_OFFSET)
+              ret = ac_extra_mem[((io.ac_base[ac_port] + io.ac_offset[ac_port]) & 0x1fffff)];
+           else
+              ret = ac_extra_mem[((io.ac_base[ac_port]) & 0x1fffff)];
 
+           if (io.ac_control[ac_port] & AC_ENABLE_INC)
+           {
+             if (io.ac_control[ac_port] & AC_INCREMENT_BASE)
+               io.ac_base[ac_port] = (io.ac_base[ac_port] + io.ac_incr[ac_port]) & 0xffffff;
+             else
+               io.ac_offset[ac_port] = (io.ac_offset[ac_port] + io.ac_incr[ac_port]) & 0xffff;
+           }
+
+           return ret;
+
+
+      case 2:
+           return (UChar)(io.ac_base[ac_port]);
+      case 3:
+           return (UChar)(io.ac_base[ac_port] >> 8);
+      case 4:
+           return (UChar)(io.ac_base[ac_port] >> 16);
+      case 5:
+           return (UChar)(io.ac_offset[ac_port]);
+      case 6:
+           return (UChar)(io.ac_offset[ac_port] >> 8);
+      case 7:
+           return (UChar)(io.ac_incr[ac_port]);
+      case 8:
+           return (UChar)(io.ac_incr[ac_port] >> 8);
+      case 9:
+           return io.ac_control[ac_port];
+      default:
+           Log("Unknown Arcade card port access : 0x%04X\n", A);
+     }
+     break;
+    }
     case 0x1800:		// CD-ROM extention
       switch (A & 15)
 	{
