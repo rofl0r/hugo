@@ -1,8 +1,9 @@
 // pce.h
-#ifndef _DJGPP_INCLUDE_PCE_H
-#define _DJGPP_INCLUDE_PCE_H
+#ifndef _INCLUDE_PCE_H
+#define _INCLUDE_PCE_H
 
 #include "hard_pce.h"
+#include "cheat.h"
 
 #define	WIDTH	(360+64)
 
@@ -10,7 +11,7 @@
 // #define HEIGHT    214
 /* TEST */
 
-#define	XBUF_WIDTH	(360+64)
+// #define	XBUF_WIDTH	(360+64)
 #define	XBUF_HEIGHT	256
 #define XBUF_WIDTH (320+64+40)
 
@@ -27,13 +28,18 @@
 
 #elif defined(LINUX)
 
+#include <sys/param.h>
 #include <sys/types.h>
-#include <linux/cdrom.h>
 #include <sys/ioctl.h>
+#include <linux/cdrom.h>
 
 #elif defined(WIN32)
 
+#define PATH_MAX 255
+
 #endif
+
+
 
 #ifdef KERNEL_DS
 
@@ -65,40 +71,8 @@
 #define	alleg_flic_unused
 #define	alleg_gui_unused
 
-/*
-####################################
-####################################
-####################################
-####################################
-2KILL :: BEGIN
-####################################
-####################################
-####################################
-####################################
-*/
 #include "allegro.h"
-/*
-####################################
-####################################
-####################################
-####################################
-2KILL :: END
-####################################
-####################################
-####################################
-####################################
-*/
 #include "gfx.h"
-
-#endif
-
-#include "cleantyp.h"
-// A 'quite portable' type definition
-
-#include "cheat.h"
-
-#ifdef ALLEGRO
-
 #include "info_dat.h"
 #include "data.h"
 // Include some informations to correctly use the datafile
@@ -141,25 +115,33 @@ extern SChar volatile key_delay;
 extern volatile UInt32 message_delay;
 // if different of zero, we must display the message pointed by pmessage
 
-extern char short_cart_name[80];
+extern char short_cart_name[PATH_MAX];
 // Just the filename without the extension (with a dot)
 // you just have to add your own extension...
 
-extern char short_iso_name[80];
+extern char short_iso_name[PATH_MAX];
 // Added for ISO save support
 
-extern char cdsystem_path[256];
+extern char cdsystem_path[PATH_MAX];
 // The path of the cdsystem to launch automaticaly
 
-extern char sav_path[80];
+extern char sav_path[PATH_MAX];
 // The place where to keep saved games
 // currently a subdir a the EXE path named 'SAV'
 
-extern char video_path[80];
+extern char video_path[PATH_MAX];
 // The place where to keep output pictures
 
-extern char ISO_filename[256];
+extern char ISO_filename[PATH_MAX];
 // the name of the ISO file
+
+extern char cart_name[PATH_MAX];
+// the name of the rom to load
+
+extern char initial_path[PATH_MAX];
+// initial path for rom seeking
+
+extern char short_exe_name[PATH_MAX];
 
 extern UInt32 scanline;
 

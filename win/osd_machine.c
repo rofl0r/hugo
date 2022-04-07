@@ -1,5 +1,4 @@
 #include "osd_machine.h"
-
 UChar* osd_gfx_buffer = NULL;
 
 UChar gamepad = 0;

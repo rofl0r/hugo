@@ -4,7 +4,7 @@
 /*      1998 by BERO bero@geocities.co.jp                                 */
 /*                                                                        */
 /*    Modified 1998 by hmmx hmmx@geocities.co.jp                          */
-/*    Modified 1999-2001 by Zeograd (Olivier Jolly) zeograd@caramail.com  */
+/*    Modified 1999-2002 by Zeograd (Olivier Jolly) zeograd@caramail.com  */
 /**************************************************************************/
 
 /* Header section */
@@ -12,7 +12,7 @@
 #include "pce.h"
 #include "iso_ent.h"
 
-#define LOG_NAME "Hu-Go!.log"
+#define LOG_NAME "hugo.log"
 
 #define CD_FRAMES 75
 #define CD_SECS 60
@@ -92,16 +92,20 @@ UInt32 scanline;
 //int MinLine = 0,MaxLine = 255;
 #define MAXDISP 227
 
-char cart_name[256] = "";
+char cart_name[PATH_MAX] = "";
 // Name of the file containing the ROM
 
-char short_cart_name[80];
+char short_cart_name[PATH_MAX];
 // Just the filename without the extension (with a dot)
 // you just have to add your own extension...
 
-char short_iso_name[80];
+char short_iso_name[PATH_MAX];
 // Just the ISO filename without the extension (with a dot)
 // you just have to add your own extension...
+
+char log_filename[PATH_MAX];
+// real filename of the logging file
+// it thus also includes full path on advanced system
 
 UChar hook_start_cd_system = 0;
 // Do we hook CD system to avoid pressing start on main screen
@@ -112,23 +116,23 @@ UChar use_eagle = 0;
 UChar use_scanline = 0;
 // use scanline mode ?
 
-char true_file_name[128];
+char true_file_name[PATH_MAX];
 // the name of the file containing the ROM (with path, ext)
 // Now needed 'coz of ZIP archiving...
 
-char short_exe_name[80];
+char short_exe_name[PATH_MAX];
 // Used to function whatever the launching directory
 // Help working under WIN9X without troubles
 // Actually, the path of the EXE
 
-char sav_path[80];
+char sav_path[PATH_MAX];
 // The place where to keep saved games
 // currently a subdir of the EXE path named 'SAV'
 
-char video_path[80];
+char video_path[PATH_MAX];
 // The place where to keep output pictures
 
-char ISO_filename[256] = "";
+char ISO_filename[PATH_MAX] = "";
 // The name of the ISO file
 
 UChar force_header = 1;
@@ -440,6 +444,8 @@ strcasestr (char *s1, char *s2)
 
 }
 
+#if !defined(WIN32)
+
 int
 stricmp (char *s1, char *s2)
 {
@@ -455,7 +461,7 @@ stricmp (char *s1, char *s2)
   return result;
 
 }
-
+#endif
 
 void
 interrupt_60hz ()
@@ -546,7 +552,7 @@ Log (char *format, ...)
   vsprintf (buf, format, ap);
   va_end (ap);
 
-  if (!(log_file = fopen (LOG_NAME, "at")))
+  if (!(log_file = fopen (log_filename, "at")))
     return;
 
   fprintf (log_file, buf);
@@ -577,7 +583,7 @@ init_log_file ()
 
 #endif
 
-  unlink (LOG_NAME);
+  unlink (log_filename);
   Log ("--[ INITIALISATION ]--------------------------------\n");
 
 #ifdef MSDOS
@@ -3792,7 +3798,25 @@ main (int argc, char *argv[])
 
 #endif
 
-  init_log_file ();  
+#ifdef LINUX
+	{
+		char* home_path;
+		
+		home_path = getenv("HOME");
+		
+		if (home_path)
+		{			
+			sprintf(short_exe_name,"%s/.hugo/",home_path);
+			mkdir(short_exe_name,0777);
+		  	sprintf(log_filename,"%s%s",short_exe_name,LOG_NAME);		
+		}
+		else
+		{
+			strcpy(short_exe_name,"./");
+		  	strcpy(home_path,LOG_NAME);
+		}
+	}
+#endif
 
 #ifdef MSDOS
 
@@ -3800,10 +3824,15 @@ main (int argc, char *argv[])
   // Disable long filename to avoid mem waste in select_rom func.
 
 #endif
+		
+  init_log_file ();  
 
   srand (time (NULL));
 
+  parse_INIfile ();	
+	
 #warning check if ALLEGRO is ok with initializing the machine here  
+	
   if (!osd_init_machine ())
     return -1;
     
@@ -3838,7 +3867,8 @@ main (int argc, char *argv[])
 
 #ifndef LINUX
 
-  get_executable_name (short_exe_name, 256);
+  //  get_executable_name (short_exe_name, 256);
+  strncpy(short_exe_name,argv[0],PATH_MAX);
   for (i = 0; short_exe_name[i]; i++)
     if (short_exe_name[i] == '\\')
       short_exe_name[i] = '/';
@@ -3984,8 +4014,6 @@ main (int argc, char *argv[])
 ####################################
 ####################################
 */
-
-  parse_INIfile ();
 
   parse_commandline (argc, argv);
 
@@ -4205,30 +4233,8 @@ main (int argc, char *argv[])
   return 0;
 }
 
-/*
-####################################
-####################################
-####################################
-####################################
-2KILL :: BEGIN
-####################################
-####################################
-####################################
-####################################
-*/
 #ifdef ALLEGRO
 
 END_OF_MAIN ();
 
 #endif
-/*
-####################################
-####################################
-####################################
-####################################
-2KILL :: END
-####################################
-####################################
-####################################
-####################################
-*/

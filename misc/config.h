@@ -1,5 +1,5 @@
-#ifndef _DJGPP_INCLUDE_CONFIG_H
-#define _DJGPP_INCLUDE_CONFIG_H
+#ifndef _INCLUDE_CONFIG_H
+#define _INCLUDE_CONFIG_H
 
 #include "pce.h"
 #include "debug.h"
@@ -10,7 +10,12 @@
 #include "interf.h"
 #include "lang.h"
 #include "osd_machine.h"
+
+#if defined(LINUX)
+
 #include "sys/param.h"
+
+#endif
 
 void parse_INIfile();
 /* check the configuration file for options
@@ -21,15 +26,8 @@ void parse_commandline(int argc,char** argv);
 
 extern unsigned char joy_mapping[5][16];
 
-
 extern SInt32 smode,vmode;
 
-extern char short_exe_name[80];
-
-extern char cart_name[256];
-
 extern char* bmdefault;
-
-extern char initial_path[128];
 
 #endif

@@ -1,7 +1,6 @@
 #include "osd_machine_sdl.h"
 
 char initial_path[PATH_MAX] = "";
-// prefered path for for searching
 
 UChar* osd_gfx_buffer = NULL;
 
@@ -59,14 +58,11 @@ int osd_init_machine()
     }
 
   printf (MESSAGE[language][clear_buffer]);
-  bzero (XBuf, XBUF_WIDTH * XBUF_HEIGHT);
+  memset (XBuf, 0, XBUF_WIDTH * XBUF_HEIGHT);
 
   Log ("Initiating sound\n");
   printf (MESSAGE[language][init_sound]);
   InitSound ();
-
-  /* Opening joypad number 0 */
-  (int)fd[0] = open ("/dev/js0", O_NONBLOCK);
 
 #warning enable eagle with sdl
 /*

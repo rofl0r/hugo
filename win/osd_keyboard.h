@@ -26,7 +26,7 @@
 typedef struct {
         UInt16 (*pad[5])();
         UChar input_type[5];
-        UChar joy_mapping[5][16];
+        UInt16 joy_mapping[5][16];
         } input_config;
 
 extern input_config config[16];

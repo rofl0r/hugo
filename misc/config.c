@@ -1,7 +1,16 @@
 #include "config.h"
 
 char sCfgFileLine[BUFSIZ];
+// line buffer for config reading
+
 char config_file[PATH_MAX];
+// name of the config file
+
+char* config_buffer;
+// content of the config file
+
+UInt32 config_buffer_length;
+// size of config_buffer
 
 char*
 get_config_var(char* section, char* cfgId )
@@ -38,7 +47,7 @@ get_config_var(char* section, char* cfgId )
 	   }
    }
 	 else
-		 if (!strncmp(section,sCfgFileLine,strlen(section)) && sCfgFileLine[0] == '[' && sCfgFileLine[strlen(section) + 1] == ']')
+		 if (!strncmp(section,sCfgFileLine + 1,strlen(section)) && sCfgFileLine[0] == '[' && sCfgFileLine[strlen(section) + 1] == ']')
 			 section = NULL;
 
       } while ( pRet != NULL);
@@ -127,7 +136,7 @@ read_joy_mapping ()
 	  if ((temp_val = get_config_int (NULL, tmp_str, 0xffff)) != 0xffff)
 	    {
 	      joy_mapping[x - 1][y] = temp_val;
-	      Log ("Setting joy_mapping[%d][%y] to %d\n", x - 1, y, temp_val);
+	      Log ("Setting joy_mapping[%d][%d] to %d\n", x - 1, y, temp_val);
 	    }
 
 	}
