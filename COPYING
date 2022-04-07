@@ -6,7 +6,3 @@ EXCEPTED
 content of the file pcecd.c, which is licensed under the GPL compatible,
 modified BSD license (see LICENSE.bsd-modified)
 
-AND 
-
-content of the files unzip.h and unzip.c, which are licensed under the zlib
-license

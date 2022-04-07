@@ -2,7 +2,9 @@
 #define _INCLUDE_SYS_INP_H
 
 #include "cleantyp.h"
+#if defined(ENABLE_NETPLAY)
 #include "SDL_net.h"
+#endif
 
 /*
  * Input section

@@ -1,3 +1,19 @@
+/*
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,17 +22,6 @@
 #include <fcntl.h>
 
 # include <limits.h>
-
-/*
-#if !defined(WIN32)
-# include <unistd.h>
-# include <utime.h>
-# include <limits.h>
-#else
-# include <direct.h>
-# include <io.h>
-#endif
-*/
 
 #include "utils.h"
 #include "unzip.h"
@@ -27,6 +32,12 @@
 
 static char possible_filename_in_zip[PATH_MAX];
 
+/*!
+ * find_possible_filename_in_zip : Look whether the given archive contains a rom
+ * @param zipfilename Name of the archive file in zip format in which to search for a rom
+ * @return NULL in case of error or no rom found else a pointer to a statically allocated
+ * storage containing the filename found inside
+ */
 char *
 find_possible_filename_in_zip (char *zipfilename)
 {
@@ -37,8 +48,8 @@ find_possible_filename_in_zip (char *zipfilename)
 
 #if !defined(FINAL_RELEASE)
   fprintf (stderr,
-           "entering function to find a possible rom name in the archive %s\n",
-           zipfilename);
+	   "entering function to find a possible rom name in the archive %s\n",
+	   zipfilename);
 #endif
 
   if (zipfilename == NULL)
@@ -75,41 +86,44 @@ find_possible_filename_in_zip (char *zipfilename)
 #endif
 
       err = unzGetCurrentFileInfo (uf, &file_info, filename_inzip,
-                                   sizeof (filename_inzip), NULL, 0,
-                                   NULL, 0);
+				   sizeof (filename_inzip), NULL, 0, NULL, 0);
 
       if (err != UNZ_OK)
-        {
-          return NULL;
-        }
+	{
+	  return NULL;
+	}
 
 #if !defined(FINAL_RELEASE)
-      fprintf (stderr, "Filename for this entry is %s\n",
-               filename_inzip);
+      fprintf (stderr, "Filename for this entry is %s\n", filename_inzip);
 #endif
 
       if (strcasestr (filename_inzip, ".PCE"))
-        {
-          strncpy (possible_filename_in_zip, filename_inzip,
-                   PATH_MAX);
-          return possible_filename_in_zip;
-        }
+	{
+	  strncpy (possible_filename_in_zip, filename_inzip, PATH_MAX);
+	  return possible_filename_in_zip;
+	}
 
       if ((i + 1) < gi.number_entry)
-        {
-          err = unzGoToNextFile (uf);
-          if (err != UNZ_OK)
-            {
-              return NULL;
-            }
-        }
+	{
+	  err = unzGoToNextFile (uf);
+	  if (err != UNZ_OK)
+	    {
+	      return NULL;
+	    }
+	}
     }
 
   return NULL;
 }
 
-int
-do_extract_currentfile (unzFile uf)
+/*!
+ * do_extract_currentfile_in_memory : Extract the current pointed file in the zip archive into a buffer
+ * @param uf the archive file handle
+ * @param unzipped_size a pointer to the size of the unzipped data, it is filled by this function for caller
+ * @return uncompressed data as pointer, to be freed by caller or NULL in case of problem
+ */
+static char *
+do_extract_currentfile_in_memory (unzFile uf, size_t * unzipped_size)
 {
   char filename_inzip[256];
   char *filename_withoutpath;
@@ -119,15 +133,15 @@ do_extract_currentfile (unzFile uf)
   void *buf;
   uInt size_buf;
   unz_file_info file_info;
+  char *return_value = NULL;
 
   err = unzGetCurrentFileInfo (uf, &file_info, filename_inzip,
-                               sizeof (filename_inzip), NULL, 0, NULL,
-                               0);
+			       sizeof (filename_inzip), NULL, 0, NULL, 0);
 
   if (err != UNZ_OK)
     {
       Log ("error %d with zipfile in unzGetCurrentFileInfo\n", err);
-      return err;
+      return NULL;
     }
 
   size_buf = WRITEBUFFERSIZE;
@@ -142,7 +156,7 @@ do_extract_currentfile (unzFile uf)
   while ((*p) != '\0')
     {
       if (((*p) == '/') || ((*p) == '\\'))
-        filename_withoutpath = p + 1;
+	filename_withoutpath = p + 1;
       p++;
     }
 
@@ -155,91 +169,89 @@ do_extract_currentfile (unzFile uf)
 
       err = unzOpenCurrentFile (uf);
       if (err != UNZ_OK)
-        {
-          Log ("error %d with zipfile in unzOpenCurrentFile\n",
-               err);
-        }
+	{
+	  Log ("error %d with zipfile in unzOpenCurrentFile\n", err);
+	  return NULL;
+	}
 
-      if ((skip == 0) && (err == UNZ_OK))
-        {
-          fout = fopen (write_filename, "wb");
+      *unzipped_size = 0;
 
-          if (fout == NULL)
-            {
-              Log ("error opening %s\n", write_filename);
-            }
-        }
+      do
+	{
+	  err = unzReadCurrentFile (uf, buf, size_buf);
+	  if (err < 0)
+	    {
+	      Log ("error %d with zipfile in unzReadCurrentFile\n", err);
+	      break;
+	    }
+	  if (err > 0)
+	    {
+	      *unzipped_size += err;
+	      return_value = realloc (return_value, *unzipped_size);
+	      if (return_value == NULL)
+		{
+		  err = UNZ_ERRNO;
+		  break;
+		}
+	      memcpy (return_value + *unzipped_size - err, buf, err);
+	    }
+	}
+      while (err > 0);
 
-      if (fout != NULL)
-        {
-          do
-            {
-              err = unzReadCurrentFile (uf, buf, size_buf);
-              if (err < 0)
-                {
-                  Log ("error %d with zipfile in unzReadCurrentFile\n", err);
-                  break;
-                }
-              if (err > 0)
-                if (fwrite (buf, err, 1, fout) != 1)
-                  {
-                    Log ("error in writing extracted file\n");
-                    err = UNZ_ERRNO;
-                    break;
-                  }
-            }
-          while (err > 0);
-          if (fout)
-            {
-              fclose (fout);
-            }
+      if (err != UNZ_OK)
+	{
+	  Log ("Error %s with zipfile in uncompressing\n", strerror (errno));
+	}
 
-        }
-
-      if (err == UNZ_OK)
-        {
-          err = unzCloseCurrentFile (uf);
-          if (err != UNZ_OK)
-            {
-              Log ("error %d with zipfile in unzCloseCurrentFile\n", err);
-            }
-        }
-      else
-        {
-          unzCloseCurrentFile (uf);	/* don't lose the error */
-        }
+      err = unzCloseCurrentFile (uf);
+      if (err != UNZ_OK)
+	{
+	  Log ("error %d with zipfile in unzCloseCurrentFile\n", err);
+	}
     }
 
   free (buf);
-  return err;
+  return return_value;
 }
 
-static int
-do_extract_onefile (unzFile uf, const char *filename,
-                    int opt_extract_without_path, int opt_overwrite)
+/*!
+ * do_extract_onefile_in_memory : Extract an archived file into a buffer
+ * @param uf Handle to the archive in ip format in which to read data
+ * @param filename Name of the file archived in the zip file the data of which we want
+ * @param unzipped_size Pointer to the size of the extracted data
+ * @return NULL in case of problem or a pointer to the archived file content. It is allocated
+ */
+static char *
+do_extract_onefile_in_memory (unzFile uf, const char *filename,
+			      size_t * unzipped_size)
 {
   if (unzLocateFile (uf, filename, CASESENSITIVITY) != UNZ_OK)
     {
       Log ("file %s not found in the zipfile\n", filename);
-      return 2;
+      return NULL;
     }
 
-  // FIXME:  what are those two extra arguments?
-  if (do_extract_currentfile (uf/* , &opt_extract_without_path, */
-/*                               &opt_overwrite */) == UNZ_OK)
-    return 0;
-  else
-    return 1;
+  return do_extract_currentfile_in_memory (uf, unzipped_size);
 }
 
-int
-extractFile (char *zipfilename, char *archivedfile)
+/*!
+ * extract_file_in_memory : Extract an archived file into a buffer
+ * @param zipfilename Name of the archive in zip format in which to read data
+ * @param archivedfile Name of the file archived in the zip file the data of which we want
+ * @param unzipped_size Pointer to the size of the extracted data
+ * @return NULL in case of problem or a pointer to the archived file content. It is allocated
+ * dynamically and needs to be explicitely freed
+ */
+extern char *
+extract_file_in_memory (char *zipfilename, char *archivedfile,
+			size_t * unzipped_size)
 {
   unzFile uf;
   int err;
+  char *return_value;
 
   if (zipfilename == NULL)
-    return 0;
+    return NULL;
 
   uf = unzOpen (zipfilename);
 
@@ -250,11 +262,12 @@ extractFile (char *zipfilename, char *archivedfile)
     }
 
   if (uf == NULL)
-    return 0;
+    return NULL;
 
-  err = do_extract_onefile (uf, archivedfile, 1, 1);
+  return_value =
+    do_extract_onefile_in_memory (uf, archivedfile, unzipped_size);
 
   unzCloseCurrentFile (uf);
 
-  return err;
+  return return_value;
 }

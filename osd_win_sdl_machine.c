@@ -133,6 +133,8 @@ osd_shut_machine (void)
   TrashSound ();
 
   SDL_Quit();
+
+  wipe_directory(tmp_basepath);
   
   return;
 }

@@ -41,6 +41,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
+#include <errno.h>
 
 /******************************************************************************
  * Log stuff
@@ -551,4 +553,44 @@ get_directory_from_filename(char* filename)
 		strrchr(filename, '/')[1] = 0;
 	}
 		
+}
+
+/*!
+ * wipe_directory : suppress a directory, eventually containing files (but not other directories)
+ * @param directory_name Name of the directory to suppress
+ */
+void
+wipe_directory(char* directory_name)
+{
+  DIR* directory;
+  struct dirent* directory_entry;
+
+  directory = opendir(directory_name);
+
+  if (NULL == directory)
+    {
+      Log("wipe_directory failed : %s\n", strerror(errno));
+      return;
+    }
+
+  while (directory_entry = readdir(directory))
+    {
+      unlink(directory_entry->d_name);
+    }
+
+  closedir(directory);
+
+}
+
+/*!
+ * file_exists : Check whether a file exists. If doesn't involve much checking (like read/write access,
+ * whether it is a symbolic link or a directory, ...)
+ * @param name_to_check Name of the file to check for existence
+ * @return 0 if the file doesn't exist, else non null value
+ */
+int
+file_exists(char* name_to_check)
+{
+  struct stat stat_buffer;
+  return !stat(name_to_check, &stat_buffer);
 }

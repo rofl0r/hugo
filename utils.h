@@ -60,4 +60,8 @@ int stricmp (char *s1, char *s2);
 
 void get_directory_from_filename(char*);
 
+void wipe_directory(char*);
+
+int file_exists(char*);
+
 #endif

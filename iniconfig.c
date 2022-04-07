@@ -385,7 +385,7 @@ set_arg (char nb_arg, const char *val)
 #if !defined(WIN32) && !defined(SOLARIS)
 
 //! program header for GNU argp function
-const char *argp_program_version = "Hu-Go! 2.11";
+const char *argp_program_version = "Hu-Go! 2.12";
 
 //! bug report address for GNU argp function
 const char *argp_program_bug_address = "<zeograd@zeograd.com>";

@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=Hu-Go!
-AppVerName=Hu-Go! 2.11
+AppVerName=Hu-Go! 2.12
 AppPublisher=Zeograd
 AppPublisherURL=http://www.zeograd.com
 AppSupportURL=http://bugzilla.pcedev.com

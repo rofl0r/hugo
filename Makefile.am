@@ -1,6 +1,12 @@
-bin_PROGRAMS = hugo hugod
+bin_PROGRAMS = hugo
+
+if NETPLAY
+
+bin_PROGRAMS += hugod
 
 hugod_SOURCES = hugod.c netplay.c
+
+endif
 
 hugo_SOURCES = pce.c hard_pce.c sprite.c h6280.c view_zp.c edit_ram.c debug.c format.c \
   subs_eagle.c cd.c hcd.c lsmp3.c sound.c mix.c followop.c dis.c optable.c \
@@ -18,12 +24,15 @@ endif
 if GTK
 
 hugo_SOURCES += support.c interface.c callbacks.c gtk_main.c
-hugod_SOURCES += support.c interface-server.c callbacks-server.c gtk_main-server.c
-
 hugo_LDADD = @GTK_LIBS@
+
+if NETPLAY
+hugod_SOURCES += support.c interface-server.c callbacks-server.c gtk_main-server.c
 hugod_LDADD = @GTK_LIBS@
 
-endif
+endif NETPLAY
+
+endif GTK
 
 if NETPLAY
 hugo_SOURCES += netplay.c
@@ -157,20 +166,24 @@ Output/setup.exe: setup.iss hugo.exe hugod.exe doc
 	$(UNIX2DOS) $<
 	$(WINE) $(INNOSETUP_LOCATION) $<
 
-doc: html txt
+doc: $(AVAILABLE_DOC_TARGETS)
+
+if HAVE_TOOLS_FOR_HTML_DOC
 html: $(HTML_DOC)
-txt: $(TXT_DOC)
-
-%.txt: %.lyx
-	test -d $(@D) || mkdir $(@D)
-	LANG=C $(LYX) -e text `test -f '$<' || echo '$(srcdir)/'`$<
-
 %.html: %.tex
 	test -d /tmp/latex2html.tmp || mkdir /tmp/latex2html.tmp
 	$(LATEX2HTML) $(LATEX2HTML_FLAGS) -dir /tmp/latex2html.tmp `test -f '$<' || echo '$(srcdir)/'`$<
 	test -d $(@D) || mkdir $(@D)
 	$(SED) s/$(patsubst %.tex,%.css,$(<F))/hugo_manual.css/ $(patsubst %.tex,%.html,/tmp/latex2html.tmp/$(<F)) > $@
 	-$(TIDY) -im $@
+endif
+
+if HAVE_TOOLS_FOR_TXT_DOC
+txt: $(TXT_DOC)
+%.txt: %.lyx
+	test -d $(@D) || mkdir $(@D)
+	LANG=C $(LYX) -e text `test -f '$<' || echo '$(srcdir)/'`$<
+endif
 
 %.tex: %.lyx
 	test -d $(@D) || mkdir $(@D)

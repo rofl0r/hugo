@@ -437,12 +437,44 @@ void osd_gfx_shut_normal_mode(void)
 *****************************************************************************/
 UInt16 osd_gfx_savepict()
   {
-          short unsigned tmp=0;
+    short unsigned tmp=0;
+    char filename[PATH_MAX];
+    char filename_base[PATH_MAX];
+    char* frame_buffer;
+    FILE* output_file;
+    time_t current_time;
+    
+    time(&current_time);
 
-#warning implement save picture feature		  
-		  
-          return tmp;
-   }
+    if (!strftime(filename_base, PATH_MAX, "%%s/screenshot_%F_%R-%%d.ppm", localtime(&current_time)))
+      return 0xFFFF;
+
+    do {
+      snprintf(filename, PATH_MAX, filename_base, video_path, tmp);
+    } while (file_exists(filename) && ++tmp < 0xFFFF);
+    
+    frame_buffer = malloc(3 * (io.screen_w & 0xFFFE) * (io.screen_h & 0xFFFE));
+    
+    if (frame_buffer == NULL)
+      return 0xFFFF;
+
+    dump_rgb_frame(frame_buffer);
+
+    output_file = fopen(filename, "wb");
+    if (output_file != NULL)
+      {
+	char buf[100];
+	
+	snprintf(buf, sizeof(buf),
+		 "P6\n%d %d\n%d\n",
+		 io.screen_w & 0xFFFE, io.screen_h & 0xFFFE, 255);
+	fwrite(buf, strlen(buf), 1, output_file);
+	fwrite(frame_buffer, 3 * (io.screen_w & 0xFFFE) * (io.screen_h & 0xFFFE), 1, output_file);
+	fclose(output_file);
+      }
+
+    return tmp;
+  }
 
 
 /*****************************************************************************

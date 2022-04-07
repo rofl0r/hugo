@@ -20,7 +20,7 @@
 /*      1998 by BERO bero@geocities.co.jp                                 */
 /*                                                                        */
 /*    Modified 1998 by hmmx hmmx@geocities.co.jp                          */
-/*    Modified 1999-2003 by Zeograd (Olivier Jolly) zeograd@zeograd.com   */
+/*    Modified 1999-2005 by Zeograd (Olivier Jolly) zeograd@zeograd.com   */
 /**************************************************************************/
 
 /* Header section */
@@ -497,108 +497,19 @@ init_log_file ()
   getdate (&Date);
   gettime (&Time);
   Log
-    ("Creating Dos Hu-Go! log file on %02d:%02d:%02d.%02d, the %d/%d/%d\nVersion 2.11 of %s\n",
+    ("Creating Dos Hu-Go! log file on %02d:%02d:%02d.%02d, the %d/%d/%d\nVersion 2.12 of %s\n",
      Time.ti_hour, Time.ti_min, Time.ti_sec, Time.ti_hund, Date.da_day,
      Date.da_mon, Date.da_year, __DATE__);
 
 #elif defined(LINUX)
-  Log ("Creating Linux log file version 2.11 of %s ($Revision: 1.63 $)\n", __DATE__);
+  Log ("Creating Linux log file version 2.12 of %s ($Revision: 1.66 $)\n", __DATE__);
 #elif defined(WIN32)
-  Log ("Creating Win32 log file version 2.11 of %s ($Revision: 1.63 $)\n", __DATE__);
+  Log ("Creating Win32 log file version 2.12 of %s ($Revision: 1.66 $)\n", __DATE__);
 #endif
 
 }
 
 extern int op6502_nb;
-
-#if 0
-UChar
-_Rd6502 (UInt16 A)
-{
-#if defined(CD_DEBUG)
-  if ((mmr[A >> 13] >= 0x40)  && (mmr[A >> 13] <= 0x43))
-    {
-      // fprintf(stderr, "reading AC pseudo bank (%d)\n", mmr[A >> 13] - 0x40);
-      return IO_read(0x1A00 + ((mmr[A >> 13] - 0x40) << 4));
-    }
-#endif
-
-  if (Page[A >> 13] != IOAREA)
-    return Page[A >> 13][A];
-  else
-    return IO_read (A);
-}
-
-void
-_Wr6502 (UInt16 A, UChar V)
-{
-//fprintf(stderr, "writing 0x%02x to 0x%04x\n", V, A);
-
-#if defined(CD_DEBUG)
-  if ((mmr[A >> 13] >= 0x40)  && (mmr[A >> 13] <= 0x43))
-    {
-      // fprintf(stderr, "writing 0x%02x to AC pseudo bank (%d)\n", V, mmr[A >> 13] - 0x40);
-      return IO_write(0x1A00 + ((mmr[A >> 13] - 0x40) << 4), V);
-    }
-#endif
-
-#ifndef SF2
-  /*
-     if (A>0xE000)
-     {
-     Log("Write in rom bios at PC = 0X%04X\n",M.PC.W);
-     return;
-     }
-  */
-  if (Page[A >> 13] != IOAREA)
-    Page[A >> 13][A] = V;
-  else
-    IO_write (A, V);
-
-/*
-        if (Page[A>>13]!=IOAREA)
-         {
-          if (A>>13<0x68)
-             if ((A & 0x1ffc) == 0x1ff0) {
-                int i;
-
-                ROMMap[0x40] = ROMMap[0] + 0x80000;
-                ROMMap[0x40] += (A & 3) * 0x80000;
-
-                for (i = 0x41; i <= 0x7f; i++) {
-                    ROMMap[i] = ROMMap[i-1] + 0x2000;
-                }
-       }
-          else
-            Page[A>>13][A]=V;
-         }
-        else IO_write(A,V);
-*/
-
-#else
-
-  if (Page[A >> 13] == IOAREA)
-    IO_write (A, V);
-  else
-    // support for SF2CE silliness
-  if ((A & 0x1ffc) == 0x1ff0)
-    {
-      int i;
-
-      ROMMap[0x40] = ROMMap[0] + 0x80000;
-      ROMMap[0x40] += (A & 3) * 0x80000;
-
-      for (i = 0x41; i <= 0x7f; i++)
-	{
-	  ROMMap[i] = ROMMap[i - 1] + 0x2000;
-	}
-    }
-  else
-    Page[A >> 13][A] = V;
-
-#endif
-}
-#endif
 
 void
 fill_cd_info ()
@@ -620,17 +531,9 @@ fill_cd_info ()
 
   CD_track[1].length = 47 * CD_FRAMES + 65;	// Most common
 
-  // CD_track[0x01].length=53 * CD_FRAMES + 65;
-
-  // CD_track[0x01].length=0 * CD_FRAMES + 16;
-
   nb_sect2msf (CD_track[1].length, &Min, &Sec, &Fra);
 
-// Fra = CD_track[0x01].length % CD_FRAMES;
-// Sec = (CD_track[0x01].length) % (CD_FRAMES * CD_SECS) / CD_SECS;
-// Min = (CD_track[0x01].length) (CD_FRAMES * CD_SECS);
-
-// Second track is the main code track
+  // Second track is the main code track
 
   CD_track[2].beg_min = binbcd[bcdbin[CD_track[1].beg_min] + Min];
   CD_track[2].beg_sec = binbcd[bcdbin[CD_track[1].beg_sec] + Sec];
@@ -2267,11 +2170,58 @@ CartLoad (char *name)
       Log("Return value = (%p) %s\n", filename_in_archive, filename_in_archive);
       if (strcmp(filename_in_archive,""))
         {
-          chdir(tmp_basepath);
+	  char* unzipped_rom;
+	  size_t unzipped_rom_size;
+	  
           Log("Found %s in %s\n", filename_in_archive, name);
-          extractFile(name, filename_in_archive);
-          sprintf(true_file_name, "%s/%s", tmp_basepath, filename_in_archive);
-          fp = fopen(true_file_name, "rb");
+          unzipped_rom = extract_file_in_memory(name, filename_in_archive, &unzipped_rom_size);
+
+	  ROM_size = unzipped_rom_size / 0x2000;
+
+#if defined(SHARED_MEMORY)
+	  shm_rom_handle =
+	    shmget ((key_t) SHM_ROM_HANDLE, unzipped_rom_size,
+		    IPC_CREAT | IPC_EXCL | 0666);
+	  
+	  if (shm_rom_handle == -1) 
+	    {
+	      fprintf (stderr, "Couldn't get shared memory (%d bytes)\n", fsize);
+	      return 1;
+	    }
+	  else
+	    {
+	      ROM = (char *) shmat (shm_rom_handle, NULL, 0);
+	      if (ROM == NULL)
+		{
+		  fprintf (stderr, "Couldn't attach shared memory\n");
+		  return 1;
+		}
+	      else 
+		{
+		  /* Copy into the shared memory, by skipping an eventual header
+		   */
+		  memcpy(ROM,
+			 unzipped_rom + (unzipped_rom_size & 0x1FF),
+			 unzipped_rom_size & ~0x1FF);
+		  free(unzipped_rom);
+		}
+	    }
+#else
+	  if ((unzipped_rom_size & 0x1FFF) == 0)
+	    {
+	      /* No header */
+	      ROM = unzipped_rom;
+	    }
+	  else
+	    {
+	      ROM = malloc(unzipped_rom_size & ~0x1FFF);
+	      memcpy(ROM,
+		     unzipped_rom + (unzipped_rom_size & 0x1FFF),
+		     unzipped_rom_size & ~0x1FFF);
+	      free(unzipped_rom);
+	    }
+#endif
+	return 0;
         }
 #endif
 
@@ -3023,14 +2973,14 @@ InitPCE (char *name, char *backmemname)
 								break;
 							case 0x20:
 							case 0x60:
-								ROMMapR[i] = ROM + (i & ROMmask) * 0x2000;
+							  ROMMapR[i] = ROM + ((i - 0x20) & ROMmask) * 0x2000;
 								break;
 							case 0x30:
 							case 0x70:
-								ROMMapR[i] = ROM + (i & ROMmask) * 0x2000;
+							  ROMMapR[i] = ROM + ((i - 0x10) & ROMmask) * 0x2000;
 								break;
 							case 0x40:
-								ROMMapR[i] = ROM + (i & ROMmask) * 0x2000;
+							  ROMMapR[i] = ROM + ((i - 0x20) & ROMmask) * 0x2000;
 								break;
 						}
 				}

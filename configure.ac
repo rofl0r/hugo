@@ -1,6 +1,6 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(hugo, 2.11, zeograd@zeograd.com)
-AM_INIT_AUTOMAKE(hugo, 2.11)
+AC_INIT(hugo, 2.12, zeograd@zeograd.com)
+AM_INIT_AUTOMAKE(hugo, 2.12)
 AC_CONFIG_SRCDIR([pce.c])
 # AC_CONFIG_HEADER([config.h])
 AM_CONFIG_HEADER(config.h)
@@ -15,10 +15,35 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
+AC_CHECK_PROG([HAVE_LYX], [lyx], [found])
+AC_CHECK_PROG([HAVE_LATEX2HTML], [latex2html], [found])
+AC_CHECK_PROG([HAVE_SED], [sed], [found])
+AC_CHECK_PROG([HAVE_TIDY], [tidy], [found])
+
+if test -n "$HAVE_LYX"; then
+   AM_CONDITIONAL(HAVE_TOOLS_FOR_TXT_DOC,true)
+   AVAILABLE_DOC_TARGETS="txt"
+   echo "$as_me:$LINENO: TEXTUAL form of the documentation can be made" >&5
+   echo $ECHO_N "TEXTUAL form of the documentation can be made" >&6
+else
+   AM_CONDITIONAL(HAVE_TOOLS_FOR_TXT_DOC,false)
+   echo "$as_me:$LINENO: TEXTUAL form of the documentation can NOT be made" >&5
+   echo $ECHO_N "TEXTUAL form of the documentation can NOT be made" >&6
+fi
+
+if test -n "$HAVE_LYX" -a -n "$HAVE_LATEX2HTML" -a -n "$HAVE_SED" -a -n "$HAVE_TIDY"; then
+   AM_CONDITIONAL(HAVE_TOOLS_FOR_HTML_DOC,true)
+   AVAILABLE_DOC_TARGETS="$AVAILABLE_DOC_TARGETS html"
+else
+   AM_CONDITIONAL(HAVE_TOOLS_FOR_HTML_DOC,false)
+fi
+
+AC_SUBST(AVAILABLE_DOC_TARGETS)
+
 # Checks for libraries.
 
 AC_CHECK_LIB(SDL, main) #,,[AC_MSG_ERROR([need SDL. See #http://www.libsdl.org])])
-AC_CHECK_LIB(SDL_net, main) #,,[AC_MSG_ERROR([need SDL_net. See #http://www.libsdl.org])])
+AC_CHECK_LIB(SDL_net, main, [HAVE_LIBSDL_NET="yes" LIBS="-lSDL_net $LIBS" AC_DEFINE([HAVE_LIBSDL_NET],[1],[Define to 1 if you have the SDL_net library])], [HAVE_LIBSDL_NET="no"]) #,,[AC_MSG_ERROR([need SDL_net. See #http://www.libsdl.org])])
 AC_CHECK_LIB(SDL_mixer,main) #,,[AC_MSG_ERROR([need SDL_mixer. See #http://www.libsdl.org])])
 AC_CHECK_LIB(vorbis, main)
 AC_CHECK_LIB(vorbisfile, main)
@@ -101,6 +126,9 @@ AC_CHECK_SIZEOF([long int], 4)
 echo "$as_me:$LINENO: checking whether netplay support was asked" >&5
 echo $ECHO_N "checking whether netplay support was asked...            $ECHO_C" >&6
 
+if test "x$HAVE_LIBSDL_NET" == "xyes"
+then
+
 AM_CONDITIONAL(NETPLAY, true)
 
 NETPLAY=yes
@@ -119,10 +147,21 @@ then
   echo "$as_me:$LINENO: result: yes" >&5
   echo "${ECHO_T}yes" >&6
 
-else
+else # NETPLAY
+
+  AM_CONDITIONAL(NETPLAY, false)
 
   echo "$as_me:$LINENO: result: no" >&5
   echo "${ECHO_T}no" >&6
+
+fi
+
+else # HAVE_LIBSDL_NET
+
+AM_CONDITIONAL(NETPLAY, false)
+
+  echo "$as_me:$LINENO: result: no (no SDL_net found)" >&5
+  echo "${ECHO_T}no (no SDL_net found)" >&6
 
 fi
 
@@ -565,10 +604,6 @@ case $target_alias in
 			 	AM_CONDITIONAL(ZE_HCD_OGG_SUPPORT, true) # ZE_: needs to be processed after SDL_MIXER_LINUX...
 			 fi
 
-#			 if test "$USE_SDL_net" = "yes"; then
-#				LIBS="$LIBS -lSDL_net "
-#			 	AM_CONDITIONAL(SDL_NET_LINUX, true)
-#			 fi
 		 else
 
 			 HUGO_TARGET_LIBRARY="-DALLEGRO `allegro-config --cflags`"

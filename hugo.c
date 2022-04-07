@@ -141,14 +141,6 @@ play_game (void)
   else
     printf (MESSAGE[language][audio_inited], 8, "SDL compatible soundcard",
 	    host.sound.freq);
-  /*
-     if (InitPCE(cart_name, backup_mem) != 0)
-     {
-     osd_snd_trash_sound();
-     (*osd_gfx_driver_list[video_driver].shut) ();
-     return 0;
-     }
-   */
 
 #if defined(ENABLE_NETPLAY)
 	osd_init_netplay();

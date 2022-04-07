@@ -488,16 +488,21 @@ Loop6502()
               change_pce_screen_height();
             }
 
-          if (!UCount)
-            RefreshScreen();
-
           if (osd_keyboard ())
             return INT_QUIT;
+
+          if (!UCount)
+            RefreshScreen();
 
 #if defined(GTK)
           /*@ -unrecog */
           while (gtk_events_pending())
-            gtk_main_iteration();
+	    {
+	      if (gtk_main_iteration())
+		{
+		  return INT_QUIT;
+		}
+	    }
           /*@ =unrecog */
 #endif
           /*@-preproc */

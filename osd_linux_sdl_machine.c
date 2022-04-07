@@ -26,8 +26,10 @@ char synchro;
 int vwidth, vheight;
 // size of visible part of the screen (I got troubles with allegro screen->* values!)
 
+#ifndef SDL
 int *fd[4];
 // handle for joypad devices
+#endif
 
 SDL_TimerID timerId;
 // handle for the timer callback
@@ -63,23 +65,6 @@ int osd_init_machine(void)
   Log ("Initiating sound\n");
   printf (MESSAGE[language][init_sound]);
   InitSound();
-
-/*
- * Moved to play_game so changes made in the gui will take effect on the next game start
-
-  if (osd_snd_init_sound ())
-  {
-	  Log("Sound ok\n");
-	  printf(MESSAGE[language][audio_inited], 0, "SDL sound card", host.sound.freq);
-	  SDL_PauseAudio(0);
-  }
-  else
-  {
-	  Log("Sound not initialized\n");
-	  printf(MESSAGE[language][audio_init_failed]);
-  }
-
-  */
 
 #ifndef SDL
   /* Opening joypad number 0 */
@@ -132,6 +117,9 @@ osd_shut_machine (void)
   TrashSound();
 
   SDL_Quit();
+
+  wipe_directory(tmp_basepath);
+
 }
 
 /*****************************************************************************
