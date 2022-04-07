@@ -567,7 +567,7 @@ case $target_alias in
 
 		 AM_CONDITIONAL(ALLEGRO_DJGPP, true)
 	 ;;
-	 *i?86-?inux*)
+	 *-?inux*)
 	   echo "Linux build enabled"
 
 		 HUGO_TARGET_MACHINE="LINUX"
