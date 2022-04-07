@@ -1,0 +1,1010 @@
+            .  ___   ____                _________           ___
+             .|  `|_|   `| ___ ___  __ .|    ____/ _______ .|  `|
+           .:|     _     ||  `|  `|(__)|    (_  `|/   _  `\|____/:.
+      ...:::||____|:|____||_______/::::\_________/\_______/(____)::::...
+            `-*-- -  -   -    -      -            -              ^cls
+
+                                Emulateur
+                 Core-GraphX / PC Engine / Turbo GraphX
+
+                            Version 1.99
+                      Version du 5 Decembre '00
+
+  (   (*) : changement principal dans ce texte )
+
+--[ CONTACT ]----------------------------------------------------------------
+
+   e - mail :  zeograd@caramail.com (préféré)
+               hugo@consolemul.com
+               hugo@fr.fm
+               zeograd@icqmail.com
+
+   UIN      :  40632933
+
+   Homepage :
+               www.hugo.fr.fm
+               hugo.consolemul.com/index_fr.htm
+               www.emuunlim.com/hugo/index_fr.htm
+
+    (On est d'accord qua ca vaut pas un bon .com
+    mais au moins je charge pas ma page de pub pour payer le domaine)
+
+--[ INTRODUCTION ]-----------------------------------------------------------
+
+   Bien sur, pas de garanties avec ce logiciel. Vous l'utilisez à vos
+   risques et périls. Je ne suis responsable de rien. (Je vous rassure,
+   le but d'un émulateur n'est pas de reformater le disque dur ;)
+
+   Salut à tous, Bienvenue dans l'univers étrange de la doc de Hu-Go!.
+   Je ne suis pas vraiment l'auteur de cet émulateur, j'ai découvert
+   les sources d'un émulateur pour PC Engine sur le site de Bero
+
+     (http://www.geocities.co.jp/Playtown/2004/)
+
+   plus des améliorations sur le site de Hmmx
+
+     (auparavant, http://www.geocities.co.jp/SiliconValley/7052/)
+
+   qui a fait un portage sous DirectX sous le nom de XPCE. J'étais interessé
+   par cette fabuleuse console et voulait continuer à la faire vivre donc il
+   m'a semblé intéressant de faire cet émulateur.
+
+   Cet émulateur est gratuit et les sources étaient accessibles à tous,
+   (tout comme Bero l'a fait). Si vous êtes intéressé par la
+   création d'un bon émulateur gratuit, contactez moi pour en discuter.
+   Par ailleurs, n'hésitez pas à répondre au sondage que vous pouvez
+   trouver sur mon site de même que le forum toujours au même endroit.
+   De même, si vous utilisez les sources, je serais heureux que vous
+   me mettiez au courant.
+
+--[ COMMENT L'INSTALLER ? ]--------------------------------------------------
+
+   Vous avez vraisemblablement un fichier zippé contenant Hu-Go!. Il vous
+   suffit de dézipper ce fichier dans un répertoire d'un disque où
+   l'on peut écrire (càd disque dur ou même disquette, mais ne l'exécutez
+   pas depuis un CDROM).
+
+   Sous Win9X, vous pouvez aussi associer l'extension PCE aux roms PC Engine,
+   en utilisant Hu-go! pour les ouvrir et en choisissant comme icône celle
+   qu'a fait Raoh, appelée PCE.ICO. C'est plus sympa, non?
+
+   Sous Linux, executez le script 'install.sh' qui devrait d'occuper de tout
+
+--[ COMMENT K'IL MARCHE ? ]--------------------------------------------------
+
+   On peut difficilement faire plus simple (sauf peut-être avec une liaison
+   synaptique directe entre votre cerveau et votre ordinateur pour deviner
+   le nom du jeu...) :
+   Lancer HU-GO! [ROM] [BACKUPMEM] [OPTION] où ROM est le nom de la rom ou de
+   l'ISO ou l'ISQ ou l'HCD en question. l'HCD est un format spécial, voir
+   dans la section dédiée.
+   Si ROM n'a pas d'extension, cherche ROM.PCE puis
+   ROM.ZIP, si ROM a l'extension PCE, cherche d'abord simplement ce fichier
+   puis dans l'archive ROM.ZIP. Bien sûr, si ROM a l'extension ZIP, cherche
+   dans cette archive pour un fichier de type PCE ayant le même nom de base
+   que ROM.
+   Les ISOs doivent avoir l'extension ISO pour être reconnus. Normalement,
+   la rom de démarrage CD n'est plus nécessaire.
+
+   (Essayez SUPER STAR SOLDIER et NEUTOPIA 2 si vous pouvez,ils sont géniaux;
+   sinon, j'ai inclus une petite démo issue du compilateur C venant
+   d'utopia [utopia.consolemul.com] )
+
+   Si vous ne spécifiez pas de nom de rom, vous aurez accès à un 'super'
+   sélecteur de fichier, en tapant les premières lettres d'une roms, vous
+   y accéderez rapidement, Si vous apuyez sur Shift en même temps, vous
+   changerez de lecteur. Avec F1, vous demandez le racfraichissement
+   du répertoire et avec F2, rafraichissement avec scan forcé des archives.
+
+   BACKUPMEM est le nom du fichier contenant la RAM de sauvegarde.
+   Pour OPTION, vois plus bas...
+   Bien entendu, OPTION et BACKUPMEM sont facultatifs.
+   On ajoutera une interface graphique, un peu de patience...
+
+--[ CONFIGURATION REQUISE ]--------------------------------------------------
+
+   'minimum' correct:
+   Pentium 166 (sans le son, peut être moins; avec le son, un bon P200 ou 233,
+                pour EAGLE, un 266 ou 300 sera nécessaire pour tourner au max)
+
+   8Mo de RAM
+
+   Un DOS (dites moi si ça marche avec un autre que le M$-DOS) ou Linux
+
+   un cerveau (en état de marche)
+
+   des doigts (environ 10, mais ça devrai aussi marcher avec moins)
+
+   (En option, vous pouvez essayer avec une liaison synaptique directe,
+   on y travaille, si vous voulez devenir cobaye, faites moi signe ;)
+
+
+   TOUCHES durant l'émulation:
+
+   Touches fléchées     Direction
+   Alt                  Bouton 1
+   Espace               Bouton 2
+   Tab                  Touche Select
+   Entrée               Touche Start
+   X                    Autofire 1 on/off
+   C                    Autofire 2 on/off
+
+   (Ce sont les valeurs par défault pour tous les joueurs)
+   vous pouvez les redéfinir avec le fichier HU-GO!.INI (voir plus bas)
+
+   [Lorsque vous lancerez un flipper, les touches seront redéfinies:
+
+   Shift gauche         Direction gauche
+   Touche W             Direction droite
+   Touche :             Bouton 1
+   Shift droit          Bouton 2
+
+   Ca devrait suffir pour flipper et bourrer. Si jamais vous avez une rom de
+   flipper non reconnue (i.e. different de Devil Cr*sh et Time Cruise),
+   faites moi-Z-en part... ]
+
+     Touches spéciales:
+
+   Ne peuvent être changées (mais vous pouvez toujours assigner ces touches
+   à des actions ou autres, vous aurez principalement l'effet spécial,
+   éventuellement l'action normale)
+
+   touche ² (juste sous ESC)   Affiche le nombre de frames affichées depuis
+                    le début du morceau (sert à la création de sous titres)
+   1 sur le bloc alpha  Fait basculer l'affichage des sprites
+   2 sur le bloc alpha  Fait basculer l'affichage du fond
+
+--[ Touches alpha ]--
+   3,4,5,6,7 ou 8 sur le bloc alpha
+                        Peut débloquer certains isos
+--[ Touches alpha ]--
+
+   ) sur le bloc alpha   Baisse le volume sonore
+   = sur le bloc alpha   Augmente le volume sonore
+   9 sur le bloc alpha   Baisse la qualité du son
+   0 sur le bloc alpha   Augmente la qualité du son
+
+   CONTROL-ALT-FIN Séquence 'KI-TU', à essayer en dernier recours lors d'un crash
+   ESC          Appelle le sélecteur de fichier pour choisir un autre jeu
+   F1           Entrer une valeur à chercher (voir TRICHER plus bas)
+   F2           Entrer une valeur dans la RAM (voir TRICHER plus bas)
+   F3           Fixer une valeur dans la RAM (voir TRICHER plus bas)
+   F4           Touche de test lancant un brouillon de gui tel qu'il
+                sera plus tard.
+   F5           Copier l'écran (dans PICT????.PCX)
+   F10          Basculer entre pleine vitesse et synchronisation
+   F12          Quitter (Option inutile, mais bon...)
+
+   F6           Sauver la progression (dans ROM.SAV où ROM est le nom de la rom,
+                       marche également pour les isos dans ISO.SVI,
+                       une seule sauvegarde pour les CDs, quel qu'il soit)
+   F7           Charge la progression
+
+   PAUSE        Pause (CA, c'est conceptuel ;)
+   'Verr Num' sur le pavé num.
+                Sauve la musique (dans SND???.WAV)
+   / sur le pavé num.
+                Sauve les images (dans VIDEO/*.PCX)
+   PLUS sur le pavé num.
+                Saute une image supplémentaire
+   MOINS sur le pavé num.
+                Saute une image de moins
+   ETOILE sur le pavé num.
+                Mode désassemblage (i.e. Si vous ne comprenez pas, c'est que vous
+                n'en avez pas besoin, réservé aux développeurs et bidouilleurs.
+                voir 'le coin de la bidouille'..)
+
+   OPTIONS:
+
+   Il y a deux types d'options. Celles sur la ligne de commande et celles
+   que l'on trouve dans un fichier d'initialisation appelé Hu-Go!.INI
+   L'émulateur lit d'abord le fichier INI puis les options de la ligne
+   de commande. Vous pouvez donc invalider les options générales...
+
+
+
+    ** Options de la ligne de commande
+   peuvent être de la forme -FV ou -F V où F est le nom de l'option et
+   V la valeur à prendre
+
+   -- v : Mode vidéo de préilection
+       0 -> essaye le 256*224 puis 256*240 puis le 256*256 puis 320*240 et enfin le 320*200
+       1 -> essaye le 256*240 puis le 256*256 puis 320*240 et enfin le 320*200
+       2 -> essaye le 256*256 puis 320*240 et enfin le 320*200 (défault)
+       3 -> essaye le 320*240 puis le 320*200
+       4 -> n'essaye que le 320*200
+       5 -> n'essaye que le 800*600
+
+   -- s : Type de son.
+       0 -> pas de son
+      -1 -> autodétection (défaut)
+
+   -- d : Poser un breakpoint au démarrage
+       0 -> ne pas poser de breakpoint (défaut)
+       1 -> poser un breakpoint
+
+   -- c : Emulation CD rom (Plus obligatoire pour l'émul ISO mais marche encore,
+                            Encore nécessaire pour émuler les CDs)
+       0 -> émule juste les Hu-Cards (défaut)
+       1 -> émule les CDs
+       2 -> émule un fichier ISO
+       3 -> émule un fichier ISQ
+       4 -> émule un fichier BIN (un seule piste pour l'instant et si
+                                  la piste de code est <280 MB)
+       5 -> émule un fichier HCD
+
+   -- i : Nom du fichier ISO (ou ISQ, ou BIN) ou lecteur CD
+      (Plus obligatoire pour l'émul ISO mais marche encore)
+      Obligatoire si -c2 a été spécifié, si oublié, l'émulation ISO est
+      désactivée. N'a pas d'importance si spécifié et -c mis à 0 ou 1.
+      Par exemple si vous voulez jouer à l'iso de DraculaX, vous devez
+      taper 'hu-go! -c2 -idracx.iso' où -c2 indique que vous voulez jouer
+      à un iso et -idracx.iso indique où est situé le fichier en question
+      (s'il est appelé dracx.iso). L'iso dont vous avez besoin est le
+      dump en mode 'cooked' de la seconde piste du CD. Si le fichier que
+      vous avez ne fonctionne pas mais que winamp est capable de le lire,
+      c'est que vous avez récupéré la mauvaise piste. Seule la seconde sert.
+
+      En mode -c1 (émulation d'un vrai CD), permet de choisir la lettre
+      du lecteur. '-if' pour utiliser le lecteur F: par exemple. Si vous
+      utilisez le pilote MSCDEX uniquement.
+
+      Avec le pilote ASPI, les choses sont un peu différentes. L'argument
+      passé à l'option '-i' est le numéro de votre lecteur cdrom à utiliser.
+      Par défaut, le premier lecteur est utilisé. Mais si vous vouliez
+      utiliser le second de vos lecteurs, spécifiez simplement '-i2'
+      sur la ligne de commande.
+
+      Ce systŠme de num‚rotation est le mˆme sous la version windows.
+
+   -- e : Mode EAGLE
+       0 -> mode normal, pas d'interpolation (Défaut)
+       1 -> mode EAGLE, lisse les contours
+
+   -- u : Rom codée en US
+       0 -> ordre normal des bits (Défaut)
+       1 -> ordre inversé
+      Normalement, Hu-Go! devrait détecter de tels jeux, si ce n'est pas le cas
+      (càd qu'il ne marche pas normalement mais marche avec -u1) dites le moi que
+      je le rajoute dans la base de donnée.
+
+   -- S : mode scanline
+       0 -> mode normal (Défaut)
+       1 -> mode scanline (affiche 1 ligne sur deux)
+
+   -- m : mode sans bios
+       0 -> utilise le bios autant que faire se peut (défaut, plus rapide mais
+                                                      moins compatible)
+       1 -> N'utilise pas le bios (plus lent mais plus compatible)
+
+     ** Options du fichier de configuration
+   Ce fichier accepte les commentaires, ce sont les lignes commençant par
+   #, la forme des options est F=V où F est le nom de l'option et V la valeur.
+
+   -- Redéfinition des touches : C'est un peu long à expliquer mais en gros
+  chaque fonction est représentée par une chaîne de caractères ("UP","DOWN",
+  "LEFT","RIGHT","I","II","SELECT","START","AUTOI","AUTOII" suivi
+  immédiatement par le numéro du pad concerné. La valeur est le scancode
+  de la touche à assigner, voir SCANCODE.TXT.
+  Vous pouvez désormais créer jusqu'à 15 configurations en utilisant des
+  sections du style [config5]. Ces sections doivent se trouver à la fin du
+  fichier de configuration. Ils contiennent de définitions de touches
+  comme expliqué ci-dessus mais également des informations sur les entrées.
+  C'est à dire que mettre input2=key3 indique que le second joypad de la
+  PC Engine sera controlée par le troisième mapping au clavier (UP3, LEFT3,...)
+  Comme entrée valide, vous avez 'input1' jusqu'à 'input5' pour les 5 joypads
+  de la console (bien que 4 seulement soient émulés), ensuite 'key1' à 'key5'
+  pour 5 mapping différents au clavier, 'joy1' à 'joy4' pour 4 joypads,
+  'mouse1' et 'mouse2' pour 2 souris (pas encore émulé) et 'synaplink' pour
+  une liaison synaptique ;)
+
+   par exemple :
+   Mettre
+
+     config=1
+     [config1]
+
+       input1=key1
+
+       UP1=0x16
+       LEFT1=0x23
+       DOWN1=0x24
+       RIGHT1=0x25
+
+       input2=joy1
+
+   dans le fichier de configuration changera les touches de direction du
+   premier joueur en 'u','h','j' et 'k' tandis que le second joueur utilisera
+   le premier joypad. Remarquez qu'en spécifiant une entrée au joypad, seuls
+   les directions et les deux boutons sont gérés vous pouvez alors choisir
+   des touches pour select, start et les deux auto-fire.
+   Comme exemple, la config1 est une entrée standard avec juste un joueur
+   au premier joypad. Ainsi si vous voulez jouer au joypad, il vous suffit de
+   décommenter la ligne avec config=1. Ce n'est pas encore très clair mais un
+   menu intégré facilitera la tâche...
+
+
+   -- langage : langage de la plupart des messages à l'émulation
+        0 -> anglais (défaut, hé oui, désolé) (par moi)
+        1 -> français (par moi =)
+        2 -> espagnol (par ma copine, et Juan roman Soriano)
+        3 -> slovène (par ]pit[ )
+        4 -> portuguais (par CodeMaster)
+        5 -> allemand (par sALTY)
+        6 -> néerlandais (par Fixo)
+        7 -> Polonais (par Dox et Faust)
+        8 -> Italien (par Gareth Jax)
+
+   -- skin : Nom de fichier de la skin à utiliser pour l'interface. Le nom
+   doit être le nom court du fichier [8.3]. L'image doit être en 640x480
+   en 256 couleurs selon un format un peu spécial. Je crois qu'il est
+   vraiment temps que je mette une liste de skins à disposition de tous.
+            défaut = skin_h~1.bmp (le nom court pour skin_hugo.bmp)
+
+   -- rom_dir : répertoire de vos roms. Il s'agit du répertoire par défaut
+   dans lequel le sélecteur de fichier va se placer. Utiliser '/' ou '\'
+   au choix. (défaut dans le fichier INI = c:\jeu\pce [le mien!],
+              défaut si pas de valeur donnée = chemin courant )
+   si le répertoire n'existe pas, il utilise le répertoire courant.
+
+   -- smode : Type de son, comme au dessus...
+
+   -- vmode : Mode vidéo, comme au dessus...
+
+   -- static_refresh : utilisé pour savoir si le sélecteur de fichier doit
+   scanner le répertoire ou utiliser le résultat du scan précédent. Tester
+   les fichiers à chaque fois peut devenir trèèèèèès lent (surtout si
+   vous avez plein d'archives contenant des roms inconnues) mais utiliser
+   un scan précédent peut ne pas refléter l'état actuel des choses.
+          0 -> Scanne le répertoire à chaque fois
+          1 -> Utilise un scan précédent     (défaut)
+
+   -- eagle : mode EAGLE, comme au dessus...
+
+   -- scanline : mode SCANLINE, comme au dessus...
+
+   -- snd_freq : Qualité de la sortie PCM. Plus elle est élevée, meilleur
+   est le son mais plus lente est l'émulation. 11025 hz devrait convenir
+   pour les petites config et 22050 ou 44100 pour les plus rapides. Vous
+   pouvez aussi donner des valeurs intermédiaires.
+          22050 Hz est la valeur par défaut
+
+   -- buffer_size : Taille du tampon pour générer du son PCM. Je crois que
+   le mieux ici est de faire quelques tests pour trouver la meilleure valeur.
+   J'utilise un tampon de 1000 octets (défaut) sur mon K6-2 350 pour un son
+   parfait et 1500 sur un P200 pour un son 'correct'
+
+   -- gamepad_driver : Numéro du pilote de joystick à utiliser. Jetez un
+   oeil au dessus de la variable en question dans le fichier .INI pour voir
+   les pilotes disponibles. Si le numéro du driver n'est pas bon (ou négatif),
+   une autodétection est faite.
+
+   -- sound_driver : Pilote à utiliser pour le son
+      0 -> pas de son
+      1 -> pilote Allegro
+      2 -> pilote Seal
+
+   Pour information, le pilote Seal était le premier utilisé et Allegro le
+   nouveau driver.
+
+   -- cd_driver : Pilote à utiliser pour le cdrom
+      0 -> Pilote MSCDEX
+      1 -> Pilote ASPI
+
+   Le pilote ASPI sert a faire tourner les cds sous windows à tous les coups.
+   Choisissez le si vous avez des problèmes pour faire marcher les cds sous
+   windows, sinon il n'y a pas de raison de le choisir si le pilote MSCDEX
+   ne vous pose pas de problème.
+
+   -- zip_support : support des fichiers zip sous le sélecteur de fichier
+      1 -> scan automatique des archives lors du déplacement vers un répertoire
+      0 -> pas de scan automatique
+   Attention, cette option peut être à 0, Hu-Go! arrivera toujours à lancer
+   les fichier zip donnés en ligne de commande ou ceux dans le sélecteur
+   de fichier qui avaient déjà été scannés. Vous pouvez utiliser F2
+   toutefois pour forcer un rafraichissement avec lecture des archives zip.
+
+   -- limit_fps : bloque le nombre d'image pas seconde à 60
+      0 -> pas de limitation (défaut)
+      1 -> bloquage à 60 fps
+
+--[ LINUX ]------------------------------------------------------------------
+
+   Avec l'arrivée d'un portage Linux, des différences entre les différentes
+   versions apparaissent. La version théoriquement la plus aboutie est la
+   version DOS mais même si les autres versions ne bénéficient pas des 
+   améliorations liées au système, elles devraient comporter les améliorations
+   génériques. Dans la mesure où je m'occupe des deux
+   versions simultanément, les nouvelles versions DOS et Linux devraient être
+   disponibles en même temps.
+   Alors, quelles sont les différences entre la version DOS et Linux ?
+   Sous Linux :
+        o Un seul mode graphique (320x240 en ModeX)
+        o Le sélecteur de fichier et le gui ne fonctionnent pas encore (enfin
+          maintenant le sélecteur de fichier marche mais n'est pas encore utile)
+        o Plus de crash systématique en sortie, même si je ne quitte plus de
+          manière propre (toutefois Linux devrait s'en charger correctment)
+        o Il existe une configuration par default en /etc/hugo.ini ou bien
+          on peut definir une configuration individuelle en plaçant un fichier
+          de configuration en ~/.hugo/hugo.ini, de même les sauvegardes d'un
+          utilisateur sont situés dans ce répertoire.
+        o Plein d'autres petites choses (entre autres liées à la gestion de 
+          la casse, ...)
+
+--[ HCD ]--------------------------------------------------------------------
+
+  Alors, qu'est ce que ce nouveau format ?
+  HCD signifie : Hu-Go! Cd Definition. Un fichier de ce type permet d'utiliser
+  des ISO de CDs avec plusieurs pistes de code et de jouer des MP3 pour
+  remplacer les pistes audio.
+  Ce n'est qu'un début, par exemple, seuls les .ISO semblent bien remplacer
+  les pistes de code, les ISQ ont un problème mais devraient marcher à terme.
+  Les HCD sont divisés en sections :
+  [main]
+  pour les information principales :
+
+  first_track=XX
+  last_track=XX
+
+  qui indiquent respectivement le numéro de la première et dernière piste.
+
+   MP3_path=XXX
+   ISO_path=XXX
+
+  qui indiquent le chemin par défaut des fichiers ISO et MP3.
+  Si vous ne spécifiez pas de chemin, le default sera le chemin du .HCD
+
+   minimum_bios=X
+
+   où X vaut 0 ou 1 et enclenche ou non le mode sans bios (voir option
+   de la ligne de commande, j'ai laissé cette syntaxe au lieu de no_bios
+   par exemple pour une évidente compatibilité des .HCD) pour cet HCD
+   particulier.
+
+  puis pour chaque piste, on trouve une section de la forme :
+  [trackXX]
+  dans cette section, on retrouve :
+
+  filename=...
+
+  qui indique le fichier qui doit remplacer la piste, un .MP3 pour les audio
+  et un .ISO ou .ISQ pour le code.
+  ensuite :
+
+  type=CODE
+
+  qui doit etre là pour spécifier que la piste est du code (pour l'audio,
+  vous pouvez aussi spécifier 'type=AUDIO' mais c'est facultatif)
+  et enfin
+
+  begin=lsn,XXX
+
+  pour spécifier le début en LSN (nb de secteur de décalage par rapport à la
+  première), le LBA (nb de secteur de décalage par rappor au début du CD)
+  et MSF fonctionnent aussi (en théorie) (pour MSF :
+    begin=msf,mm:ss:ff
+    rajouter des zéros au besoin)
+  Ce n'est qu'un début, mais ca fait déjà marcher les jeux multi-pistes et
+  les MP3 pour l'audio (même si tout n'est pas encore implémenté pour les
+  MP3)
+
+   Il y a aussi un autre mode disponible. le mode CD.
+   ecrivez
+   type=CD
+   et vous aurez la possibilite de simuler une piste du hcd avec une vraie
+   piste provenant d'un vrai cd.
+   Dans ce mode, il y a deux champs supplementaires:
+   drive=0
+   qui permet de choisir le lecteur dans lequel se trouve le cd qui contient
+   la piste a utiliser. Le format dans lequel vous entrer le lecteur varie
+   selon le pilote cd utilise, 0, 1 etc... pour le pilote ASPI et D, E etc...
+   pour le driver mscdex.
+
+   Ensuite, vous pouvez evidemment choisir quel est la piste a utiliser avec
+   track=5
+   Si vous ne mettez pas ce champ, la valeur par defaut sera le number de la
+   piste que vous emulez avec le .hcd
+
+   Vous pouvez aussi patcher les iso :
+
+  patch_number=XX
+
+  où XX représente le nombre de patchs à appliquer puis
+
+  patchX=0X????????,0X??
+
+  où X varie entre 0 et patch_number - 1 et les nombres en hexa qui suivent
+  sont respectivement l'offset et la nouvelle valeur du patch dans le
+  fichier ISO en question.
+
+  Vous trouverez un exemple dans l'archive.
+
+   Sur le même modèle, vous pouvez désormais utiliser un système de
+   sous-titrage avec lequel vous pouvez afficher des sous titres durant
+   la lecture d'une piste audio (même si vous n'avez pas le MP3 
+   correspondant). Vous pouvez choisir le nombre de sous titres avec
+
+   subtitle_number=XX
+
+   où XX est le nombre de sous titres que vous voulez mettre pour cette
+   piste.
+
+   Vous pouvez choisir de synchroniser les sous titrages avec le son plutot
+   qu'avec le jeu.
+
+   synchro_mode=XX
+
+   si XX = 0 (défaut), comme pour la première version, il y a synchronisation
+   avec le jeu sinon avec la musique. Si vous synchronisez avec la musique,
+   remplacer les informations qui suivent en changeant les occurences à
+   nombre d'images pour le champ début en nombre de 60èmes de secondes
+   écoulées.
+
+   Ensuite, pour chaque sous titre, vous devez spécifier à quel moment il
+   commence, combien il dure et quel est le message à afficher.
+   La syntaxe est la suivante: 
+
+   subtitleXX=<début>,<durée>,<message>
+
+   où XX est le numéro du sous titre (XX est compris entre 0 et 
+   subtitle_number-1), <début> est le nombre d'image affichées depuis le 
+   début de la piste. Normalement, il y a environ 60 images par secondes
+   mais avec une petite config, on est bien en dessous. J'ai choisi
+   l'image comme unité parce qu'il permet de synchroniser les sous titres
+   avec le jeu ne lui même et non la musique par dessus (ce qui aurait été
+   le cas si j'avais choisi une unité de temps réelle comme une seconde).
+   Afin de connaitre facilement le nombre d'images affichées depuis le début
+   du morceau, j'ai rajouté un affichage avec la touche ². La valeur
+   affichée en appuyant sur cette touche est exactement celle à mettre dans
+   le champ <début> (en l'ajustant un poil au besoin...)
+   Le champ <durée> est en soixantième de seconde. La valeur 60 dans ce
+   champ affiche le message correspondant pour une seconde.
+   Et le dernier champs est le message à afficher et ne doit pas
+   contenir de virgule.
+   Une dernière chose : il faut que les sous titres soient ordonnés
+   selon leut ordre d'apparition.
+   N'hésitez pas à m'enboyer un mail ou regarder l'exemple pour plus de
+   détails.
+
+--[ SON ]--------------------------------------------------------------------
+
+   Comme vous avez pu lire, vous avez désormais le choix entre Seal et
+   Allegro comme pilote.
+
+   Allegro :
+    + Meilleure qualité
+    + Permet le support MP3
+    + S'arrete hors de l'émul (GUI, ...)
+    - Nécessite une machine puissante
+    - En cas de désynchronisation, bloque l'ému un instant
+
+   Seal :
+    + Nécessite une machine moins puissante
+    + Ne bloque pas l'ému si désynchronisé
+    - Moins bonne intégration (pas de MP3...)
+    - Moins bonne qualité
+
+   Pour ceux qui n'ont pas le son, hé ben désolé mais pour
+   l'instant si vous ne désactivez pas le son (avec -s0 sur la ligne de
+   commande), le prog fait une détection automatique et choisit la
+   première carte qui lui tombe sous la main (si vous en avez plusieurs).
+   S'il ne reconnaît pas votre carte, essayer de bien configurer les
+   variables d'environnement (dans AUTOEXEC.BAT c'est un truc du style
+   SET MA_CARTE = I5 T1651 H123 P350). Quant à la qualité, ce n'est que
+   du 8 bits mono de fréquence variable.
+   Mais vous pouvez essayer le dumping : entre deux appuis sur 'verr num',
+   le son sera sauvé sur le disque au format WAV et réécoutable par tout
+   bon lecteur multimédia...
+
+--[ COMMENT ACCELERER L'EMULATION ]------------------------------------------
+
+   Vu que les nouvelles options peuvent ralentir un peu l'émulation,
+   je rajoute ce petit chapitre pour rendre l'émulation très jouable
+   sur certaines configs.
+
+
+   -- Essayez de lancer Hu-Go! avec l'option -v4 pour activer le mode
+   320*200. Vous pouvez gagner jusqu'à 10% de vitesse MAIS (hé oui,
+   c'eût été trop facile [j'coz chê-ri] )  il vous manquera un bout de
+   l'écran (les 12 premières et 12 dernières lignes)
+
+   -- Si vous jouez sous ZIN9X, essayez de le quitter pour jouer sous DOS,
+   vous pourrez gagner jusqu'à 15%
+
+   -- Enlevez le son (ou votre carte sonore, au choix) avec -s0 en ligne de
+   commande ou en mettant sound=0 dans le fichier INI
+
+   -- Pensez au fait que vous avez une option pour sauter des images
+   durant l'émulation avc '+' et '-' (jusqu'à 16)
+
+   -- Si vous voyez votre disque dur qui n'arrète pas de cricriter (aussi
+   appelé syndrome du hamster qui pédale), c'est qu'il swappe à donf donc
+   que n'avez assez de mémoire. Essayez un redémarrage 'clean', c'est à dire
+   avec le minimum de driver et si ce n'est pas assez achetez plus de RAM
+   (ça m'étonnerai que vous en arriviez là, même mon 486DX33 avec 4Mo n'est
+   pas victime du hamster fou)
+
+   -- Achetez un ordi plus puissant ;) (Je suis contre le surarmement
+   informatique auquel certaines surcouches graphiques de plus en plus
+   gourmande au fil des ans nous poussent)
+
+   (Pour donner un ordre d'idée, sous DOS, en 320*200 sans son, J'atteins
+   une moyenne de 125 frames par seconde sur un K6-350 (et 55 sur un P200),
+   Avec mon K6-350, j'atteins la limite des 60 images/sec. avec le son et
+   sur le P200, je suis obligé de sauter une frame sur deux sous Zin95 pour
+   avoir l'équivalent du 60 frames/sec. avec le son sous n'importe quel mode.
+   [et a peu près 7 frames/sec. sur un 486DX33 avec 4Mo de RAM
+   {J'en vois qui rigole au fond (=-D } en 256*240 sans son] )
+
+--[ PROJETS ]----------------------------------------------------------------
+
+   Ici, vous pourrez principalement trouver toute sorte d'idées d'amélioration
+   pour Hu-Go!. Vous pouvez croiser les bras en attendant que tout soit
+   implémenté ou bien mettre la main à la pâte... A vous de voir. J'ai rajouté
+   un indicateur de difficulté (E : Evident, M : Moyen, H : Hachement balèze ;)
+   pour que les personnes voulant aider au developpement puissent s'attaquer
+   à qqch à leur niveau; quant aux utilisateurs, vous verrez sans doute arriver
+   en premier les points les plus faciles
+
+EMH
+X  -- Ajustage automatique du nombre d'images sautées
+X  -- Moyen pour sauver les résultats des recherches et pour les rappliquer
+     depuis un petit menu avec des descriptions
+X  -- Nouvelles transitions (J'chais pas pourquoi mais j'aime bien)
+X  -- Fonctionnalités aidant à la mise au point de nouveaux jeux sur PC Engine
+ X -- Précalcul des sprites (Je m'attends à une petite augmentation de vitesse
+     avec ce type d'astuce)
+ X -- Moyen de faire comprendre aux gens que j'ai desespérément besoin de
+     retours (i.e. dites moi si vous l'avez aimé, détesté, mangé, donné en
+     pature aux hamsters, remercié pour vous avoir fait découvrir le hamster
+     qui sommeillait dans les méandres des bus de votre PC, jeté par la
+     Windoz(c)(r)(tm), [rajoutez ici toute idée entrant dans votre crâne
+     lorsque le logo Hu-Go! s'affiche {sauf celles portant atteinte aux bon
+     moeurs de notre société } ] ) (Ca en fait un paquet de parenthèses, on
+     se croirait dans une source LISP ;[ )
+ X -- Une petite interface utilisateur pour changer les options au vol
+  X-- Eradication du bug qui empêche certaines pistes PCM d'être correctement jouées
+  X-- Portage sous Amiga, Acorn, Mac, ...
+  X-- Changement du noyau de l'émulateur (passage de celui de Marat Fayzullin
+     à celui de Dave Shadoff, ou un autre)
+
+
+--[ TRICHER ]----------------------------------------------------------------
+
+   Comment ça, tricher? Oui,oui, vous avez bien lu, vous allez pouvoir
+   tricher. Mais sachez que j'ai longtemps hésité avant d'intégrer une
+   telle option qui pourrait dénaturer certains jeux, mais après tout,
+   les joueurs se doivent d'être responsables. Si je ne m'abuse, Hu-Go!
+   est le premier émulateur à proposer une telle option. Elle en est
+   à ses balbutiements et je préfère m'atteler à autre chose en priorité.
+
+   Un petit exemple pour voir comment ça marche:
+
+   Si vous voulez trafiquer le nombre de vies dans un jeu, vous lancez
+   le jeu puis appuez sur F1, le jeu se bloque, pas d'affolement, il
+   attend juste que vous lui indiquiez la valeur à rechercher, en
+   l'occurence votre nombre de vies, après avoir entré la valeur en
+   question (dont il ne considère que l'octet le plus faible), il
+   inscrit le resultat de la recherche. Puis continuez à jouer et perdez
+   une vie (Toi au fond, oui, oui, toi, j'ai dit UNE vie, pas dix, ça sert
+   à rien d'être à l'écran GAME OVER...) et refaites une recherche
+   (F1 puis la nouvelle valeur...) et ainsi de suite jusqu'à que
+   mort s'ensuive, euh..., qu'il vous indique une valeur concordante.
+   Notez-la. C'est l'addresse dans la RAM d'une variable qui a pris les
+   valeurs indiquées aux moments où vous les avez entrées. Est ce la bonne
+   variable ? Pressez F2, l'émulation s'arrête à nouveau (C'est nul comme
+   programme, il bloque toute les 5 secondes ;), il attend cette fois ci
+   l'addresse dans la RAM puis la nouvelle valeur. Normalement c'est bon.
+   Cette manière de faire entre une valeur dans la RAM puis celle ci peut
+   être modifiée par le programme; En revanche, si vous effectuez la
+   même manip' avec F3 (offset puis valeur), cette fois ci la valeur
+   va être rafraichie 60 fois par seconde, donnant l'illusion d'une
+   valeur constante. Si vous rappuyez sur F3 puis une addresse 'freezée',
+   vous la rendez à nouveau variable...
+   Si à un moment vous êtes tombé sur un 'RECHERCHE ECHOUEE', c'est que ça
+   a foiré quelque part, jettez donc un oeil aux trucs ci dessous (subtile
+   transition, je m'épate... ;)
+   Desormais, vous pouvez faire des recherches relatives. c'est a dire qu'au
+   lieu de chercher des valeurs exactes, vous recherchez des variations dans
+   les variables. Par exemple, chaque fois que vous perdez une vie, vous faites
+   une recherche sur -1, c'est a dire que la variable en question a diminue
+   de un depuis la derniere recherche. Pas besoin de vous occuper de la valeur
+   de base (voir les TRUCS plus bas). Quand vous voulez faire une recherche
+   relative, utilisez F1 comme avant sauf qu'au lieu de taper un nombre tout
+   simple, prefixez le de '+' ou '-'. Pour la premiere recherche, ne vous
+   occupez pas de la valeur donnee, ca sert juste a initialiser le fichier
+   temporaire contenant toutes les variables correspondantes potentielles.
+   Une fois initialise, vous pouvez utilisez F1 puis '-1' ou '+3' etc...
+   D'un point de vue technique, on peut melanger recherches relatives et
+   absolues meme si l'utilite est assez limitee.
+
+   TRUCS:
+     -- Attention, parfois la valeur n'a pas été modifiée à l'écran,
+     Il y a toujours affiché X vies mais en réalité la variable est
+     bien fixée à Y (ou Z, ou i, ou ...). Pour le vérifier essayer
+     de perdre une vie ou acheter qqch si la variable était du fric...
+
+     -- Vous n'êtes pas obligés de faire des recherches sur des valeurs
+     différentes, vous pouvez faire une recherche alors que vous deux vies
+     puis à nouveau faire la même recherche 5 secondes plus tard...
+     D'ailleurs je vous recommende même de faire deux recherches très
+     rapprochées d'une variable qui n'a pas changée, c'est souvent très
+     rentable en terme d'élimination de mauvaises variables.
+
+     -- A cause du nouvel affichage, il se peut que vous soyez bloqué.
+     C à dire que deux variables au moins vont prendre les mêmes valeurs
+     et le prog n'affiche que 'PLUSIEURS ENDROTIS POSSIBLES' puisqu'il n'y a
+     jamais une seule valeur qui colle. A ce moment là, vous pouvez mettre
+     les mains dans le cambouis et aller jeter un oeil dans le fichier qui
+     s'appelle ROM.FP0 (où ROM est le nom de la rom) il contient en hexa
+     les offsets possibles. A vous de vous débrouiller, si vous ne savez
+     pas comment, mailez-moi.
+
+     -- Les sessions de recherche sont gardées même si vous quittez
+     l'émulateur.
+
+     -- Pour recommencer une nouvelle session, faites un 'RECHERCHE ECHOUEE'
+     (Chercher 25 puis 6 puis 79 dans un laps de temps réduit, si vous
+     n'obtenez pas un 'RECHERCHE ECHOUEE', vous serez le premier sur la liste
+     des cobayes pour les expériences de liaisons synaptiques directes ;)
+
+     -- Parfois, la variable en mémoire n'est pas affichée 'exactement',
+     Si vous voyez affiché 4 vies, il se peut que dans la RAM, la
+     valeur de la variable soit 3 ou 5, essayez de chercher une unité en
+     dessus ou une unité en dessous, ça peut parfois marcher. (Comme le
+     nombre de bille dans Devil Crush =)
+     Desormais le mieux est maintenant d'utiliser la recherche relative pour
+     eviter de se casser la tete.
+
+     -- La recherche n'opère que sur les octets mais la variable complète
+     peut tenir sur 2,3 octets ou plus, dans ce cas les octets restants
+     se situent très certainement juste en dessus ou juste en dessous de
+     l'octet détecté ( par exemple si vous pouvez modifier un peu l'argent
+     à l'adresse X, essayez de modifier l'octet à l'adresse X+1 pour
+     changer beaucoup la valeur de la variable)
+
+
+   Si vous avez des suggestions, des questions, des propositions d'aides
+   ou de mirroirs sur le WEB, rapport de bugs ou de jeu ne fonctionnant
+   pas (On fait comme chez M$, les utilisateurs sont les débuggeurs ;),
+   n'hésitez pas, envoyez moi un e-mail (J'adore ça!)
+        ZEOGRAD@CARAMAIL.COM
+
+--[ LE COIN DE LA BIDOUILLE ]------------------------------------------------
+
+   Ce chapitre n'est pas destiné aux utilisateurs 'normaux' (Je veux dire les
+   joueurs), tout ça est fait pour les gens qui connaissent le fonctionnement
+   interne de la PC engine et veulent en apprendre plus, débuguer leurs créations,
+   faire des traductions, ou autre...
+   Bien, maintenant seuls les gens intéressés devraient continuer à lire ça ;)
+   Tout d'abord, quand vous appuyez sur une touche, vous devez savoir qu'il ne
+   peut y avoir d'effets qu'au moment où la console lit l'entrée. Ca peut
+   expliquer pourquoi dans certains jeux on tombe toujours sur le même bout de
+   code (Je crois). Une fois désassemblé, vous pouvez vous déplacer vous
+   déplacer vers le bas, c'est facile mais lorsque vous voulez vous déplacer
+   vers le haut j'essaye de désassembler 1,2,3,4 ou 7 octets avant et je garde
+   le premier désassemblage qui ne donne pas d'instructions illégales. S'il n'y
+   arrive pas, il recule d'un seul octet.
+   Il n'y a pas beaucoup de protections (après tout, vous êtes des pros ;)
+   c'est à dire que vous pouvez tout faire planter si vous poussez un peu
+   l'ému. Toutefois si vous arrivez à trouver une circonstance particulière
+   qui fasse systématiquement planter le désassembleur, faites moi-Z-en part.
+   Les breakpoints sont implémentés en utilisant les instructions 0x?B, les
+   14 premiers sont à votre disposition; l'avant dernier est réservé pour les
+   fonctions du style 'step', 'trace', 'go to cursor',... Quant au dernier
+   il est un peu spécial, il sert à simuler une exécution normale en
+   partant d'un breakpoint; je m'explique: Après être arrivé dans le désassembleur
+   suite à un breakpoint, vous allez sans doute continuer l'exécution, il
+   va donc falloir remplacer l'opcode illégal par le véritable opcode, ce
+   que je fais, mais par la suite il faut remettre l'opcode BP? en place pour
+   s'arrêter la prochaine fois que l'on passe à cet endroit, et quand est
+   ce qu'on peut le faire ? J'utilise le pseudo breakpoint restant pour
+   stopper l'exécution juste après l'instruction actuelle, puis je remplace
+   l'instruction juste effectuée et celle sur laquelle on est maintenant et
+   on relance le tout à IP-1, l'exécution sera normale. Ouf... C'est un peu
+   lourd mais ça vient du fait que je n'ai pas de fonction qui exécute une
+   seule instruction à la fois.(si vous avez une autre idée pour faire ça
+   [sans trop se casser le cul ;] je suis tout "Toui" ;) Pour l'instant
+   ça ne marche pas correctement, mais on en est pas loin.
+   Lors du désassemblage, les instructions invalides liées aux breakpoints
+   ne sont remplacées par les opcodes originaux que s'ils sont le premier
+   octet d'une instruction; je veux dire que si vous placez un breakpoint
+   puis remontant dans le code source perdez le fil des instructions, vous
+   aurez des arguments invalides pour les functions précédant les breakpoints
+   que vous aurez placés. C'est pas très clair mais vous verrez vite ce dont
+   je voulais vous avertir. Si ça vous embête vraiment je peux changer ça
+   mais je pense que le désassemblage sera beaucoup plus long... Pour l'instant
+   les breakpoints ne sont pas complètement implémentés, avec F2 vous pouvez
+   en poser et les retirer mais il me semble que le passage d'un Bp a un
+   autre provoque un bug..
+   Avec F7 et F8, vous pouvez exécuter les instruction une par une. A chaque
+   appui sur F8, vous avancez d'une instruction, lorsque vous arrivez sur un
+   appel de routine, F8 exécute la routine entière avant de vous rendre la main
+   C'est la seul différence avec F7 qui va au contraire vous amener sur la
+   première instruction de la routine.
+   Avec F3, le désassembleur attend que vous entriez une valeur hexa et
+   place un point d'arret à cet endroit. Avec F4, la rom est exécutée
+   jusqu'à l'opcode actuellement sélectionné. F5 force le PC à aller
+   à la position sélectionnée et F6 noppe l'instruction choisie.
+   Avec 'G', vous pouvez entrer l'addresse à laquelle vous voulez aller
+   (en hexa, sans préfixe)
+   Je n'ai pas testé ces fonctions à fond. Si vous voyez un problème, essayez
+   de le reproduire et faites moi part des manip' à faire pour faire apparaître
+   le bug, ainsi je pourrais l'éradiquer de la surface de la planète Hu-Go!
+   (err... je m'emporte)
+   Vous pouvez utiliser 'haut', 'bas', 'Pg Haut', 'Pg Bas'; F1 vous affiche
+   un petit écran d'aide.
+   L'éditeur de RAM se lance avec 'r' lorsque vous êtes dans l'écran de
+   désassemblage. Pour naviguer, utilisez les touches normales, avec 'Espace'
+   vous remplacez la valeur actuellement sélectionnée, entrez la nouvelle
+   valeur et validez avec 'Entrée' ou annuler le changement avec 'Esc'.
+   Pour l'émulation CD (et normale), j'ai rajouté deux petites options sympa:
+   avec 'i', vous arrivez à un écran d'information, constitué de quelques pages
+   seulement pour l'instant (mais qui pourra s'aggrandir au gré des besoins)
+   donnant des infos sur les registres généraux et les variables liées
+   au CD. Vous pourrez passer d'une page à l'autre avec gauche et droite,
+   et sortir avec 'Esc' ou F12. Il y aussi possibilité de voir la satb
+   avec tous les attributs de chaque sprites sur 8 pages...
+   Avec 'w' (Z en QWERTY), vous arrivez à un visualisateur de Zero page.
+   Les 256 premiers octets situés là seront visibles, mais pas modifiables.
+   J'aimerais bien que les personnes qui utilisent ces options m'en parlent,
+   me donnent des conseils, astuces, améliorations qu'ils aimeraient voir
+   arriver. Je sais qu'il y a vraiment beaucoup de choses à faire dans ce
+   domaine...
+
+--[ REMERCIEMENTS ]----------------------------------------------------------
+
+   Remerciements Particuliers:
+ *>  -- Bacon boy 99 (ex-webmaster de Planet Rom)  <*
+       plus l'ancien logo, responsable de plein de choses =)
+     -- ]pit[ pour tout ce qu'il fait pour moi (dont le nouveau logo et les
+        bannières)
+     -- Nyef pour ses docs sur l'émulation CD
+     -- Lester Barrows, pour son aide sur le code linux (pads entre autre)
+     -- Ishan (ex Vlendr'it) pour la gestion de la mailing liste, des tests tweak
+        et pour la recherche de resources intéressantes sur le net ainsi que
+        le mode scanline.
+     -- TOZTWO pour le passage en HTML de la doc
+     -- Tormod Tjaberg pour son code de détection de longueur de MP3
+     -- Fixo, mint^tcd, sALTY, CodeMaster, Raoh, MrF, dus et tous les gars
+            sur #emu chez Ircnet ;)
+     -- ElmerYud parce qu'il voulait étre là, et puis aussi parce qu'il veut
+        devenir l'assistant en communication d'Hu-Go!
+     -- [Link] parce que c'est un gros chacal puant mais qui a du go–t pour
+        son nick ^^
+     -- tAGGY pour ses deux super dessins
+     -- SirJaguar, Nico, Ded, Leto_II, Readiosys, fag, Raph99, Top50 et 
+        tous les gars sur #power3d, #arkana ou #consolemul
+     -- l'auteur de NeoCD pour ses sources de lecture CD sous DJGPP
+     -- Dave Shadoff (TGSIM et TGSIMGPP, de longs mails, des idées )
+     -- Dirk Steven (EAGLE, C plus fort que le reste =)
+     -- Marat Fayzullin (SOURCE DE DEPART pour 6502)
+     -- Bero (SOURCE supplémentaire)
+     -- Hmmx (SOURCE encore plus supplémentaire)
+     -- DJ Delorie (DJGPP, indispensable!)
+     -- Shawn Hargreaves (ALLEGRO, vraiment génial)
+     -- David Michel (Encore bravo, MAGIC ENGINE est vraiment le meilleur
+        [Pour l'instant] ;) , de plus David n'hésite pas à donner un coup de main,
+        Chapeau pour son fair-play et sa gentillesse; il ne faut pas oublier
+        qu'il est aussi l'auteur du MAGIC KIT servant à programmer les jeux
+        PC Engine)
+     -- Emu unlimited (www.emuunlim.com)
+        pour héberger ma page.
+     -- Consolemul (www.consolemul.com)
+        pour en faire de même :)
+     -- Le groupe Info-Zip pour rendre le dézippage si facile
+
+     -- Zophar domain (www.zophar.net)
+     -- Jens Christian Restemeier (DOCS)
+     -- Joe LoCicero (DOCS)
+     -- Bt Garner (DOCS)
+     -- David Woodford (DOCS)
+     -- Videoman (DOCS)
+     -- Charles W Sandmann (CWSDPMI, programme sous license GPL, les sources
+        sont accessibles via http://www.delorie.com/djgpp/ )
+     -- Markus F. X. J. Oberhumer & Laszlo Molnar (UPX, un excellent
+        compacteur utilisé pour cette version)
+
+
+     Remerciements Divers:
+     -- Bouli (www.multimania.com/booemu/
+              arcades.le-village.com/megrom/)
+       pour utiliser Hu-Go! pour ses screenshots ;)
+     -- Michael Sheldows (www.homestead.com/sheldows) pour essayer de porter
+        Hu-Go! vers un nouvel système d'exploitation de son cru
+     -- Mr Iceberg (www.multimania.com/pceaudit)
+        pour avoir utilisé FPCEID afin de créer un autre audit PCE et m'avoir
+            envoyé des roms 'inconnues'
+
+     Désolé pour tous ceux que j'ai oublié :(
+       (Envoyez moi un mail si vous pensez que vous devriez être remercié...)
+
+ [Ha,... tiens! Vous regardez ici, si vous êtes arrivé par la voie normale,
+ { c'est à dire en lisant tout - ou presque - } vous avez du vous rendre
+  compte que ça prenait du temps d'écrire une doc comme ça {Alors la
+  traduction en anglais, ...} {Même si en fait j'écris la doc en Anglais
+  avant de la 'traduire' en français, ben oui, il me semble plus
+  facile d'éviter les tournures trop françaises en commençant à écrire
+  dans la langue de Diana - Bien que dans l'état de décomposition dans
+  lequel elle doit être, ça ne doit pas être facile ^ désolé, c'était de
+  très mauvais goût ^ - } {Vous avez vu que j'étais à court de '(', en fait
+  si j'en ai pas mis au départ, c'était parce que je voulais écrire une ligne
+  pour les personnes lisant les docs jusqu'au bout - Et dieu sait qu'il n'y
+  en pas beaucoup - mais comme je me suis mis à délirer, j'ai mis des '(' - On
+  ne se refait pas -, du coup ayant commencé avec des '[' il ne me restait que
+  des '{' mais ensuite j'ai du aller plus loin alors j'ai essayé des '-', c'est
+  pas terrible mais il me restait pas grand chose; Pis alors j'm'suis dit - Tiens!
+  En parlant de "j'm'suis dit", répétez cette phrase 25679 fois d'affilée,
+  une fois à l'endroit, une fois à l'envers et vous devriez avoit invoqué
+  le démon de la langue lourde et du mal de crâne ^ Astuce sponsorisée par
+  ........, ........ agit rapidement sur les maux de docs ;) ^ - Vous avez
+  vu ? J'ai encore été à court de '-', forcément j'ai été obligé de mettre des
+  '^' quoique là, ça n'a plus de véritable équivalent parenthésique { J'veux
+  dire que les '(', les '[' et les '}' - C'est vrai ça, pourquoi une ségrégation
+  envers les ')', les ']' et les '}' -, je disais que je voulais dire que les
+  '(', les ']' et les '{' - Pour changer ;) - ont une véritable vocation
+  de parenthésition - Je crois que ça existe pas, mais il y a fort à parier
+  que l'académie française va introduire ce mot dans la langue française
+  ^ Je ne ferais pas ici de mauvais jeu de mot ^ apràs la lecture répétée
+  de cette doc ^ Je ne veux pas dire qu'ils ne seraient pas capables de
+  faire Hu-Go!, mais il y a tellement de Phaûttheux,... ^ - - ouf... - - arg! -
+  au même titre que le '-' - dont on ne peut faire de ségrération littéraire
+  envers le complémentaire - que l'on peut retrouver dans les vrais livres
+  - Vous savez, ceux que l'on vous oblige à lire même si vous voulez pas pour
+  discuter sur une demi-ligne pendant 20 minutes avec un examinateur ;) -
+  , mais quant au '^' - envers lequel on ne peut non plus faire de ségrégation
+  - il n'a de valeur parenthésiale - Il faut un second mot pour un sens aussi
+  profond que l'idée de mettre qqch au milieu d'autre chose ;) -, en revanche
+  il a une valeur de touche proche de mon doigt au moment de mettre un signe
+  pour remplacer une ')', ce qui explique son apparition - A propos, le plus
+  drôle aurait été de voir apparaître ce symbole pour la première fois
+  dans l'explication de sa présence, on se serait retrouvé dans une sorte de
+  paradoxe spatio - temporel qui aurait autodétruit la présente doc ^ et
+  vous avec ^, heureusement, la fin du monde n'est prévu que vers le 11
+  août 199 et encore la météo ne prévoit qu'une fin du monde localisée à la
+  banlieue Sud de Londres. Ce qui fait de beaucoup de gens ne considère cette
+  fin du monde que comme une apocalypse mineure - } J'étais donc en train de
+  dire que je commençais la doc en Anglais {Je rappelle ça au cas où vous vous
+  seriez laisser distraire par qq commentaire ;} et qu'ensuite seulement
+  je l'écrivais en français, car j'étais plus à même de ne pas faire de
+  traduction littérale dans ce sens {être Français aide à écrire Français ;}.
+  De plus, pour me donner de l'énergie toute la journée, je lèche un crapaud
+  hallucinogène tout les matins au petit déjeuner, avec ça, la vie paraît
+  moins triste : bus multicolores et mangeables, personnes nues sous leurs
+  vêtements, fonctionnaires travailleurs {Je plaisante, je les aime bien
+  - mais seulement pour le repas du soir ^ ;) ^ - }, gendarmes récupérant
+  leur briquet, présidents utilisant plus souvent leur cerveau que leur
+  braguette, harcèlements sexuels de la part de femmes {Pas trop moches
+  si possible}, journalistes à la rédaction de "Paris Gala A la Une",
+  publicités à la télévision entrecoupées d'émissions intéressantes,
+  compilateurs sans bugs ultra optimisé {Merde, ça existait déjà dans la vraie
+  vie}, Utilisateur d'Hu-Go! offrant de l'argent {Beaucoup d'argent} à son
+  auteur sans qu'il n'ait rien demandé {Prévoir une petite dizaine de
+  crapaud pour ce dernier délire}, Publicitaires et commerciaux ne nous
+  prenant pas pour du bétail, Logiciels vendus à leur juste prix {Qui a
+  dit qu'Hu-Go! ne valait rien ? >:[ }, Programmes scolaires adaptés à la
+  réalité, ... Ouf, j'en ai fini avec ce qui me .....ait les ....lles {
+  C'est plus dur sans les premières lettres ;) } {non, sans déc. on n'a
+  vraiment pas besoin de prendre de cochoneries pour s'éclater, OK ?;
+  par exemple pour pouvez courir très vite la tête la première dans un mur;
+  aprés un écran noir de 3 sec. - Merde, déformation professionelle -, je
+  voulais dire qu'on y voyait rien pendant 3 sec., vous pourez dire :
+  "Je me suis vraiment éclaté! ". Le plus drôle étant que vous pouvez
+  recommencer jusqu'à ce que vous en ayez marre}. Moi, pour ma part je m'éclate
+  en écrivant des conneries à la fin d'une doc, vous y croyez, hein ? Je
+  viens d'avoir une idée pour un slogan français pour Hu-Go! :
+  Hu-Go!, le plus '(' des émulateurs.
+  Qu'est ce que vous en pensez? ... Hein? ... De la merde!? Oui, bon si vous
+  le dites, j'chuis pas contrariant ;).
+  Je crois qu'il est temps de vous laissez jouer, y'a ma chanson préférée qui
+  passe à WinAmp {Future World dans la démo de Yume200}.
+  Si vous voulez vous faire un gros délire, mailez moi ou rendez vous sous
+  IRC, ou mieux, sous ICQ {cf +haut} ... ]
+
+  Toute ressemblance avec des faits réels ou imaginaires existants ou
+  ayant existés serait purement volontaire...
+
+  Si vous commencez à lire la doc ici, je dois malheuresement vous annoncer
+  que vous êtes dislexique vertical (cas rare).
+
+

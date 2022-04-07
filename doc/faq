@@ -1,0 +1,467 @@
+In this file you should find some answers to common questions about Hu-Go!
+and how to make it work correctly.
+
+If you can't find an answer to your problem after having read the doc and
+this file then you'd better mail me at zeograd@caramail.com.
+ ----------------------------------------------------------------------------
+
+ * Q * What the heck is a Pc engine ?
+
+ * A * It's a 8/16 bits game console made by Nec. It's between the years
+       1985 and 1992 that it knew its main success. Mostly known in Japan,
+       it was also imported in the states under the name of TurboGraphX 16.
+       In Europe, it was known in France and English (at least, but not only)
+       under the name of CoreGraphX.
+       Predilection games for this machine were shoot'em up and RPG.
+       By the way, since it was the first console to be able to use a CD rom
+       drive, its CD RPG were considered (and still are) among the best
+       console RPG.
+       If I'm not wrong, it has been taken over by TTI after NEC (TTI must
+       be a branch of NEC). Their policy toward emulation is very nice, I've
+       never heard of any troubles with rom spreading nor emulator authors.
+       The latest official game to have appeared on it were 'Brain of the
+       Dead 1 & 2' in June 1999. It's an older game that finished to be
+       ported.
+       Some of the most known games (just a few, there are a tons) are :
+         DraculaX, Sapphire, PC kid serie , Neutopia, gunhed serie (super
+         star soldier, soldier blade, final soldier), Bomberman serie,
+         Far east of eden serie ...
+       The scene around this console is made of fans, since there's no more
+       commercial interests around it. It appears to be a console with a lot
+       of true fans around it since I often see or hear people that wanted to
+       decicate a web site to it because it was their favorite, because they
+       think it needs to be known more. I haven't find such an enthousiasm
+       with other machine (but I admit I'm not objective).
+       As for the developpement scene, it seemed to be quite active until
+       middle 1998 (with GREAT development kit from David Michel, Magic kit)
+       and looked like it was slowing down (not to say it was stopping). But
+       the Hu6280 team showed us it was possible to make a little game for it
+       [jamanoid]. Let's hope we'll see some new stuff arriving in it to
+       make it start anew, once done, it's little a vicious cercle, but in
+       the good sense :)
+
+ ----------------------------------------------------------------------------
+
+ * Q * What is a command line ?
+
+ * A * This is simply what you write after the name of the executable.
+       Clicking on the file under Windows or similar thing generally doesn't
+       allow you to enter any argument for the executable.
+       You can either use the 'properties' to specify constant parameters,
+       drag'n drop a file to the executable icon to make the name of the
+       first file the first argument of the executable, or launch it using
+       DOS prompt and write down additional parameters after the name of the
+       executable.
+
+ ----------------------------------------------------------------------------
+
+ * Q * What is this .INI file ?
+
+ * A * It's a human readable file containing informations on default behaviour
+       of Hu-Go!. e.g. default video mode, default directory for roms, etc...
+
+ ----------------------------------------------------------------------------
+
+ * Q * How can I change a variable in the .INI file ?
+
+ * A * Open the Hu-Go!.INI file in any text editor, like NotePad or Edit, and
+       search for the name of the variable to change. Once found, change
+       the value at the right side of the '='. If the variable name
+       doesn't exist, just write it in the [main] section (i.e. after the [main]
+       text and before any other [???] declaration) followed by the sign '='
+       and the new value.
+
+       For example, let's say that we had a sound option (we do have one), and
+       wanted to change it. The options are '0' for nosound, and '-1' for
+       autodetect sound. If in the .INI file the option looks like this:
+
+            smode = 0
+
+       Then there will be no sound. If you would like to enable sound, then
+       simply change the text to read:
+
+            smode = -1
+
+ ----------------------------------------------------------------------------
+
+ * Q * Generally, where can I change an option ?
+
+ * A * If the option is specific to .INI file or command line, you don't have
+       the choice but else, if it's just as a test, you can specify it on
+       command line since it will then override the .INI file option. But
+       if you don't want to write in down each time, you can change the value
+       in the .INI file.
+
+ ----------------------------------------------------------------------------
+
+ * Q * How do I use a game pad ?
+
+ * A * If you want to quickly use one, just change the 'config' variable in
+       the .INI file to 1. This is a sample example for how to use a joypad
+       for first player with 'space' and 'enter' key as select and start.
+       For more precise control definition, see later...
+
+ ----------------------------------------------------------------------------
+
+ * Q * What game pads are supported ?
+
+ * A * All whose that allegro can handle. i.e. all which comply with the
+       normal game pad interface and some more. Currently, special joystick
+       supported are :
+        - CH Flightstick Pro
+        - Logitech Wingman Extreme or Thrustmaster Mk.I compatible
+        - SideWinder
+        - Gravis Gamepad pro
+        - Pad SNES on LTP1,2 or 3
+        - Wingman Warrior
+
+ ----------------------------------------------------------------------------
+
+ * Q * What is a rom ?
+
+ * A * First, you must know that a classic console cartridge contains data
+       that the console will execute. That's the way you can play video games.
+       These data is actually a series of '0' and '1' engraved in
+       a cartridge. And a rom is simply the same serie of '0' and '1'
+       but 'engraved', saved in fact, in a plain file. This file will then
+       be readable by an emulator that will read data in it exactly the same
+       way the console read data from the true cartridge, so that you can play
+       console games on your PC without trying to insert true cartridges into
+       your floppy disk ^_^
+
+ ----------------------------------------------------------------------------
+
+ * Q * What is an iso ?
+
+ * A * Basically it's the same thing as a rom (see above) but instead of using
+       data on a cartridge, data is contained on a data track on a CD. That's
+       why iso can be so large. To make a large size cartridge game is
+       expensive for developers, so they try to keep the file size small.
+       To make a large size CD game cosrs the same as a small size CD game,
+       and that is one reason that ISO files are so huge.
+
+ ----------------------------------------------------------------------------
+
+ * Q * How can I play a PC Engine CD I'm used to play with my Duo (e.g.) ?
+
+ * A * You have to launch Hu-Go! with '-c1' command line parameter,
+       Then Hu-Go! should boot on the CD inserted in the first CD rom drive
+       or the specified one with '-i?' option on the command line.
+
+ ----------------------------------------------------------------------------
+
+ * Q * Why my CD doesn't run under MS-Windows but plain DOS ?
+
+ * A * Post your question to Bill Gates and ask him why MS-Windows isn't
+       compatible with DOS. =)
+       Seriously, this is MS-Windows fault. It doesn't like the fact that a
+       code track is situated at second place.
+       More precisely, it's MSCDEX driver fault.
+       Now this the new ASPI driver, you can play cds under windows
+
+ ----------------------------------------------------------------------------
+
+ * Q * My monitor display weird thing, what to do ?
+
+ * A * Try another default video mode, e.g. '-v4' on command line should
+       do the trick, or you can change the video option in the .INI file.
+
+ ----------------------------------------------------------------------------
+
+ * Q * What is an cd system card ?
+
+ * A * This is a rom containing the code compulsory to boot a CD and play CD
+       games. You'll also need it for ISO files.
+       There are two kinds of cd system card, the usual one from Nec (most
+       games use it) and Game Express one (very few game use it).
+       The Nec one exist in several versions : 1.0, 2.0, 2.1 and 3.0
+       With the 3.0, you should be able to run almost all CD games.
+
+ ----------------------------------------------------------------------------
+
+ * Q * How do I turn off sound ?
+
+ * A * Either putting '-s0' in command line or setting variable 'smode' to '0'
+       in .INI file.
+
+ ----------------------------------------------------------------------------
+
+ * Q * Is there any available front-end for Hu-Go! ?
+
+ * A * Yes. House Atreide's Front End can be found on
+       www.emulfr.org/atreides. (URL is no more correct I fear)
+       But it's in french and need VB6 runtimes.
+
+       There's also Eagan's frontend. the author of this frontend also has a
+       Keith Courage in alpha zone Turbo Graphx to PC conversion project.
+       You can find out all about it at :
+       www.angelfire.com/ca2/eagsproging
+
+       Now, I've made mine. You can grab it on Hu-Go! page (www.hugo.fr.fm).
+       It's in the miscelaneous page...
+
+ ----------------------------------------------------------------------------
+
+ * Q * Hu-Go! is too slow, how can I speed it up ?
+
+ * A * There are some little tings you can try :
+
+       - Try the '-v4' switch on the command line. In 320*200 mode you will get
+       about 10% more speed but (there's always a "but") the screen will be
+       clipped (i.e. you won't be able to see the first and last 12 lines).
+
+       - If you usually play under WIN9X, try to play under plain DOS, you
+       may gain about 15% extra speed.
+
+       - Disable sound with the '-s0' command line switch or by putting "sound=0"
+       in the .INI file.
+
+       - Disable EAGLE mode with the -e0 command line switch or by putting
+       eagle=0 in the .INI file.
+
+       - Don't forget you have a skip frame option using '+' and '-'. Things
+       become less smooth but a lot faster (up to 16 times).
+
+       - If your hard disk keeps on accesing data while playing, it means you
+       don't have enough RAM and it is using virtual memory on disk (which is
+       a lot slower). You should try to make a 'clean' boot without any
+       drivers etc. loaded.
+
+       If this is still not enough then the only option is to buy more RAM (I
+       don't think you would ever have to do this, Hu-Go! is very economic ;)
+
+       - Buy a faster computer ;)
+
+ ----------------------------------------------------------------------------
+
+ * Q * Hu-Go! is too fast, how can I slow down things ?
+
+ * A * Try enabling synchronisation using F10. This should reduce fps
+       to 60.
+
+ ----------------------------------------------------------------------------
+
+ * Q * Why are there some bunch of digits sometimes ?
+
+ * A * This is the debugger mode which allow you to investigate rom or iso.
+       You may have pressed '*' on digit pad, then simply press it one more
+       time to go back to emulation.
+       But just before a crash, this mode is automaticaly enabled. You can
+       exit it the same way but the emulator will quit automaticaly then.
+       Please report me (Zeograd@caramail.com) such problem with roms.
+
+ ----------------------------------------------------------------------------
+
+ * Q * Can I play all games with Hu-Go! ?
+
+ * A * Unfortunately, no.
+       On Hu-Card (normal rom), you can expect a 90-95% compatibility even if
+       some people tell me much less.
+       With ISO files, you can count on a 85% compatibility. You can check
+       the compatibility list at
+       hugo.consolemul.com/hugo_en.htm#comp_list to see what ISO are emulated
+       and what aren't.
+       CD and ISO compatibility are almost the same, but you can get some CD
+       working even if ISO isn't.
+
+ ----------------------------------------------------------------------------
+
+ * Q * Where can I find roms and ISOs ?
+
+ * A * Theoricaly, you can't get roms or ISOs of games you don't own the
+       right to use it. But since it's very hard to make roms from cardridges,
+       there are some sites where you can pick up the ones you're allowed to.
+       It's rather the same thing with ISOs. Apart the fact it's easier to
+       make them using some utilities you can found on my page :
+       www.hugo.fr.fm
+       Else ISO/rom sites are mainly :
+       www.fagemul.fr.fm
+       www.nec-ro-pole.fr.fm
+       ...
+
+ ----------------------------------------------------------------------------
+
+ * Q * What is 'scancode.txt' ?
+
+ * A * It's used with the key redefinition.
+       Each key on your keyboard got a low level code called scancode.
+       It's used to represent the key.
+
+ ----------------------------------------------------------------------------
+
+ * Q * How to become a beta tester ?
+
+ * A * Be motivated and ask me to (zeograd@caramail.com)
+
+ ----------------------------------------------------------------------------
+
+ * Q * Can I help in any maneer, and if so, how ?
+
+ * A * Sure, you can help. They are very different way to do so.
+       As a coder, you can help adding some features ( front end,
+       installation proggy).
+       As a graphics artist, you can make banner, or background, icons, etc...
+       If you are generous, you can send CDs, or even some hardware, who knows =)
+       Or else you can just send a nice word to motive me ^_^
+       If all case, either send me a messy to zeograd@caramail.com or
+       contact me via ICQ (UIN : 40632933)
+
+ ----------------------------------------------------------------------------
+
+ * Q * I'd like to port it to another platform, how can I do ?
+
+ * A * First, the best thing to do is telling me about it so that we can
+       chat about it. Then just hand over the latest available sources
+       and go for it. Never hesitate to mail me so that I both know where
+       is the project and I may be able to give advice.
+
+ ----------------------------------------------------------------------------
+
+ * Q * I've seen bugs or problems in the emu, how can I report it ?
+
+ * A * Depending of the 'gravity' of the trouble, either post in the forum
+       available on my page (www.hugo.fr.fm) or directly send me a mail at
+       zeograd@caramail.com
+
+ ----------------------------------------------------------------------------
+
+ * Q * I'm a webmaster, how can I help ?
+
+ * A * You can make a mirror of my site, just ask for me so that I can tell
+       you when I make an update.
+       Or you can use one of the nice banners to link to the main page or to
+       the local copy of a Hu-Go! archive. The banners can be found at
+       hugo.consolemul.com/misc_en.htm#banner
+
+ ----------------------------------------------------------------------------
+
+ * Q * How much does Hu-Go! cost ?
+
+ * A * Errr... Nothing. Well almost. In all cases, no money. But any feedback
+       or help is greatly appreciated. In all cases, there's nothing
+       compulsory.
+
+ ----------------------------------------------------------------------------
+
+ * Q * How can I make a PC Engine game ?
+
+ * A * Look out for Magic Kit (made by David Michel) and some knowledge for
+       PC Engine hardware and software. You can also hand over a nice open
+       source PC Engine game at David Shadoff's homepage (www.interlog.com/~daves)
+       as well as other stuff needed to make a game.
+       You can also grab HuC, our C compiler for pc engine that you should
+       find on Utopia team site (http://utopia.consolemul.com)
+       Then you can use the debugging abilities of Hu-Go! to make your game
+       working perfectly.
+
+ ----------------------------------------------------------------------------
+
+ * Q * How can I expect in term of speed on my machine ?
+
+ * A * It depends on lots of thing (sound, eagle mode, played game, OS)
+       but we can give an idea using the following array :
+
++-----------------------------------------------------------------------------+
+|                                    AMD K6-2 350                             |
++-----+-----------------------------------+-----------------------------------+
+|     |          With Sound               |           Without Sound           |
+|O.S. +-----------------+-----------------+-----------------+-----------------+
+|     |    Eagle mode   |  No Eagle mode  |   Eagle mode    |  No eagle mode  |
++-----+-----------------+-----------------+-----------------+-----------------+
+| Win |     40+ fps     |   Max speed     |    50+ fps      |   Max speed     |
++-----+-----------------+-----------------+-----------------+-----------------+
+| Dos |     45  fps     |   Max speed     |   Max speed     |   Max speed     |
++-----+-----------------+-----------------+-----------------+-----------------+
+
++-----------------------------------------------------------------------------+
+|                                    PENTIUM 233                              |
++-----+-----------------------------------+-----------------------------------+
+|     |          With Sound               |           Without Sound           |
+|O.S. +-----------------+-----------------+-----------------+-----------------+
+|     |    Eagle mode   |  No Eagle mode  |   Eagle mode    |  No eagle mode  |
++-----+-----------------+-----------------+-----------------+-----------------+
+| Win |     35  fps     |     50+ fps     |     35+ fps     |   Max speed     |
++-----+-----------------+-----------------+-----------------+-----------------+
+| Dos |     35+ fps     |   Max speed     |     40- fps     |   Max speed     |
++-----+-----------------+-----------------+-----------------+-----------------+
+
++-----------------------------------------------------------------------------+
+|                                    PENTIUM 200                              |
++-----+-----------------------------------+-----------------------------------+
+|     |          With Sound               |           Without Sound           |
+|O.S. +-----------------+-----------------+-----------------+-----------------+
+|     |    Eagle mode   |  No Eagle mode  |   Eagle mode    |  No eagle mode  |
++-----+-----------------+-----------------+-----------------+-----------------+
+| Win |     25  fps     |     40- fps     |     25- fps     |     45- fps     |
++-----+-----------------+-----------------+-----------------+-----------------+
+| Dos |     25+ fps     |     40 fps      |     25+ fps     |     45+ fps     |
++-----+-----------------+-----------------+-----------------+-----------------+
+
+
+ ----------------------------------------------------------------------------
+
+ * Q * How can I change the key setting ?
+
+ * A * It's a bit tricky for now :
+       there are 15 user definable configurations, so that you can define
+       one for solo use, one for solo use for a friend, and some for
+       different multi players setting.
+       You can toggle from one to another with the .INI variable 'config'.
+       The config number 0 can't be redefined and correspond to the default
+       setting for 1 player with default keys in the documentation.
+
+       Each key setting must be placed in the appropriate section. e.g. if you
+       want to redefine config number 5, you'll place the definition after
+       the marker : [config5] but before any other section marker.
+
+       In the appropriate section, you'll have to place two kind of information.
+       First, you'll need to tell the emu what input each player will use.
+       e.g. you can tell Hu-Go! that the first player will use the first plugged
+       joypad typing 'input1=joy1', the second player can use the second key setting
+       with 'input2=key2'
+
+       You can use up to 5 inputs, but only 4 are implemented until now (which
+       is not so bad).
+
+       As for the available devices, you now have 5 key setting from 'key1' to
+       'key5' and 4 joypads from 'joy1' to 'joy4'. And mice and synaptic links
+       should be implemented.
+
+       One you've told what device will be used for each player you want to play
+       you can configure more or less each device.
+
+       To configure third key setting for example, use
+       UP3=???
+       DOWN3=???
+       etc...
+       defined position or buttons are :
+       UP? , DOWN? , LEFT? , RIGHT? , I? , II? , SELECT? , START? , AUTOI? ,
+       AUTOII?
+
+       As for the ???, it's the scancode of the concerned key.
+       This is where the scancode.txt is useful, you'll find there the
+       correspondance between the key you want to assign and the scancode to
+       put after the egual sign.
+       Imagine you want to assign the up direction of the third key setting
+       to the 'O' key on your keyboard.
+       You open the scancode.txt and look out for 'O' and find its scancode
+       is 0X18 then you put in the right section in the .INI file :
+
+       UP3=0X18
+
+       That's all, easy no ?
+       hmm, not really but it'll become so.
+
+       As for the joypad setting, you can only change SELECT, START, AUTOI and
+       AUTOII. Using the same key of numbering as the key mapping one.
+       This will prevent you from having one player using 'key2' device and another
+       'joy2' device, unless you want them to have SELECT, START, AUTOI and AUTOII
+       key identical.
+
+ ----------------------------------------------------------------------------
+
+ * Q * Why is this FAQ finished ?
+
+ * A * Because this is the last question
+
+ ----------------------------------------------------------------------------

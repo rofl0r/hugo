@@ -1,0 +1,305 @@
+-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
+
+HUGO Cheat Library v0.5 by MUG U.K(tm) - All work by MUG U.K(tm) 
+----------------------------------------------------------------
+
+Current version started:- 24/05/2000
+
+Current version finished:- 11/07/2000
+
+Current total: 78 games, 17 ISO files.
+
+-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
+
+Email: mug_uk@mindless.com or ICQ: 1540934
+
+Will eventually end up on my website http://surf.to/muguk
+
+For use with Hugo v1.27 or higher as from v1.27 onwards, there was the
+inclusion of the relative search method .. so lots more games were
+added to this file as well as a few extra cheats added to ones from 
+the 0.4 version of this file!!
+
+If you want to send me your cheats for inclusion, full credits will be
+listed for each cheat.
+
+-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
+
+General Info:-
+
+Load in Hugo and load in the ROM.  I have assumed you will be using all
+ROMS which are NOT known as bad-dumps, bit-flipped, different sizes etc.
+
+If you are not sure then use GoodPCE first to rename the ROM before expecting
+my POKEs to work.  
+
+For a normal refresh value, hit F2, type in the Offset and then the value
+according to my chart.
+
+For infinite (ie. frozen) values, hit F3 and then do the same.
+
+I only spent a few hours a day doing these cheats.  
+
+Is there anyone else out there doing some of their own - or am I on my own
+as per the Sega Master System, Gamegear and SC/SG machines?  If you do your
+own, then get in touch as I'd hate to duplicate your work.
+
+I regularly train SMS/GG ROMs as well as normal PC games.  Occasionally I 
+will also attempt to train any Atari ST games I am asked to do (which is
+how I started out game hacking .. http://come.to/muguk!)
+
+-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
+
+					Normal HuCard ROMs
+
+-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
+
+ROM Name				Cheat				Offset	Value
+-----------------------------------------------------------------
+
+Aero Blaster		Lives (P1)			7121		FREEZE @ anything up to 9
+
+Afterburner II		Lives				4275		FREEZE @ anything up to 3
+                		Missiles			4276		FREEZE @ anything up to 9
+
+Air Zonk			Lives				0178		FREEZE @ anything up to 9
+
+Alien Crush			Balls				0070		FREEZE @ anything up to 9
+
+Ankoko Densetsu		Energy			4366		FREEZE @ anything up to 6
+				Magic Weapon		4370		FREEZE @ anything up to 9
+
+Atomic Robokid Special	Lives				0529		Normal = 3 .. up to 99?
+				Energy			3997		Freeze @ 14
+
+Barunba			Energy			1666		Freeze @ 5
+
+Batman			Time (Seconds)		5031		Freeze @ whatever up to 60
+				Items to Collect		5035		Set to 1 and pick up item to finish level				
+
+Beball     			Lives				2322		FREEZE it to 99?
+aka Chew Man Fu		Diamonds			2318		Set to whatever you want up to 21
+
+Blazing Lasers		Lives				0893		FREEZE @ 3
+				Smart Bombs			0897		FREEZE @ 3
+
+Bloody Wolf			Infinite Energy		1285		Normal = 3 or higher up to 6
+				Grenades			1306		Normal = 20 but max is 99 (62 in hex displayed)		
+
+Bomberman			Lives				1080		Freeze or Poke value up to 9 ?
+				Time (Seconds)		3470		Freeze @ whatever value up to 59 you want :)
+
+Bomberman 93		Lives				6303		Freeze or Poke value up to 9 ?
+				Time (Seconds)		0182		Freeze @ whatever value up to 59 you want :)
+
+Bomberman 94		Lives				5892		FREEZE @ 3
+(my favourite!)		Bombs				7075		FREEZE @ 9
+				Time (Seconds)		7051		FREEZE @ 50
+
+Bonk 3
+(Bonk's Big Adventure)	Energy			2959		FREEZE @ 16 and never die :)
+
+Bonze Adventure		Lives				4441		FREEZE @ 5
+
+Cadash			Hit Points			7164		FREEZE it up to characters max
+
+Chase HQ (Japanese)	Time Left			0083		FREEZE it up to 20
+
+Chew Man Fu			Lives				2322		FREEZE it to 99?
+				Diamonds			2318		Set to whatever you want up to 21
+
+China Warrior		Energy			3011		FREEZE it at 10 - can't die :)
+
+City Hunter			Power				2972		FREEZE it to 16
+
+Coryoon			Lives				7715		FREEZE it to 9 max
+
+Cratermaze			Lives				6911		FREEZE @ whatever up to 9 max
+				Items to collect		6924		Set to as low as you want :)
+				Time (Seconds)		6904		FREEZE @ whatever up to 59!
+
+Crazy Jappy Platformer	Energy			0040		FREEZE @ 16
+(anyone know the real
+name of this ROM?)
+
+
+
+Dead Moon			Lives				0033		FREEZE @ anything up to 9
+				Smart Bombs			0034		FREEZE @ anything up to 9
+
+Detana Twinbee		Lives (P1)			0135		FREEZE @ anything up to 9
+
+Die Hard			Weapon Ammo			5720		FREEZE @ any value you want :)
+
+Download			Weapon Ammo			1530		FREEZE @ 98
+
+Dragon Spirit		Lives				0067		FREEZE @ 9
+
+Drop Off			Lives				3265		FREEZE @ anything up to 3
+										(got it working once, but HuGo crashes!)
+	
+Fantasy Zone		Lives				0012		FREEZE @ 7
+
+Final Blaster		Lives				2911		FREEZE @ 9
+
+Final Soldier		Lives				0252		FREEZE @ 9
+
+Galaga 90			Lives				0196		FREEZE @ 9
+
+Ghost Manor			Lives				6465		FREEZE @ 3
+				Bullets			6436		FREEZE @ 15 (or multiples of 5 up to 30)
+
+Gomula Speed		Lives				0534		FREEZE @ 9
+
+Gradius			Lives				0133		FREEZE @ 9
+
+Gunhed			Lives				0893		FREEZE @ xx (up to 99)
+				Smart Bombs			0897		FREEZE @ xx (up to 99)
+
+Hani On The Road		Lives				7688		FREEZE @ xx (up to 99)
+
+Heavy Unit			Lives				0008		FREEZE @ x (up to 9)
+
+Hyperdyne Sidearms	Lives				0108		FREEZE @ x (up to 99)
+
+Impossamole			Lives				0034		FREEZE @ xx (up to 99 - but it appears in HEX on screen!)
+
+King of Casino		Money			   2688/2689	Change it to suit your pocket :)
+
+Legend of Hero Tonma	Lives				5276		FREEZE @ x (up to 9)
+
+Legendary Axe 2		Energy			4366		DO NOT FREEZE !!!  Set to a value, but if you use
+										freeze, the end of level bonus will loop forever!
+
+Metal Stoker		Infinite Energy		1554		FREEZE @ 4
+
+Mr Heli     		Infinite Energy		4100		FREEZE @ 10
+
+New Zealand Story		Infinite Lives		0044		FREEZE it or set to max of 9
+
+Ninja Gaiden		Infinite Lives		3759		FREEZE it or set up to 99 ?
+
+Ninja Spirit		Infinite Energy		6089		FREEZE it or set to max of 9
+
+Neutopia			Bombs				5429		FREEZE it @ 8
+
+Neutopia 2			Gold			    7732/7733	Freeze or poke to 27 & 0F = 9999 Max gold
+				Bombs				7766		FREEZE it @ 8
+
+Ordyne			Infinite Lives		0081		FREEZE it or set to max of 99
+
+Photograph Boy		Photo shots allowed	0098		Just poke it to required amount
+										Pointless Freezing it or setting it high
+
+Psycho Chaser		Lives				0065		FREEZE it or set to max of 9
+
+Psychosis			Lives				4940		FREEZE it or set to max of 9 (any higher and game crashes)
+
+R-Type Complete		Lives				0322		FREEZE it to 3
+
+Rabio Lepus Special	Lives				0391		FREEZE it or set to max of 9
+				Shield			0389		FREEZE it to 3
+				Missiles			0393		FREEZE it to 9
+
+Raiden			Lives				5217		FREEZE it to 9
+				Smart Bombs 		5317		FREEZE it to 9
+
+Rock On			Lives				1669		FREEZE it or set to 9 max
+
+S.C.I				Turbos			2456		FREEZE it or set to 9 max
+
+Sidearms (Magea Chip)	Lives				0108		FREEZE it @ 9
+
+Silent Debuggers		2nd Weapon			0541		FREEZE it at whatever .. only guessing as no-idea how
+										to play this game to test it fully :)
+
+Soldier Blade		Lives				5802		Freeze it or set to 9 max
+
+Somer Assault		Energy			4369		Freeze it @ 3
+
+Splatterhouse		Energy			2637		FREEZE @ 5 
+				Shotgun Ammo		2642		FREEZE @ 8 .. but only seems to work
+										when you first get the gun.  Not for end 
+										of level boss with chainsaw arms ?
+
+Super Star Soldier	Lives				0111		FREEZE @ 3 
+
+Tatsujin			Lives				0084		FREEZE @ 3 
+				Bombs				0086		FREEZE @ 3 
+
+Teriseiryu St Dragon	Lives				4812		FREEZE @ 3 
+
+Terra Cresta II		Lives				4745		FREEZE @ 3 
+
+Thunderblade		Lives				0056		FREEZE @ 3 
+
+Tiger Shark			Lives				0676		FREEZE @ 3 
+				Support Firepower		2593		FREEZE @ 3 
+										I don't last long enough to test this bit !
+
+Time Cruise			Balls				1584		FREEZE @ 3
+
+Timeball			Time				5676		FREEZE @ 30
+
+Toilet Kids			Lives				0143		FREEZE @ 3 
+
+
+Tora E no Michi		Energy			0217		FREEZE @ 16
+(aka Tiger Road)		Lives				3319		FREEZE @ 3
+
+Turrican			Lives				3152		up to 99
+				Crystals			3164		up to 999 (in theory!)
+				Time				3160		FREEZE @ whatever value you want!		
+
+
+Valkyrie no Densetsu	Energy			0191		FREEZE @ 8
+				Gold			   0196 & 0197	0196 = Low byte & 0197 - Hi Byte
+
+
+-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
+
+					ISO versions of TG16 CDs
+
+-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
+
+ISO Name				Cheat				Offset	Value
+-----------------------------------------------------------------
+
+Alzadick			Lives				0156		FREEZE @ 3 or change up to 9
+
+Builderland			Lives				7905		FREEZE @ 3
+
+Cotton			Lives				4706		FREEZE @ 3 or change up to 9
+
+Daisenau Custom		Lives				2212		FREEZE @ 3 or change up to 9			
+(Tiger Shark)		Support Power		2225		FREEZE @ 3 or change up to 9
+
+Gates Of Thunder		Lives				1665		FREEZE @ 3 or change up to 9
+
+Hellfire			Lives				1189		FREEZE @ 4
+
+Monster Lair		Lives				1155		FREEZE @ 3 or change up to 9
+
+Nexr Special		Lives				7953		FREEZE @ 3
+
+Rainbow Islands		Lives				8134		FREEZE @ 3 or change up to 9
+
+R-Type Complete CD	Lives				0764		FREEZE @ 3
+
+Rayxanber 2			Lives				0011		FREEZE @ 3
+
+Rayxanber 3			Lives				4878		FREEZE @ 3
+
+Shockman			Energy			3596		FREEZE @ 18
+
+Sidearms Special		Lives				0092		FREEZE @ 3
+
+Spriggan			Lives				3296		FREEZE @ 3
+
+Star Parodier		Lives				7963		FREEZE @ 3
+				Smart Bombs			7972		FREEZE @ 3
+
+Super Darius		Lives				3016		FREEZE @ 3
+
+Valis 2			Lives				2333		FREEZE @ 3 or change up to 9
+
