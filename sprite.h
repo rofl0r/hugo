@@ -49,6 +49,7 @@ extern UChar SPONSwitch;
 #define	ScrollX	io.VDC[BXR].W
 #define	ScrollY	io.VDC[BYR].W
 extern int	ScrollYDiff;
+
 extern int	oldScrollX;
 extern int	oldScrollY;
 extern int	oldScrollYDiff;
@@ -56,7 +57,9 @@ extern int	oldScrollYDiff;
 extern UInt32 spr_init_pos[1024];
 // cooked initial position of sprite
 
+#if !defined(NEW_GFX_ENGINE)
 extern UChar SPM[WIDTH*HEIGHT];
+#endif
 
 /*
 ####################################
@@ -110,9 +113,6 @@ extern int frame;
 
 extern void RefreshSpriteExact(int,int,unsigned char);
 // The true refreshing function
-
-extern void RefreshSpriteSpeedy(int,int,unsigned char);
-// The new modified one
 
 extern void (*RefreshSprite)(int Y1,int Y2,unsigned char bg);
 // The pointer toward the used function

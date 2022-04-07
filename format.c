@@ -13,6 +13,7 @@
 
 
 /* lineprinters, to keep code clean. */
+/*@ -bufferoverflowhigh */
 
 void
 lineprint1 (char *outf, long ctr, unsigned char *op, char *outstring)
@@ -81,7 +82,7 @@ relative (char *outf, long ctr, unsigned char *op, char *str)
 
   newadd = (ctr + 2) + offset;
 
-  sprintf (buf, "%-4s $%04lX", str, newadd);
+  sprintf (buf, "%-4s $%04lX", str, (unsigned long)newadd);
   lineprint2 (outf, ctr, op, buf);
 }
 
@@ -185,7 +186,7 @@ pseudorel (char *outf, long ctr, unsigned char *op, char *str)
 
   newadd = (ctr + 3) + offset;
 
-  sprintf (buf, "%-4s $%02X, $%04lX", str, *(op + 1), newadd);
+  sprintf (buf, "%-4s $%02X, $%04lX", str, *(op + 1), (unsigned long)newadd);
   lineprint3 (outf, ctr, op, buf);
 }
 
@@ -237,3 +238,5 @@ xfer (char *outf, long ctr, unsigned char *op, char *str)
 	   *(op + 5));
   lineprint7 (outf, ctr, op, buf);
 }
+
+/*@ =bufferoverflowhigh */

@@ -7,64 +7,51 @@
 #include "interupt.h"
 #include "dis_runtime.h"
 #include "pce.h"
+#include "hard_pce.h"
+#include "gfx.h"
+#include "pce.h"
+#include "utils.h"
 
-extern IO io;
-
-extern UChar* Page[];
-
-extern UChar *ROMMap[];
-
-extern UChar* IOAREA;
-
+#if defined(KERNEL_DEBUG)
+static
+int one_bit_set(UChar arg)
+{
+  return (arg != 0) && ((-arg & arg) == arg);
+}
+#endif
 
 // flag-value table (for speed)
 
 UChar flnz_list[256] = {
-FL_Z,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,    // 00-0F
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,       // 40-4F
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,       // 70-7F
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // 80-87
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // 90-97
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // A0-A7
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // B0-B7
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // C0-C7
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // D0-D7
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // E0-E7
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // F0-F7
-FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N
+  FL_Z,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,       // 00-0F
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          // 40-4F
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,          // 70-7F
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // 80-87
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // 90-97
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // A0-A7
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // B0-B7
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // C0-C7
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // D0-D7
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // E0-E7
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,  // F0-F7
+  FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N
 };
 
 // Elementary operations:
 // - defined here for clarity, brevity,
 //   and reduced typographical errors
-
-//Addressing modes:
-
-#define abs_operand(x)	   get_8bit_addr(get_16bit_addr(x))
-#define absx_operand(x)    get_8bit_addr(get_16bit_addr(x)+reg_x)
-#define absy_operand(x)    get_8bit_addr(get_16bit_addr(x)+reg_y)
-#define zp_operand(x)	   get_8bit_zp(imm_operand(x))
-#define zpx_operand(x)	   get_8bit_zp(imm_operand(x)+reg_x)
-#define zpy_operand(x)	   get_8bit_zp(imm_operand(x)+reg_y)
-#define zpind_operand(x)   get_8bit_addr(get_16bit_zp(imm_operand(x)))
-#define zpindx_operand(x)  get_8bit_addr(get_16bit_zp(imm_operand(x)+reg_x))
-#define zpindy_operand(x)  get_8bit_addr(get_16bit_zp(imm_operand(x))+reg_y)
-
-// Elementary flag check (flags 'N' and 'Z'):
-
-#define chk_flnz_8bit(x) reg_p = ((reg_p & (~(FL_N|FL_T|FL_Z))) | flnz_list[x]);
 
 // This code ignores hardware-segment accesses; it should only be used
 // to access immediate data (hardware segment does not run code):
@@ -73,40 +60,66 @@ FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N,FL_N
 
 inline UChar imm_operand(UInt16 addr) {
   register unsigned short int memreg = addr>>13;
-  return( (UChar) (Page[memreg][addr]));
+  return( (UChar) (PageR[memreg][addr]));
 }
 
-//
-// as a define:  (inline doesn't always inline it)
-//#define imm_operand(x)     (UChar) *(mmr_base[(x)>>13] + ((x) & 0x1FFF))
+#if !defined(INLINED_ACCESSORS)
+
+#define get_8bit_addr(addr) Rd6502((addr))
+
+#define put_8bit_addr(addr,byte) Wr6502((addr),(byte))
+
+#define get_16bit_addr(addr) (Rd6502(addr) + (Rd6502((UInt16)(addr + 1)) << 8))
+
+#else
+
 
 // This is the more generalized access routine:
 inline UChar get_8bit_addr(UInt16 addr) {
   register unsigned short int memreg = addr>>13;
-  if (Page[memreg] == IOAREA)
+
+  if (PageR[memreg] == IOAREA)
     return(IO_read(addr));
   else
-    return((UChar) (Page[memreg][addr]));
+    return((UChar) (PageR[memreg][addr]));
 }
 
-inline int put_8bit_addr(UInt16 addr, UChar byte) {
+inline void put_8bit_addr(UInt16 addr, UChar byte) {
   register unsigned int memreg = addr>>13;
-  if (Page[memreg] == IOAREA) {
+
+  if (PageW[memreg] == IOAREA) {
     IO_write(addr, byte);
   } else {
-    Page[memreg][addr] = byte;
+    PageW[memreg][addr] = byte;
   }
-  return(0);
 }
 
 inline UInt16 get_16bit_addr(UInt16 addr) {
   register unsigned int memreg = addr>>13;
-  UInt16 ret_16bit = (UChar) Page[memreg][addr];
+  UInt16 ret_16bit = (UChar) PageR[memreg][addr];
   memreg = (++addr)>>13;
-  ret_16bit += (UInt16) ((UChar) Page[memreg][addr] << 8);
+  ret_16bit += (UInt16) ((UChar) PageR[memreg][addr] << 8);
 
   return(ret_16bit);
 }
+
+#endif
+
+//Addressing modes:
+
+#define abs_operand(x)     get_8bit_addr(get_16bit_addr(x))
+#define absx_operand(x)    get_8bit_addr(get_16bit_addr(x)+reg_x)
+#define absy_operand(x)    get_8bit_addr(get_16bit_addr(x)+reg_y)
+#define zp_operand(x)      get_8bit_zp(imm_operand(x))
+#define zpx_operand(x)     get_8bit_zp(imm_operand(x)+reg_x)
+#define zpy_operand(x)     get_8bit_zp(imm_operand(x)+reg_y)
+#define zpind_operand(x)   get_8bit_addr(get_16bit_zp(imm_operand(x)))
+#define zpindx_operand(x)  get_8bit_addr(get_16bit_zp(imm_operand(x)+reg_x))
+#define zpindy_operand(x)  get_8bit_addr(get_16bit_zp(imm_operand(x))+reg_y)
+
+// Elementary flag check (flags 'N' and 'Z'):
+
+#define chk_flnz_8bit(x) reg_p = ((reg_p & (~(FL_N|FL_T|FL_Z))) | flnz_list[x]);
 
 inline UChar get_8bit_zp(UChar zp_addr) {
   return((UChar) *(zp_base + zp_addr) );
@@ -146,10 +159,13 @@ inline UInt16 pull_16bit(void) {
 // Implementation of actual opcodes:
 //
 
+/*@ -type */
+
+static
 UChar adc(UChar acc, UChar val) {
   Int16  sig  = (Char)acc;
   UInt16 usig = (UChar)acc;
-  UInt16 temp, temp1;
+  UInt16 temp;
 
   if (!(reg_p & FL_D)) {		/* binary mode */
     if (reg_p & FL_C) {
@@ -158,12 +174,12 @@ UChar adc(UChar acc, UChar val) {
     }
     sig  += (Char)val;
     usig += (UChar)val;
-    acc   = usig & 0xFF;
+    acc   = (UChar)(usig & 0xFF);
 
     reg_p = (reg_p & ~(FL_N|FL_V|FL_T|FL_Z|FL_C))
-	    | (((sig > 127) || (sig < -128)) ? FL_V:0)
-	    | ((usig > 255) ? FL_C:0)
-	    | flnz_list[acc];
+            | (((sig > 127) || (sig < -128)) ? FL_V:0)
+            | ((usig > 255) ? FL_C:0)
+            | flnz_list[acc];
 
   } else {				/* decimal mode */
 
@@ -191,10 +207,11 @@ UChar adc(UChar acc, UChar val) {
   return(acc);
 }
 
+static
 void sbc(UChar val) {
   Int16  sig  = (Char)reg_a;
   UInt16 usig = (UChar)reg_a;
-  Int16  temp, temp1;
+  Int16  temp;
 
   if (!(reg_p & FL_D)) {		/* binary mode */
     if (!(reg_p & FL_C)) {
@@ -203,7 +220,7 @@ void sbc(UChar val) {
     }
     sig   -= (Char)val;
     usig  -= (UChar)val;
-    reg_a  = (usig & 0xFF);
+    reg_a  = (UChar)(usig & 0xFF);
     reg_p  = (reg_p & ~(FL_N|FL_V|FL_T|FL_Z|FL_C))
 	     | (((sig > 127) || (sig < -128)) ? FL_V:0)
 	     | ((usig > 255) ? 0:FL_C)
@@ -216,7 +233,7 @@ void sbc(UChar val) {
 // adequately defined.	Nor is overflow
 // flag treatment.
 
-    temp  = bcdbin[usig] - bcdbin[val];
+    temp  = (Int16)(bcdbin[usig] - bcdbin[val]);
 
     if (!(reg_p & FL_C)) { temp--; }
 
@@ -501,9 +518,7 @@ int asl_abs(void) {
 	  | flnz_list[temp];
   cycles+=7;
 
-  if (put_8bit_addr(temp_addr,temp)) {	// if error writing to address,
-    return 1;				// stop before advancing PC
-  }
+  put_8bit_addr(temp_addr,temp);
   reg_pc+=3;
   return 0;
 }
@@ -517,10 +532,7 @@ int asl_absx(void) {
 	  | ((temp1 & 0x80) ? FL_C:0)
 	  | flnz_list[temp];
   cycles+=7;
-
-  if (put_8bit_addr(temp_addr,temp)) {	// if error writing to address,
-    return 1;				// stop before advancing PC
-  }
+  put_8bit_addr(temp_addr,temp);
   reg_pc+=3;
   return 0;
 }
@@ -885,6 +897,9 @@ int bra(void) {
 }
 
 int brek(void) {
+#if defined(KERNEL_DEBUG)
+  fprintf(stderr, "BRK opcode has been hit [PC = 0x%04x] at %s(%d)\n", reg_pc, __FILE__, __LINE__);
+#endif
   push_16bit(reg_pc+2);
   reg_p &= ~FL_T;
   push_8bit(reg_p|FL_B);
@@ -1155,9 +1170,7 @@ int dec_abs(void) {
   UInt16 temp_addr = get_16bit_addr(reg_pc+1);
   chk_flnz_8bit(temp = get_8bit_addr(temp_addr)-1);
   cycles+=7;
-  if (put_8bit_addr(temp_addr, temp)) {
-     return 1;
-  }
+  put_8bit_addr(temp_addr, temp);
   reg_pc+=3;
   return 0;
 }
@@ -1167,9 +1180,7 @@ int dec_absx(void) {
   UInt16 temp_addr = get_16bit_addr(reg_pc+1)+reg_x;
   chk_flnz_8bit(temp = get_8bit_addr(temp_addr)-1);
   cycles+=7;
-  if (put_8bit_addr(temp_addr, temp)) {
-    return 1;
-  }
+  put_8bit_addr(temp_addr, temp);
   reg_pc+=3;
   return 0;
 }
@@ -1359,9 +1370,7 @@ int inc_abs(void) {
   UInt16 temp_addr = get_16bit_addr(reg_pc+1);
   chk_flnz_8bit(temp = get_8bit_addr(temp_addr)+1);
   cycles+=7;
-  if (put_8bit_addr(temp_addr, temp)) {
-    return 1;
-  }
+  put_8bit_addr(temp_addr, temp);
   reg_pc+=3;
   return 0;
 }
@@ -1371,9 +1380,7 @@ int inc_absx(void) {
   UInt16 temp_addr = get_16bit_addr(reg_pc+1)+reg_x;
   chk_flnz_8bit(temp = get_8bit_addr(temp_addr)+1);
   cycles+=7;
-  if (put_8bit_addr(temp_addr, temp)) {
-    return 1;
-  }
+  put_8bit_addr(temp_addr, temp);
   reg_pc+=3;
   return 0;
 }
@@ -1383,6 +1390,7 @@ int inc_zp(void) {
   UChar zp_addr = imm_operand(reg_pc+1);
   chk_flnz_8bit(temp = get_8bit_zp(zp_addr)+1);
   put_8bit_zp(zp_addr, temp);
+
   reg_pc+=2;
   cycles+=6;
   return 0;
@@ -1485,6 +1493,7 @@ int lda_zpx(void) {
 
 int lda_zpind(void) {
   chk_flnz_8bit(reg_a = zpind_operand(reg_pc+1));
+
   reg_pc+=2;
   cycles+=7;
   return 0;
@@ -1594,9 +1603,7 @@ int lsr_abs(void) {
 	  | ((temp1&1) ? FL_C:0)
 	  | flnz_list[temp];
   cycles+=7;
-  if (put_8bit_addr(temp_addr, temp)) {
-    return 1;
-  }
+  put_8bit_addr(temp_addr, temp);
   reg_pc+=3;
   return 0;
 }
@@ -1610,9 +1617,7 @@ int lsr_absx(void) {
 	  | ((temp1&1) ? FL_C:0)
 	  | flnz_list[temp];
   cycles+=7;
-  if (put_8bit_addr(temp_addr, temp)) {
-    return 1;
-  }
+  put_8bit_addr(temp_addr, temp);
   reg_pc+=3;
   return 0;
 }
@@ -1942,9 +1947,7 @@ int rol_abs(void) {
 	  | ((temp1 & 0x80) ? FL_C:0)
 	  | flnz_list[temp];
   cycles+=7;
-  if (put_8bit_addr(temp_addr, temp)) {
-    return 1;
-  }
+  put_8bit_addr(temp_addr, temp);
   reg_pc+=3;
   return 0;
 }
@@ -1959,9 +1962,7 @@ int rol_absx(void) {
 	  | ((temp1 & 0x80) ? FL_C:0)
 	  | flnz_list[temp];
   cycles+=7;
-  if (put_8bit_addr(temp_addr, temp)) {
-    return 1;
-  }
+  put_8bit_addr(temp_addr, temp);
   reg_pc+=3;
   return 0;
 }
@@ -2019,9 +2020,7 @@ int ror_abs(void) {
 	  | ((temp1 & 0x01) ? FL_C:0)
 	  | flnz_list[temp];
   cycles+=7;
-  if (put_8bit_addr(temp_addr, temp)) {
-    return 1;
-  }
+  put_8bit_addr(temp_addr, temp);
   reg_pc+=3;
   return 0;
 }
@@ -2036,9 +2035,7 @@ int ror_absx(void) {
 	  | ((temp1 & 0x01) ? FL_C:0)
 	  | flnz_list[temp];
   cycles+=7;
-  if (put_8bit_addr(temp_addr, temp)) {
-    return 1;
-  }
+  put_8bit_addr(temp_addr, temp);
   reg_pc+=3;
   return 0;
 }
@@ -2186,6 +2183,14 @@ int sed(void) {
 }
 
 int sei(void) {
+#ifdef DUMP_ON_SEI
+	int i;
+	Log("MMR[7]\n");
+	for (i = 0xE000; i < 0xE100; i++)
+		{
+			Log("%02X ", get_8bit_addr(i));
+		}
+#endif
   reg_p = (reg_p|FL_I) & ~FL_T;
   reg_pc++;
   cycles+=2;
@@ -2298,9 +2303,7 @@ int st2(void) {
 int sta_abs(void) {
   reg_p &= ~FL_T;
   cycles+=5;
-  if (put_8bit_addr(get_16bit_addr(reg_pc+1), reg_a)) {
-    return 1;
-  }
+  put_8bit_addr(get_16bit_addr(reg_pc+1), reg_a);
   reg_pc+=3;
   return 0;
 }
@@ -2308,9 +2311,7 @@ int sta_abs(void) {
 int sta_absx(void) {
   reg_p &= ~FL_T;
   cycles+=5;
-  if (put_8bit_addr(get_16bit_addr(reg_pc+1)+reg_x, reg_a)) {
-    return 1;
-  }
+  put_8bit_addr(get_16bit_addr(reg_pc+1)+reg_x, reg_a);
   reg_pc+=3;
   return 0;
 }
@@ -2318,9 +2319,7 @@ int sta_absx(void) {
 int sta_absy(void) {
   reg_p &= ~FL_T;
   cycles+=5;
-  if (put_8bit_addr(get_16bit_addr(reg_pc+1)+reg_y, reg_a)) {
-    return 1;
-  }
+  put_8bit_addr(get_16bit_addr(reg_pc+1)+reg_y, reg_a);
   reg_pc+=3;
   return 0;
 }
@@ -2328,6 +2327,7 @@ int sta_absy(void) {
 int sta_zp(void) {
   reg_p &= ~FL_T;
   put_8bit_zp(imm_operand(reg_pc+1), reg_a);
+
   reg_pc+=2;
   cycles+=4;
   return 0;
@@ -2344,9 +2344,7 @@ int sta_zpx(void) {
 int sta_zpind(void) {
   reg_p &= ~FL_T;
   cycles+=7;
-  if (put_8bit_addr(get_16bit_zp(imm_operand(reg_pc+1)), reg_a)) {
-    return 1;
-  }
+  put_8bit_addr(get_16bit_zp(imm_operand(reg_pc+1)), reg_a);
   reg_pc+=2;
   return 0;
 }
@@ -2354,9 +2352,7 @@ int sta_zpind(void) {
 int sta_zpindx(void) {
   reg_p &= ~FL_T;
   cycles+=7;
-  if (put_8bit_addr(get_16bit_zp(imm_operand(reg_pc+1)+reg_x), reg_a)) {
-    return 1;
-  }
+  put_8bit_addr(get_16bit_zp(imm_operand(reg_pc+1)+reg_x), reg_a);
   reg_pc+=2;
   return 0;
 }
@@ -2364,9 +2360,7 @@ int sta_zpindx(void) {
 int sta_zpindy(void) {
   reg_p &= ~FL_T;
   cycles+=7;
-  if (put_8bit_addr(get_16bit_zp(imm_operand(reg_pc+1))+reg_y, reg_a)) {
-    return 1;
-  }
+  put_8bit_addr(get_16bit_zp(imm_operand(reg_pc+1))+reg_y, reg_a);
   reg_pc+=2;
   return 0;
 }
@@ -2374,9 +2368,7 @@ int sta_zpindy(void) {
 int stx_abs(void) {
   reg_p &= ~FL_T;
   cycles+=5;
-  if (put_8bit_addr(get_16bit_addr(reg_pc+1), reg_x)) {
-    return 1;
-  }
+  put_8bit_addr(get_16bit_addr(reg_pc+1), reg_x);
   reg_pc+=3;
   return 0;
 }
@@ -2400,9 +2392,7 @@ int stx_zpy(void) {
 int sty_abs(void) {
   reg_p &= ~FL_T;
   cycles+=5;
-  if (put_8bit_addr(get_16bit_addr(reg_pc+1), reg_y)) {
-    return 1;
-  }
+  put_8bit_addr(get_16bit_addr(reg_pc+1), reg_y);
   reg_pc+=3;
   return 0;
 }
@@ -2426,9 +2416,7 @@ int sty_zpx(void) {
 int stz_abs(void) {
   reg_p &= ~FL_T;
   cycles+=5;
-  if (put_8bit_addr(get_16bit_addr(reg_pc+1), 0)) {
-    return 1;
-  }
+  put_8bit_addr(get_16bit_addr(reg_pc+1), 0);
   reg_pc+=3;
   return 0;
 }
@@ -2436,9 +2424,7 @@ int stz_abs(void) {
 int stz_absx(void) {
   reg_p &= ~FL_T;
   cycles+=5;
-  if (put_8bit_addr((get_16bit_addr(reg_pc+1)+reg_x), 0)) {
-    return 1;
-  }
+  put_8bit_addr((get_16bit_addr(reg_pc+1)+reg_x), 0);
   reg_pc+=3;
   return 0;
 }
@@ -2471,7 +2457,6 @@ int sxy(void) {
 
 int tai(void) {
   UInt16 from, to, len, alternate;
-  int err = 0;
 
   reg_p &= ~FL_T;
   from = get_16bit_addr(reg_pc+1);
@@ -2479,26 +2464,43 @@ int tai(void) {
   len  = get_16bit_addr(reg_pc+5);
   alternate = 0;
 
+#if defined(CD_DEBUG) && defined(INLINED_ACCESSORS)
+  fprintf(stderr, "Transfert from bank 0x%02x to bank 0x%02x\n", mmr[from >> 13], mmr[to >> 13]);
+#endif
+
   cycles+=(6 * len) + 17;
-  while ((len-- != 0) && (err == 0)) {
-    err = put_8bit_addr(to++, get_8bit_addr(from+alternate));
+  while (len-- != 0) {
+    put_8bit_addr(to++, get_8bit_addr(from+alternate));
     alternate ^= 1;
   }
-  if (!err) reg_pc+=7;
-  return(err);
+  reg_pc+=7;
+  return 0;
 }
 
 int tam(void) {
   UInt16 i;
   UChar bitfld = imm_operand(reg_pc+1);
 
+#if defined(KERNEL_DEBUG)
+  if (bitfld == 0)
+    {
+      fprintf(stderr, "TAM with argument 0\n");
+      Log("TAM with argument 0\n");
+    }
+  else if (!one_bit_set(bitfld))
+    {
+      fprintf(stderr, "TAM with unusual argument 0x%02x\n", bitfld);
+      Log("TAM with unusual argument 0x%02x\n", bitfld);
+    }
+#endif
+
   for (i = 0; i < 8; i++) {
     if (bitfld & (1 << i)) {
       mmr[i] = reg_a;
       bank_set(i, reg_a);
-      /* Page[i] = ROMMap[reg_a]; */
     }
   }
+
   reg_p &= ~FL_T;
   reg_pc+=2;
   cycles+=5;
@@ -2521,24 +2523,26 @@ int tay(void) {
 
 int tdd(void) {
   UInt16 from, to, len;
-  int err = 0;
 
   reg_p &= ~FL_T;
   from = get_16bit_addr(reg_pc+1);
   to   = get_16bit_addr(reg_pc+3);
   len  = get_16bit_addr(reg_pc+5);
 
+#if defined(CD_DEBUG) && defined(INLINED_ACCESSORS)
+  fprintf(stderr, "Transfert from bank 0x%02x to bank 0x%02x\n", mmr[from >> 13], mmr[to >> 13]);
+#endif
+
   cycles+=(6 * len) + 17;
-  while ((len-- != 0) && (err == 0)) {
-    err = put_8bit_addr(to--, get_8bit_addr(from--));
+  while (len-- != 0) {
+    put_8bit_addr(to--, get_8bit_addr(from--));
   }
-  if (!err) reg_pc+=7;
-  return(err);
+  reg_pc+=7;
+  return 0;
 }
 
 int tia(void) {
   UInt16 from, to, len, alternate;
-  int err = 0;
 
   reg_p &= ~FL_T;
   from = get_16bit_addr(reg_pc+1);
@@ -2546,52 +2550,75 @@ int tia(void) {
   len  = get_16bit_addr(reg_pc+5);
   alternate = 0;
 
+#if defined(CD_DEBUG) && defined(INLINED_ACCESSORS)
+  fprintf(stderr, "Transfert from bank 0x%02x to bank 0x%02x\n", mmr[from >> 13], mmr[to >> 13]);
+#endif
+
   cycles+=(6 * len) + 17;
-  while ((len-- != 0) && (err == 0)) {
-    err = put_8bit_addr(to+alternate, get_8bit_addr(from++));
+  while (len-- != 0) {
+    put_8bit_addr(to+alternate, get_8bit_addr(from++));
     alternate ^= 1;
   }
-  if (!err) reg_pc+=7;
-  return(err);
+  reg_pc+=7;
+  return 0;
 }
 
 int tii(void) {
   UInt16 from, to, len;
-  int err = 0;
 
   reg_p &= ~FL_T;
   from = get_16bit_addr(reg_pc+1);
   to   = get_16bit_addr(reg_pc+3);
   len  = get_16bit_addr(reg_pc+5);
 
+#if defined(CD_DEBUG) && defined(INLINED_ACCESSORS)
+  fprintf(stderr, "Transfert from bank 0x%02x to bank 0x%02x\n", mmr[from >> 13], mmr[to >> 13]);
+#endif
+
   cycles+=(6 * len) + 17;
-  while ((len-- != 0) && (err == 0)) {
-    err = put_8bit_addr(to++, get_8bit_addr(from++));
+  while (len-- != 0) {
+    put_8bit_addr(to++, get_8bit_addr(from++));
   }
-  if (!err) reg_pc+=7;
-  return(err);
+  reg_pc+=7;
+  return 0;
 }
 
 int tin(void) {
   UInt16 from, to, len;
-  int err = 0;
 
   reg_p &= ~FL_T;
   from = get_16bit_addr(reg_pc+1);
   to   = get_16bit_addr(reg_pc+3);
   len  = get_16bit_addr(reg_pc+5);
 
+#if defined(CD_DEBUG) && defined(INLINED_ACCESSORS)
+  fprintf(stderr, "Transfert from bank 0x%02x to bank 0x%02x\n", mmr[from >> 13], mmr[to >> 13]);
+#endif
+
   cycles+=(6 * len) + 17;
-  while ((len-- != 0) && (err == 0)) {
-    err = put_8bit_addr(to, get_8bit_addr(from++));
+  while (len-- != 0) {
+    put_8bit_addr(to, get_8bit_addr(from++));
   }
-  if (!err) reg_pc+=7;
-  return(err);
+  reg_pc+=7;
+  return 0;
 }
 
 int tma(void) {
   int i;
   UChar bitfld = imm_operand(reg_pc+1);
+
+#if defined(KERNEL_DEBUG)
+  if (bitfld == 0)
+    {
+      fprintf(stderr, "TMA with argument 0\n");
+      Log("TMA with argument 0\n");
+    }
+  else if (!one_bit_set(bitfld))
+    {
+      fprintf(stderr, "TMA with unusual argument 0x%02x\n", bitfld);
+      Log("TMA with unusual argument 0x%02x\n", bitfld);
+    }
+#endif
 
   for (i = 0; i < 8; i++) {
     if (bitfld & (1 << i)) {
@@ -2614,9 +2641,7 @@ int trb_abs(void) {
 	  | ((temp1&0x40) ? FL_V:0)
 	  | ((temp & reg_a) ? 0:FL_Z);
   cycles+=7;
-  if (put_8bit_addr(abs_addr, temp1)) {
-    return 1;
-  }
+  put_8bit_addr(abs_addr, temp1);
   reg_pc+=3;
   return 0;
 }
@@ -2646,9 +2671,7 @@ int tsb_abs(void) {
 	  | ((temp1&0x40) ? FL_V:0)
 	  | ((temp & reg_a) ? 0:FL_Z);
   cycles+=7;
-  if (put_8bit_addr(abs_addr, temp1)) {
-    return 1;
-  }
+  put_8bit_addr(abs_addr, temp1);
   reg_pc+=3;
   return 0;
 }
@@ -2801,13 +2824,15 @@ int int_tiq(void) {
   return 0;
 }
 
+/*@ =type */
+
 // Execute a single instruction :
 
 void exe_instruct(void) {
-  (*optable_runtime[Page[reg_pc>>13][reg_pc]].func_exe)();
+  (*optable_runtime[PageR[reg_pc>>13][reg_pc]].func_exe)();
 }
 
-void
+static void
 Int6502 (UChar Type)
 {
   UInt16 J;
@@ -2847,20 +2872,73 @@ Int6502 (UChar Type)
 	      J = VEC_TIMER;
 	      break;
 
-
 	    }
 
 	}
 
-      reg_pc = get_16bit_addr(J);
+      reg_pc = get_16bit_addr((UInt16)J);
     }
-  else
+}
+
+//! Log all needed info to guess what went wrong in the cpu
+void dump_pce_core() {
+
+  int i;
+
+  fprintf(stderr, "Dumping PCE core\n");
+
+  Log("PC = 0x%04x\n", reg_pc);
+  Log("A = 0x%02x\n", reg_a);
+  Log("X = 0x%02x\n", reg_x);
+  Log("Y = 0x%02x\n", reg_y);
+  Log("P = 0x%02x\n", reg_p);
+  Log("S = 0x%02x\n", reg_s);
+
+  for (i = 0; i < 8; i++)
     {
-      irequest |= Type;
+      Log("MMR[%d] = 0x%02x\n", i, mmr[i]);
+    }
+
+  for (i = 0x2000; i < 0xFFFF; i++)
+    {
+
+      if ((i & 0xF) == 0)
+        {
+          Log("%04X: ", i);
+        }
+
+      Log("%02x ", get_8bit_addr((UInt16)i));
+      if ((i & 0xF) == 0xF)
+        {
+          Log("\n");
+        }
+      if ((i & 0x1FFF) == 0x1FFF)
+        {
+          Log("\n-------------------------------------------------------------\n");
+        }
     }
 
 }
 
+
+#ifdef BENCHMARK
+/* code copied from utils.c */
+#include <sys/time.h>
+static double osd_getTime(void)
+{
+#ifdef WIN32  
+  return (SDL_GetTicks() * 1e-3);
+#elif defined(DJGPP)
+  return uclock() * (1.0 / UCLOCKS_PER_SEC);
+#else
+  struct timeval tp;
+
+  gettimeofday(&tp, NULL);
+  // printf("current microsec = %f\n",tp.tv_sec + 1e-6 * tp.tv_usec);
+  return tp.tv_sec + 1e-6 * tp.tv_usec;
+#endif
+}
+#endif
 
 // Execute instructions as a machine would, including all
 // important (known) interrupts, hardware functions, and
@@ -2875,7 +2953,16 @@ void exe_go(void) {
   int err = 0;
   UChar I;
 
-//  if (gr_mode != 0) set_gr_palette();
+#if defined(KERNEL_DEBUG)
+  UInt16 old_reg_pc;
+#endif
+
+#ifdef BENCHMARK
+  static int countNb = 8;   /* run for 8 * 65536 scan lines */
+  static int countScan = 0; /* scan line counter */
+  static double lastTime;
+  lastTime = osd_getTime();
+#endif
 
   // err is set on a 'trap':
   while (!err) {
@@ -2893,7 +2980,7 @@ void exe_go(void) {
           reg_x,
           reg_y,
           reg_p);
-/*
+
       {
         int i;
         for (i=0xF0; i<256; i++)
@@ -2905,71 +2992,123 @@ void exe_go(void) {
 */
 #endif
 
-/*
-{
-	static char in_rom = 0;	
-		if (reg_pc == 0x3800) in_rom = 1;
-			
-		if (in_rom)
-		  Log("PC = %04X\n",reg_pc, in_rom);	
-		
-		if (reg_pc == 0x3837)
-		{
-			int i;
-			for (i = 0; i < 8; i++)
-				Log("tmm[%d] = %d\n",i,mmr[i]);
-			for (i = 0xE000; i < 0xFFFE; i++)
-				Log("%02x%s",Page[i>>13][i],i & 0xf?"":"\n");
-		}
-		
-		if (reg_pc >= 0xE000)
-			in_rom = 0;
-		
-		if (reg_pc == 0x4000)
-		{
-			int i;
-			for (i = 0; i < 8; i++)
-				Log("tmm[%d] = %d\n",i,mmr[i]);
-			for (i = 0x68; i < 0x7F; i++)
-			{
-				int x;
-				Log("bank %d :",i);
-					for (x = 0; x < 20; x++)
-						Log("%02X",ROMMap[i][x]);
-					Log("\n");
-			}
-		}
-		
-		
-}
-*/
+    /*
+    {
+      static char in_rom = 0;
+      if (reg_pc == 0x3800) in_rom = 1;
 
-#if defined(TEST_ROM_RELOCATED)
-#warning REMOVE ME (anyway the speed will be terrible, you ll notice me quickly :)
-   Log("PC = %04X\n",reg_pc);
-{
-	extern UChar* ROM;
-	
-	int i;
-	for (i = 0xE000; i < 0xFFFF; i++)
-	{
-		Op6502(i);
-		Log("ROM[0x%x] = %d(0x%x)\n",i & 0x1FFF,ROM[i & 0x1FFF],ROM[i & 0x1FFF]);
-	}
-}
-#endif
+      if (in_rom)
+        Log("PC = %04X\n",reg_pc, in_rom);
+
+      if (reg_pc == 0x3837)
+        {
+          int i;
+          for (i = 0; i < 8; i++)
+            Log("tmm[%d] = %d\n",i,mmr[i]);
+          for (i = 0xE000; i < 0xFFFE; i++)
+            Log("%02x%s",Page[i>>13][i],i & 0xf?"":"\n");
+        }
+
+      if (reg_pc >= 0xE000)
+        in_rom = 0;
+
+      if (reg_pc == 0x4000)
+        {
+          int i;
+          for (i = 0; i < 8; i++)
+            Log("tmm[%d] = %d\n",i,mmr[i]);
+          for (i = 0x68; i < 0x7F; i++)
+            {
+              int x;
+              Log("bank %d :",i);
+              for (x = 0; x < 20; x++)
+                Log("%02X",ROMMap[i][x]);
+              Log("\n");
+            }
+        }
+
+    }
+    */
 
 #if defined(SHARED_MEMORY)
-    if (s_external_control_cpu != -1) {
-		while (s_external_control_cpu != 0) {
-			usleep(10);
-		}
-		if (s_external_control_cpu > 0)
-			s_external_control_cpu--;
-	}
+    if (external_control_cpu >= 0) {
+      while (external_control_cpu == 0) {
+#if defined(WIN32)
+        SDL_Delay(1);
+#else
+        usleep(1);
 #endif
-	
-    err = (*optable_runtime[Page[reg_pc>>13][reg_pc]].func_exe)();
+      }
+      if (external_control_cpu > 0)
+        external_control_cpu--;
+    }
+#endif
+
+#if defined(KERNEL_DEBUG)
+    old_reg_pc = reg_pc;
+#endif
+
+#undef OPCODE_LOGGING
+#if defined(OPCODE_LOGGING)
+#if defined(SDL)
+    extern Uint8* key;
+
+	// if (!key[SDLK_F11])
+#endif
+    Log("[%04X] (%02X) (%02X,%02X,%02X) (%02X,%02X)\n",
+        reg_pc,
+        PageR[reg_pc>>13][reg_pc],
+        reg_a,
+        reg_x,
+        reg_y,
+        reg_s,
+        reg_p);
+#endif
+
+#ifdef USE_INSTR_SWITCH
+#include "instr-switch.c"
+#else
+    err = (*optable_runtime[PageR[reg_pc>>13][reg_pc]].func_exe)();
+#endif
+
+#if defined(KERNEL_DEBUG)
+
+    if (mmr[2] == 0x69)
+      {
+        static int old_4062 = -1;
+        if (PageR[0x4062 >> 13][0x4062] != old_4062)
+          {
+            Log("[0x4062] changed from 0x%02x to 0x%02x\n", old_4062, PageR[0x4062 >> 13][0x4062]);
+            old_4062 = PageR[0x4062 >> 13][0x4062];
+          }
+      }
+
+    if (reg_pc < 0x2000)
+      {
+        fprintf(stderr, "PC in I/O area [0x%04x] referer = 0x%04x\n", reg_pc, old_reg_pc);
+        Log("PC in I/O area [0x%04x] referer = 0x%04x\n", reg_pc, old_reg_pc);
+      }
+/*
+	if ((reg_pc >= 0x2000) && (reg_pc < 0x4000))
+	  {
+		 fprintf(stderr, "PC in RAM [0x%04x] *PC = 0x%02x referer = 0x%04x\n", reg_pc, Page[reg_pc>>13][reg_pc], old_reg_pc);
+		 Log("PC in RAM [0x%04x] *PC = 0x%02x referer = 0x%04x\n", reg_pc, Page[reg_pc>>13][reg_pc], old_reg_pc);
+	  }
+*/
+    if (err)
+      {
+        dump_pce_core();
+		 /*
+		 int i;
+		 fprintf(stderr,"Err was set, PC = 0x04%x\n", reg_pc);
+		 for (i = -15; i < 15; i++)
+		   {
+			  fprintf(stderr,"%02x ", Page[(reg_pc+i)>>13][reg_pc+i]);
+		   }
+		 */
+      }
+#endif
+
     // err = (*optable[Page[reg_pc>>13][reg_pc]].func_exe)();
 
     // TIMER stuff:
@@ -2979,163 +3118,69 @@ void exe_go(void) {
 //  }
 
     // HSYNC stuff - count cycles:
-    if (cycles > 455) {
+    if (cycles > 455)
+      {
+
+#ifdef BENCHMARK
+        countScan++;
+        if ((countScan & 0xFFFF) == 0) {
+          double currentTime = osd_getTime();
+          printf("%f\n", currentTime - lastTime);
+          lastTime = currentTime;
+          countNb--;
+          if (countNb == 0) return;
+        }
+#endif
 
 /*
       Log("Horizontal sync, cycles = %d, cycleNew = %d\n",
           cycles,
           CycleNew);
 */
-      CycleNew += cycles;
-      cycles -= 455;
-      // scanline++;
+        CycleNew += cycles;
+        cycles -= 455;
+        // scanline++;
 
-      /* inspired from Marat's code ... */
+        // Log("Calling periodic handler\n");
+        I = Loop6502 ();	/* Call the periodic handler */
+        // _ICount += _IPeriod;
+        /* Reset the cycle counter */
+        cycles = 0;
 
-	  /* If we have come after CLI, get INT_? from IRequest */
-	  /* Otherwise, get it from the loop handler            */
-	  if (aftercli)
-	    {
+        // Log("Requested interrupt is %d\n",I);
 
-	      if (irequest & INT_TIMER)
-		{
+        if (I == INT_QUIT)
+          {
+#if !defined(FINAL_RELEASE)
+            fprintf(stderr,"Normal exit of the cpu loop (INT_QUIT interruption caught)\n");
+#endif
+            return;	/* Exit if INT_QUIT     */
+          }
+        if (I)
+          Int6502 (I);	/* Interrupt if needed  */
 
-		  irequest &= ~INT_TIMER;
+        if ((unsigned int) (CycleNew - cyclecountold) >
+            (unsigned int) TimerPeriod * 2)
 
-		  I = INT_TIMER;
+          cyclecountold = CycleNew;
 
-		}
-	      else if (irequest & INT_IRQ)
-		{
-
-		  irequest &= ~INT_IRQ;
-
-		  I = INT_IRQ;
-
-		}
-
-	      else if (irequest & INT_IRQ2)
-		{
-
-		  irequest &= ~INT_IRQ2;
-
-		  I = INT_IRQ2;
-
-		}
-
-	      cycles = 455;
-
-	      if (irequest == 0)
-
-		{
-		  cycles = ibackup;	/* Restore the ICount        */
-		  aftercli = 0;	/* Done with AfterCLI state  */
-
-		}
-	    }
-	  else
-	    {
-
-              // Log("Calling periodic handler\n");
-
-	      I = Loop6502 ();	/* Call the periodic handler */
-	      // _ICount += _IPeriod;	/* Reset the cycle counter   */
-              cycles = 0;
-	    }
-
-          // Log("Requested interrupt is %d\n",I);
-
-	  if (I == INT_QUIT)
-	    return;	/* Exit if INT_QUIT     */
-	  if (I)
-	    Int6502 (I);	/* Interrupt if needed  */
-
-
-	  if ((unsigned int) (CycleNew - cyclecountold) >
-	      (unsigned int) TimerPeriod * 2)
-
-	    cyclecountold = CycleNew;
-
-	}
-      else
-	{
-
-	  if (CycleNew - cyclecountold >= TimerPeriod)
-	    {
-
-	      cyclecountold += TimerPeriod;
-
-	      I = TimerInt ();
-
-	      if (I)
-		Int6502 (I);
-
-	    }
-
-	}
-
-
-/* Dave's code ....
-      if (scanline < 241) {			    // body of screen
-//	 if ((frames & 3) == 1) put_CG(lines-1);    // calculate scanline
-         // put_CG(scanline-1);
-	 io.vdc_status = 0x04;			    // HSYNC
-//	 if (HSync_Int) {
-         if (RasHitON) {
-	    if (!(reg_p & FL_I)) int_irq1();
-	 }
-
-      } else if ((scanline > 240) && (scanline < 252)) {  // vsync pulse
-	 io.vdc_status = 0x04;			    // HSYNC
-//	 if (HSync_Int) {
-         if (RasHitON) {
-	    if (!(reg_p & FL_I)) int_irq1();
-	 }
-
-      } else if ((scanline > 251) && (scanline < 255)) {  // vsync pulse
-//	 stat_6270 = 0x24;			    // VSYNC *and* HSYNC
-//	 if (lines == 252)  {
-	    io.vdc_status = 0x20;
-	    if (!(reg_p & FL_I)) int_irq1();
-//	 } else if (HSync_Int) {
-//	    if (!(reg_p & FL_I)) int_irq1();
-//	 }
-
-      } else if (scanline < 257) { 		    // vblank interval
-	 io.vdc_status = 0x04;			    // VSYNC
-//	 if (HSync_Int) {
-         if (RasHitON) {
-	    if (!(reg_p & FL_I)) int_irq1();
-	 }
-
-      } else {					    // (line 260) restart
-	 scanline = 0;
-	 frames++;
-         if (osd_keyboard())
-            return;
-//	 if ( ((frames & 1) == 1) && (gr_mode != 0) ) {
-	 if ((frames & 1) == 1) {
-//	 if (gr_mode != 0) {
-//	    if (pal_flag == 1) set_gr_palette();
-//	    put_graphics();
-//            put_sprites();
-            RefreshScreen ();
-//	    blit_to_screen();
-	 }
-//	 if (key_array[1] != 0) err = 1;
-//	 if (kbhit()) err = 1;
-	 if (halt_flag) err = 1;
-	 io.vdc_status = 0x04;
-	 if (RasHitON) {
-	    if (!(reg_p & FL_I)) int_irq1();
-	 }
       }
-    }
+    else
+      {
 
-    */
+        if (CycleNew - cyclecountold >= TimerPeriod)
+          {
+            cyclecountold += TimerPeriod;
+            I = TimerInt ();
+            if (I)
+              Int6502 (I);
+          }
+
+      }
+
+  }
+#if !defined(FINAL_RELEASE)
+  fprintf(stderr,"Abnormal exit from the cpu loop\n");
+#endif
+  Log("Abnormal exit from the cpu loop\n");
 }
-//exit_pctimerint();     // release PC's timer interrupt
-//exit_pckeyint();       // release PC's keyboard-read interrupt
-}
-
-

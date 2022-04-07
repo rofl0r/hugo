@@ -6,6 +6,8 @@
 /*                                                                        */
 /**************************************************************************/
 
+#include "iniconfig.h"
+#include "utils.h"
 #include "hcd.h"
 
 UInt32 HCD_first_track;
@@ -30,7 +32,7 @@ int
 fill_HCD_info (char *name)
 {
 
-#ifdef ALLEGRO
+#if defined(ALLEGRO) || defined(SDL_mixer)
 
   int current_track;
 
@@ -40,14 +42,14 @@ fill_HCD_info (char *name)
 
 
 
-  char MP3_path_tmp[256], ISO_path_tmp[256];
+  char MP3_path_tmp[256], ISO_path_tmp[256], cw_dir[256];
 
 
 
   set_config_file (name);
 
 
-
+  init_config();
   HCD_first_track = get_config_int ("main", "first_track", 1);
 
 
@@ -63,19 +65,24 @@ fill_HCD_info (char *name)
   MP3_path = get_config_string ("main", "MP3_path", "");
 
 
-
   if (!strcmp (MP3_path, ""))
 
     {
 
-
-
+#ifdef ALLEGRO
       fix_filename_path (MP3_path_tmp, name, 256);
-
-
-
-      {
-
+#else
+		memset(MP3_path_tmp,0,256);
+		memset(cw_dir,0,256);
+		strcpy (MP3_path_tmp, name);
+		//Log("MP3_path_tmp:%s#\n",MP3_path_tmp);
+		//if filepath to .hcd is relative...?
+		// getcwd +name = gives the full path the hcd
+		//1. MP3_path_tmp==name          => current dir + MP3_path_tmp=.
+		//2. MP3_path begins with '.'    =>
+#endif
+//      {
+// because dirname is GNU C only ?
 	int i;
 
 	for (i = 0; MP3_path_tmp[i]; i++)
@@ -86,7 +93,7 @@ fill_HCD_info (char *name)
 
 
 
-      }
+//      }
 
 
 
@@ -96,12 +103,27 @@ fill_HCD_info (char *name)
 
 
 
-      MP3_path = MP3_path_tmp;
+	if ((strcmp(MP3_path_tmp,name)==0)||(strncmp (MP3_path_tmp, ".",1)==0))
+		{
+		if (strcmp(MP3_path_tmp,name)==0)
+#if defined(MSDOS)||defined(WIN32)||defined(DJGPP)
+						 strcpy(MP3_path_tmp,"\\");
+#else
+						 strcpy(MP3_path_tmp,"/");
+#endif
+		getcwd(cw_dir,256);
+		//Log("%s\n", cw_dir);
+		strncat(cw_dir,MP3_path_tmp,256);
+		MP3_path = cw_dir;
+		//Log("%s\n", MP3_path);
+		}else{
+		MP3_path = MP3_path_tmp;
+		}
 
-
-
-    }
-
+    }else{
+		strcpy (MP3_path_tmp, MP3_path);
+		MP3_path = MP3_path_tmp;
+	}
 
 
 
@@ -117,12 +139,16 @@ fill_HCD_info (char *name)
     {
 
 
-
+#ifdef ALLEGRO
       fix_filename_path (ISO_path_tmp, name, 256);
+#else
+		memset(ISO_path_tmp,0,256);
+		memset(cw_dir,0,256);
+		strcpy(ISO_path_tmp, name);
+#endif
 
 
-
-      {
+//      {
 
 	int i;
 
@@ -134,7 +160,7 @@ fill_HCD_info (char *name)
 
 
 
-      }
+//      }
 
 
 
@@ -143,12 +169,30 @@ fill_HCD_info (char *name)
 	*(strrchr (ISO_path_tmp, '/') + 1) = 0;
 
 
+	if ((strcmp(ISO_path_tmp,name)==0)||(strncmp (ISO_path_tmp, ".",1)==0))
+		{
+		if (strcmp(ISO_path_tmp,name)==0)
+#if defined(MSDOS)||defined(WIN32)||defined(DJGPP)
+						 strcpy(ISO_path_tmp,"\\");
+#else
+						 strcpy(ISO_path_tmp,"/");
+#endif
+		getcwd(cw_dir,256);
+		//Log("%s\n", cw_dir);
+		strncat(cw_dir,ISO_path_tmp,256);
+		ISO_path = cw_dir;
+		//Log("%s\n", ISO_path);
+		}else{
+		ISO_path = ISO_path_tmp;
+		}
 
-      ISO_path = ISO_path_tmp;
 
 
 
-    }
+    }else{
+		strcpy(ISO_path_tmp, ISO_path);
+		ISO_path = ISO_path_tmp;
+	}
 
 
 
@@ -297,10 +341,9 @@ fill_HCD_info (char *name)
 	  strcpy (CD_track[current_track].filename, tmp_buf);
 
 
-
+#ifdef ALLEGRO
 	  if (!exists (tmp_buf))
-
-	    {
+	  {
 
 	      Log ("Missing ISO file : %s\nUsed to emulate track %d.",
 
@@ -309,6 +352,15 @@ fill_HCD_info (char *name)
 	      return 0;
 
 	    }
+#elif defined (SDL_mixer) && defined (LINUX)
+		struct stat rom_file_buf;
+
+	  if (stat(tmp_buf, &rom_file_buf) != 0)
+	  {
+				Log("Error : %X when stating %s\n", errno, tmp_buf);
+		  return 0;
+	  }
+#endif
 
 
 
@@ -613,7 +665,7 @@ fill_HCD_info (char *name)
 	  //----- use Tormod's work to guess MP3 length ---------
 
 
-
+	  if (strcasestr(CD_track[current_track].filename, ".mp3")) {
 	  CD_track[current_track].length =
 
 	    (int) (MP3_length (CD_track[current_track].filename) * 75.0);
@@ -625,8 +677,15 @@ fill_HCD_info (char *name)
 	       CD_track[current_track].filename,
 
 	       CD_track[current_track].length);
+	}
 
-
+	  #ifdef OGG_SUPPORT
+	  //----- littletux: use ogginfo hack to guess OGG length ---------
+	  if (strcasestr(CD_track[current_track].filename, ".ogg")) {
+		CD_track[current_track].length = (int) (OGG_length(CD_track[current_track].filename));
+	    Log ("After OGG length guessing, size of %s is %d 75th of second\n", CD_track[current_track].filename, CD_track[current_track].length);
+  	  }
+	  #endif
 
 	  if (CD_track[current_track].length == 0)
 
@@ -691,6 +750,9 @@ fill_HCD_info (char *name)
 
 #endif
 
+//restores right file for hugo config
+set_config_file_back();
+
   return 1;
 
 
@@ -715,53 +777,29 @@ HCD_pause_playing ()
 
 };
 
-
-
 void
-
-HCD_play_track (int track, char repeat)
-
+HCD_play_track (UChar track, char repeat)
 {
 
-
-
   switch (CD_track[track].subtitle_synchro_type)
-
     {
-
     case 0:			// frame synchronisation
-
-      HCD_frame_at_beginning_of_track = frame;
-
+      HCD_frame_at_beginning_of_track = (UInt32)frame;
       break;
-
     case 1:			// timer synchronisation
-
       HCD_frame_at_beginning_of_track = timer_60;
-
       break;
-
-    default:
-
     }
 
-
-
-  HCD_current_played_track = track;
-
+  HCD_current_played_track = (UChar)track;
   HCD_current_subtitle = 0;
 
-
-
   if (CD_track[track].source_type == HCD_SOURCE_CD_TRACK)
-
     {
-
-     osd_cd_play_audio_track(CD_track[track].filename[0]);
-
+     osd_cd_play_audio_track((UChar)(CD_track[track].filename[0]));
      }
-	 
-#warning reenable mp3 with sdl	 	 
+
+#warning "reenable mp3 with sdl"
 #if (defined(LINUX) || defined(MSDOS)) && defined(ALLEGRO)
 
   else
@@ -778,108 +816,66 @@ HCD_play_track (int track, char repeat)
 
     }
 
+#elif defined (SDL_mixer)
+
+  else if ((CD_track[track].source_type == HCD_SOURCE_REGULAR_FILE)
+			&& ((strcasestr (CD_track[track].filename, ".mp3"))
+			||(strcasestr (CD_track[track].filename, ".ogg"))
+			||(strcasestr (CD_track[track].filename, ".wav"))))
+    {
+	  Mix_PlayMusic(sdlmixmusic[track],repeat);
+      MP3_playing = 1;
+    }
+
 #endif
 
 };
 
-
-
 void
-
 HCD_play_sectors (int begin_sect, int sect_len, char repeat)
-
 {
-
-
-
   int result;
 
-
-
   for (result = nb_max_track; result; result--)
-
     {
-
-      if ((begin_sect >= CD_track[result].beg_lsn) &&
-
-	  (begin_sect <= CD_track[result].beg_lsn + CD_track[result].length))
-
-	break;
-
+      if (((UInt32)begin_sect >= CD_track[result].beg_lsn) &&
+	  		((unsigned)begin_sect <= CD_track[result].beg_lsn + CD_track[result].length))
+			break;
     }
 
-
-
   if (CD_track[result].source_type == HCD_SOURCE_CD_TRACK)
-
     {
-
      UInt32 min_from, sec_from, fra_from;
-
      UInt32 min_to, sec_to, fra_to;
-
      UInt32 min_real, sec_real, fra_real, dummy;
-
-
-
      begin_sect -= CD_track[result].beg_lsn;
 
      /* begin_sect is now relative to the begin of the track to play */
-
-
-
-     Frame2Time(begin_sect,
-
-                &min_from,
-
-                &sec_from,
-
-                &fra_from);
-
-
+     Frame2Time((unsigned)begin_sect,
+                (int*)&min_from,
+                (int*)&sec_from,
+                (int*)&fra_from);
 
      sect_len += begin_sect;
 
      /* sect_len is now also relative to the begin of the track to play */
+     Frame2Time((unsigned)sect_len,
+                (int*)&min_to,
+                (int*)&sec_to,
+                (int*)&fra_to);
 
-
-
-     Frame2Time(sect_len,
-
-                &min_to,
-
-                &sec_to,
-
-                &fra_to);
-
-
-
-
-
-     osd_cd_track_info(CD_track[result].filename[0],
-
-                       &min_real,
-
-                       &sec_real,
-
-                       &fra_real,
-
-                       &dummy);
-
-
+     osd_cd_track_info((UChar)(CD_track[result].filename[0]),
+                       (int*)&min_real,
+                       (int*)&sec_real,
+                       (int*)&fra_real,
+                       (int*)&dummy);
 
      min_from += min_real;
-
      sec_from += sec_real;
-
      fra_from += fra_real;
 
-
-
      min_to += min_real;
-
      sec_to += sec_real;
-
      fra_to += fra_real;
 
 
@@ -948,7 +944,7 @@ HCD_play_sectors (int begin_sect, int sect_len, char repeat)
 
      }
 
-#warning reenable mp3 with sdl	 
+#warning "reenable mp3 with sdl"
 #if (defined(LINUX) || defined(MSDOS)) && defined(ALLEGRO)
 
   else
@@ -1003,8 +999,32 @@ HCD_play_sectors (int begin_sect, int sect_len, char repeat)
 
     }
 
-#endif
+#elif SDL_mixer
 
+  else if ((CD_track[result].source_type == HCD_SOURCE_REGULAR_FILE)
+				&& (strcasestr (CD_track[result].filename, ".mp3")
+				||strcasestr (CD_track[result].filename, ".ogg"))) {
+
+      if (-150 < begin_sect - CD_track[result].beg_lsn < 150)
+		Mix_PlayMusic(sdlmixmusic[result], repeat);
+      else			/* can't yet easily repeat "inside" a track */
+		Mix_PlayMusic(sdlmixmusic[result], FALSE);
+
+	  Mix_RewindMusic();
+	  if (Mix_SetMusicPosition((begin_sect - CD_track[result].beg_lsn) / 75)==-1){
+	    printf("Mix_SetMusicPosition(): %s\n", Mix_GetError());
+	  }
+
+      HCD_frame_at_beginning_of_track = frame - (begin_sect - CD_track[result].beg_lsn) / 75.0 * 60.0;
+
+      /* try to estimate the number of cycle that should have elapsed since
+         the beginning of the track */
+      HCD_current_played_track = result;
+      HCD_current_subtitle = 0;
+      MP3_playing = 1;
+
+  }
+#endif
   else if (strcasestr (CD_track[result].filename, ".WAV"))
 
     {
@@ -1035,80 +1055,42 @@ HCD_play_sectors (int begin_sect, int sect_len, char repeat)
 
 };
 
-
-
 void
-
 HCD_shutdown ()
-
 {
-
   int current_track;
 
-
-
-  for (current_track = HCD_first_track;
-
-       current_track <= HCD_last_track; current_track++)
-
+  for (current_track = (int)HCD_first_track;
+       current_track <= (int)HCD_last_track; current_track++)
     {
-
       free (CD_track[current_track].patch);
-
       free (CD_track[current_track].subtitle);
-
     }
-
-
 
 };
 
-
-
 void
-
 HCD_handle_subtitle ()
-
 {
 
-
-
   if (HCD_current_subtitle >=
-
       CD_track[HCD_current_played_track].subtitle_number)
-
     return;
 
-
-
   switch (CD_track[HCD_current_played_track].subtitle_synchro_type)
-
     {
-
     case 0:
-
       if (frame - HCD_frame_at_beginning_of_track >=
-
-	  CD_track[HCD_current_played_track].
-
-	  subtitle[HCD_current_subtitle].StartTime)
-
-	{
-
-	  osd_gfx_set_message (CD_track[HCD_current_played_track].subtitle
-
-			       [HCD_current_subtitle].data);
-
-	  message_delay =
-
-	    CD_track[HCD_current_played_track].
-
-	    subtitle[HCD_current_subtitle].Duration;
-
-	  HCD_current_subtitle++;
-
-	}
-
+	  		(int)(CD_track[HCD_current_played_track].
+	  		subtitle[HCD_current_subtitle].StartTime))
+			{
+				osd_gfx_set_message (
+					CD_track[HCD_current_played_track].subtitle[HCD_current_subtitle].data
+				);
+				message_delay =
+					CD_track[HCD_current_played_track].subtitle[HCD_current_subtitle].Duration;
+				HCD_current_subtitle++;
+			}
       break;
 
     case 1:
@@ -1136,118 +1118,59 @@ HCD_handle_subtitle ()
 	}
 
       break;
-
-
-
-    default:
-
     }
-
-
 
 }
 
-
-
 void
-
 read_sector_HCD (unsigned char *p, UInt32 dum)
-
 {
-
-
-
-  UInt32 sector = pce_cd_sectoraddy;
-
-
-
   int result;
 
-
-
-  for (result = HCD_last_track; result > 0x01; result--)
-
+  for (result = (int)HCD_last_track; result > 0x01; result--)
     {
-
       if ((pce_cd_sectoraddy >= CD_track[result].beg_lsn) &&
-
 	  (pce_cd_sectoraddy <= CD_track[result].beg_lsn +
-
 	   CD_track[result].length))
-
 	break;
-
     }
 
-
-
   if (CD_track[result].source_type == HCD_SOURCE_REGULAR_FILE)
-
-    HCD_iso_read_sector(p, dum, result);
-
+    HCD_iso_read_sector(p, dum, (UInt32)result);
   else
-
     if (CD_track[result].source_type == HCD_SOURCE_CD_TRACK)
-
-      HCD_cd_read_sector(p, dum, result);
-
-
+      HCD_cd_read_sector(p, dum, (UInt32)result);
 
 }
 
-
-
 void
-
 HCD_iso_read_sector(unsigned char *p, UInt32 dum, UInt32 result)
-
 {
 
-
-
-  static current_position = 0;
-
-  static current_file = 0;
-
-  static current_type = 0;
-
-
+  static int current_position = 0;
+  static int current_file = 0;
+  static int current_type = 0;
 
 #ifndef FINAL_RELEASE
-
-  fprintf (stderr, "Loading sector nø%d.\n", pce_cd_sectoraddy);
-
-  Log ("Loading sector nø%d.\n", pce_cd_sectoraddy);
-
+  fprintf (stderr, "Loading sector nÃ¸%d.\n", pce_cd_sectoraddy);
+  Log ("Loading sector nÃ¸%d.\n", pce_cd_sectoraddy);
   Log ("HCD : seek at %d\n",
-
        (pce_cd_sectoraddy - CD_track[result].beg_lsn) * 2048);
-
-  Log ("Track nø%d begin at %d\n", result, CD_track[result].beg_lsn);
-
-  Log ("Track nø2 begin at %d\n", CD_track[2].beg_lsn);
-
+  Log ("Track nÃ¸%d begin at %d\n", result, CD_track[result].beg_lsn);
+  Log ("Track nÃ¸2 begin at %d\n", CD_track[2].beg_lsn);
 #endif
-
-
 
 label_are_bad:
 
-
-
   if (result == current_file)
-
     {
-
       if (current_type == 1)	// non compacted
-
 	{
+	  fseek (HCD_iso_FILE, (long)((pce_cd_sectoraddy - CD_track[result].beg_lsn)
+		 * 2048), SEEK_SET);
 
-	  fseek (HCD_iso_FILE, (pce_cd_sectoraddy - CD_track[result].beg_lsn)
-
-		 * 2048, SEEK_SET);
-
-	  fread (p, 2048, 1, HCD_iso_FILE);
+	  if (fread (p, 2048, 1, HCD_iso_FILE) != 2048)
+			Log("Error when reading sector %d in hcd", pce_cd_sectoraddy);
 
 	  current_position = ftell (HCD_iso_FILE);	// not useful
 
@@ -1413,74 +1336,39 @@ label_are_bad:
 	}
 
 #endif
-
       goto label_are_bad;
-
-
-
     }
 
-
-
   {
-
     int dummy;
-
-
-
-    for (dummy = 0; dummy < CD_track[result].patch_number; dummy++)
-
+    for (dummy = 0; dummy < (int)(CD_track[result].patch_number); dummy++)
       {
-
-
-
 	if ((CD_track[result].patch[dummy].offset >> 11) ==
-
 	    pce_cd_sectoraddy - CD_track[result].beg_lsn)
-
 	  p[CD_track[result].patch[dummy].offset & 2047] =
-
 	    CD_track[result].patch[dummy].new_val;
-
-
 
       }
 
-
-
   }
-
-
 
  }
 
-
-
 void
-
 HCD_cd_read_sector(unsigned char *p, UInt32 dum, UInt32 result)
-
 {
-
  UInt32 min, sec, fra, control;
 
-
-
- osd_cd_track_info(CD_track[result].filename[0],
-
-                   &min,
-
-                   &sec,
-
-                   &fra,
-
-                   &control);
+ osd_cd_track_info((UChar)CD_track[result].filename[0],
+                   (int*)&min,
+                   (int*)&sec,
+                   (int*)&fra,
+                   (int*)&control);
 
 
 
- osd_cd_read(p, dum - CD_track[result].beg_lsn + Time2HSG(min, sec, fra));
+ osd_cd_read(p, dum - CD_track[result].beg_lsn + Time2HSG((int)min, (int)sec, (int)fra));
 
 
 
 }
-

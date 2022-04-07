@@ -32,7 +32,7 @@
 /* addressing mode information: */
 
 typedef struct mode_debug {
-  int size;
+  unsigned char size;
   void (*func)(char *, long int, unsigned char *, char *);
 } mode_struct_debug;
 

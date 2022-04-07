@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* modified bsd pce cd hardware support (old one) */
+#undef BSD_CD_HARDWARE_SUPPORT
+
 /* for hugo developers working on the cd subsystem */
 #undef CD_DEBUG
 
@@ -14,13 +17,13 @@
 /* defined if user wants netplay support */
 #undef ENABLE_NETPLAY
 
-/* defined if user wants a 'clean' binary (=not for hugo developpers) */
+/* defined if user wants a 'clean' binary ( = not for hugo developpers) */
 #undef FINAL_RELEASE
 
 /* for hugo developers working on the graphics subsystem */
 #undef GFX_DEBUG
 
-/* defined if user have GTK installed */
+/* defined if user have GTK2 installed */
 #undef GTK
 
 /* Define to 1 if you have `alloca', as a function or macro. */
@@ -50,6 +53,21 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `SDL' library (-lSDL). */
+#undef HAVE_LIBSDL
+
+/* Define to 1 if you have the `SDL_mixer' library (-lSDL_mixer). */
+#undef HAVE_LIBSDL_MIXER
+
+/* Define to 1 if you have the `SDL_net' library (-lSDL_net). */
+#undef HAVE_LIBSDL_NET
+
+/* Define to 1 if you have the `vorbis' library (-lvorbis). */
+#undef HAVE_LIBVORBIS
+
+/* Define to 1 if you have the `vorbisfile' library (-lvorbisfile). */
+#undef HAVE_LIBVORBISFILE
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
@@ -108,14 +126,26 @@
 /* Define to 1 if you have the `vprintf' function. */
 #undef HAVE_VPRINTF
 
+/* defined if inlined accessors should be used */
+#undef INLINED_ACCESSORS
+
 /* for hugo developers working on the input subsystem */
 #undef INPUT_DEBUG
 
-/* for hugo developers working on 6280 emulation */
+/* for hugo developers working on hu6280 emulation */
 #undef KERNEL_DEBUG
 
 /* defined if user wants new kernel */
 #undef KERNEL_DS
+
+/* for hugo developers working on netplay emulation */
+#undef NETPLAY_DEBUG
+
+/* defined if user wants to use the new gfx engine */
+#undef NEW_GFX_ENGINE
+
+/* defined if user wants ogg support in hcd */
+#undef OGG_SUPPORT
 
 /* Name of package */
 #undef PACKAGE
@@ -141,6 +171,9 @@
 /* defined if user wants SDL as library */
 #undef SDL
 
+/* defined if user wants SDL_mixer as library */
+#undef SDL_mixer
+
 /* defined if user wants open memory openness */
 #undef SHARED_MEMORY
 
@@ -162,13 +195,16 @@
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
    automatically deduced at run-time.
-        STACK_DIRECTION > 0 => grows toward higher addresses
-        STACK_DIRECTION < 0 => grows toward lower addresses
-        STACK_DIRECTION = 0 => direction of growth unknown */
+	STACK_DIRECTION > 0 => grows toward higher addresses
+	STACK_DIRECTION < 0 => grows toward lower addresses
+	STACK_DIRECTION = 0 => direction of growth unknown */
 #undef STACK_DIRECTION
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* defined if rom are expected to be patched to run from bank 0x68 */
+#undef TEST_ROM_RELOCATED
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
@@ -176,9 +212,15 @@
 /* Version number of package */
 #undef VERSION
 
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN
+
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 
-/* Define as `__inline' if that's what the C compiler calls it, or to nothing
-   if it is not supported. */
+/* Define to `__inline__' or `__inline' if that's what the C compiler
+   calls it, or to nothing if 'inline' is not supported under any name.  */
+#ifndef __cplusplus
 #undef inline
+#endif

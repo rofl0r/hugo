@@ -29,6 +29,9 @@
 
 #endif
 
+void set_config_file (const char *filename);
+void set_config_file_back (void);
+
 void parse_INIfile();
 /* check the configuration file for options
    also make some global initialisations */

@@ -15,4 +15,4 @@ foreach $line (@manual_content) {
 	printf "$line\\n\\\n";
 }
 
-print '";';
+print "\";\n";

@@ -4,7 +4,7 @@
 unsigned
 Time2Frame (int min, int sec, int frame)
 {
-  return min * 60 * 75 + sec * 75 + frame;
+  return (unsigned)(min * 60 * 75 + sec * 75 + frame);
 }
 
 unsigned
@@ -16,25 +16,25 @@ Time2HSG (int min, int sec, int frame)
 unsigned
 Time2Redbook (int min, int sec, int frame)
 {
-  return ((min << 16) | (sec << 8) | (frame));
+  return (unsigned)((min << 16) | (sec << 8) | (frame));
 }
 
 void
 Frame2Time (unsigned frame, int *Min, int *Sec, int *Fra)
 {
-  *Min = (frame / (60 * 75));
+  *Min = (int)(frame / (60 * 75));
   frame -= *Min * 60 * 75;
-  *Sec = (frame / 75);
+  *Sec = (int)(frame / 75);
   frame -= *Sec * 75;
-  *Fra = frame;
+  *Fra = (int)frame;
 }
 
 void
 Redbook2Time (unsigned redbook, int *Min, int *Sec, int *Fra)
 {
-  *Fra = redbook & 0xff;
-  *Sec = (redbook >> 8) & 0xff;
-  *Min = (redbook >> 16) & 0xff;
+  *Fra = (int)(redbook & 0xff);
+  *Sec = (int)((redbook >> 8) & 0xff);
+  *Min = (int)((redbook >> 16) & 0xff);
 }
 
 void

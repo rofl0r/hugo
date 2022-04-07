@@ -60,11 +60,11 @@ void Dir(unsigned *dirt,
 
          char *nom_dir,
 
-         ARCH_FILE fichier[1600],
+         ARCH_FILE * fichier,
 
          char* must_draw,
 
-         TO_DISPLAY to_display[1600]);
+         TO_DISPLAY * to_display);
 
 
 
@@ -73,4 +73,3 @@ char* select_rom();
 
 
 #endif
-

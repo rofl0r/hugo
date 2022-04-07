@@ -14,11 +14,11 @@
 
 /* Variable section */
 
+#if defined(ALLEGRO)
+
 static UChar page = 0;
 
 static UChar out = 0;
-
-#if defined(ALLEGRO)
 
 void (*info_display[MAX_PAGES]) () =
 {

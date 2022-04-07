@@ -40,7 +40,7 @@
    * Data are located at sector in the UInt32 variable
    * return 0 on success else non zero value on error
    */
-  int osd_cd_read(UChar*, UInt32);
+  void osd_cd_read(UChar*, UInt32);
 
   /*
    * osd_cd_stop_audio
@@ -97,5 +97,31 @@
                                UChar min_to,
                                UChar sec_to,
                                UChar fra_to);
+	/*
+	 * osd_cd_pause
+	 *
+	 * Pauses the cdda playing
+	 */
+	void osd_cd_pause();
 
+	/*
+	 * osd_cd_status
+	 *
+	 * Get status about the current cdda playing
+	 */
+	void osd_cd_status(int *status);
+	
+	/*
+	 * osd_cd_subchannel_info
+	 *
+	 * Fills the pce buffer given as param with info about the subchannel
+	 */
+	void osd_cd_subchannel_info(UInt16 offset);
+	
+	/*
+	 * osd_cd_resume
+	 *
+	 * Resumes paused cdda playback
+	 */
+	void osd_cd_resume(void);
 #endif

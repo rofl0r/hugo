@@ -43,7 +43,6 @@ extern UChar * mmr;
 // Globals which hold emulation-realted info:
 //
 extern UInt32    cycles;
-extern UInt32    frames;
 extern UChar   halt_flag;
 
 //

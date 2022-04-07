@@ -6,10 +6,7 @@
 #include "lsmp3.h"
 
 #if defined(DOS) || defined(linux)
-
-#include "libamp.h"
-
-
+  #include "libamp.h"
 #endif
 
 extern UInt32 HCD_first_track;
@@ -34,13 +31,21 @@ extern PACKFILE * HCD_packed_iso_FILE;
 
 #endif
 
+#ifdef SDL_mixer
+  #include "osd_linux_sdl_music.h"
+#endif
+
+#ifdef OGG_SUPPORT
+  #include "ogglength.h"
+#endif
+
 int fill_HCD_info(char* name);
 
 void HCD_play_sectors(int begin_sect, int sect_len, char repeat);
 
 void HCD_pause_playing();
 
-void HCD_play_track(int track, char repeat);
+void HCD_play_track(UChar track, char repeat);
 
 void HCD_shutdown();
 

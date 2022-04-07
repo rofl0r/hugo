@@ -68,14 +68,6 @@ on_option_config_number_clicked        (GtkButton       *button,
                                         gpointer         user_data);
 
 void
-on_option_device_number_clicked        (GtkButton       *button,
-                                        gpointer         user_data);
-
-void
-on_option_device_type_clicked          (GtkButton       *button,
-                                        gpointer         user_data);
-
-void
 on_button_close_input_settings_window_clicked
                                         (GtkButton       *button,
                                         gpointer         user_data);
@@ -174,4 +166,58 @@ on_button_manual_close_clicked         (GtkButton       *button,
 
 void
 on_input_settings_window_show          (GtkWidget       *widget,
+                                        gpointer         user_data);
+
+void
+on_open_cd1_activate                   (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+
+void
+on_save_settings1_activate             (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+
+void
+on_open_cd1_activate                   (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+
+void
+on_save_settings1_activate             (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+
+void
+on_option_config_number_changed        (GtkOptionMenu   *optionmenu,
+                                        gpointer         user_data);
+
+void
+on_button_input_configuration_clicked  (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_input_configuration_clicked  (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_spinbutton_configuration_value_changed
+                                        (GtkSpinButton   *spinbutton,
+                                        gpointer         user_data);
+
+void
+on_window_input_settings_show          (GtkWidget       *widget,
+                                        gpointer         user_data);
+
+gboolean
+on_window_input_settings_delete_event  (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data);
+
+void
+on_button_input_ok_activate            (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_input_cancel_activate        (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_spinbutton_joydev_value_changed     (GtkSpinButton   *spinbutton,
                                         gpointer         user_data);

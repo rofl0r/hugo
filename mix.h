@@ -13,4 +13,8 @@ UInt32 WriteBufferAdpcm8(UChar *buf,
                        SInt32* PreviousValue
                        );
 
+void WriteBuffer(char *buf,
+				int ch,
+				unsigned dwSize);
+				
 #endif

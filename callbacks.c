@@ -12,6 +12,8 @@
 #include "pce.h"
 #include "iniconfig.h"
 
+static char tmp_buf[100];
+
 gboolean
 on_mainWindow_key_press_event          (GtkWidget       *widget,
                                         GdkEventKey     *event,
@@ -36,7 +38,7 @@ void
 on_open1_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  gtk_file_selection_set_filename(fileselector_window, initial_path);
+  gtk_file_selection_set_filename((GtkFileSelection*)fileselector_window, initial_path);
   gtk_widget_show(fileselector_window);
 }
 
@@ -101,7 +103,7 @@ void
 on_mainWindow_destroy                  (GtkObject       *object,
                                         gpointer         user_data)
 {
-  gtk_main_quit();
+	gtk_main_quit();
 }
 
 
@@ -110,7 +112,8 @@ on_ok_button1_clicked                  (GtkButton       *button,
                                         gpointer         user_data)
 {	
 	gtk_widget_hide(fileselector_window);
-	strcpy( cart_name, gtk_file_selection_get_filename(fileselector_window));
+	CD_emulation = 0;
+	strcpy( cart_name, gtk_file_selection_get_filename((GtkFileSelection*)fileselector_window));
 
 	/*
 	 * We need to flush any gtk events waiting to happen (like the widget hide
@@ -137,30 +140,6 @@ on_cancel_button1_clicked              (GtkButton       *button,
                                         gpointer         user_data)
 {
 	gtk_widget_hide(fileselector_window);
-}
-
-
-void
-on_option_config_number_clicked        (GtkButton       *button,
-                                        gpointer         user_data)
-{
-	printf("option clicked\n");
-}
-
-
-void
-on_option_device_number_clicked        (GtkButton       *button,
-                                        gpointer         user_data)
-{
-
-}
-
-
-void
-on_option_device_type_clicked          (GtkButton       *button,
-                                        gpointer         user_data)
-{
-
 }
 
 
@@ -205,57 +184,57 @@ on_button_grab_clicked                 (GtkButton       *button,
 }
 
 
-void
-on_button_use_current_config_clicked   (GtkButton       *button,
-                                        gpointer         user_data)
-{
-	GtkOptionMenu* option_menu;
-    GtkWidget *active_item;
-    int item_index;  
-	
-	option_menu = lookup_widget(input_settings_window, "option_config_number");
-  
-    active_item = gtk_menu_get_active (GTK_MENU (option_menu->menu));  
-    item_index = g_list_index ( GTK_MENU(option_menu->menu)->menu_shell.children, active_item);  
-  
-    gtk_show_config(item_index);
-
-}
-
-
-void
-on_button_configure_this_player_clicked
-                                        (GtkButton       *button,
-                                        gpointer         user_data)
-{
-	GtkOptionMenu* option_menu;
-    GtkWidget *active_item;
-    int item_index;  
-	
-	option_menu = lookup_widget(input_settings_window, "option_player_number");
-  
-    active_item = gtk_menu_get_active (GTK_MENU (option_menu->menu));  
-    item_index = g_list_index ( GTK_MENU(option_menu->menu)->menu_shell.children, active_item);  
-  
-    gtk_show_config_player(item_index);
-}
+//void
+//on_button_use_current_config_clicked   (GtkButton       *button,
+//                                        gpointer         user_data)
+//{
+//	GtkOptionMenu* option_menu;
+//	GtkWidget *active_item;
+//	int item_index;  
+//	
+//	option_menu = (GtkOptionMenu*)lookup_widget(input_settings_window, "option_config_number");
+//	
+//	active_item = gtk_menu_get_active (GTK_MENU (option_menu->menu));  
+//	item_index = g_list_index ( GTK_MENU(option_menu->menu)->menu_shell.children, active_item);  
+//  
+//	gtk_show_config(item_index);
+//
+//}
 
 
-void
-on_button_use_this_device_clicked      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-	GtkOptionMenu* option_menu;
-    GtkWidget *active_item;
-    int item_index;  
-	
-	option_menu = lookup_widget(input_settings_window, "option_device_type");
-  
-    active_item = gtk_menu_get_active (GTK_MENU (option_menu->menu));  
-    item_index = g_list_index ( GTK_MENU(option_menu->menu)->menu_shell.children, active_item);  
-  
-    gtk_select_config_device(item_index);
-}
+//void
+//on_button_configure_this_player_clicked
+//                                        (GtkButton       *button,
+//                                        gpointer         user_data)
+//{
+//	GtkOptionMenu* option_menu;
+//    GtkWidget *active_item;
+//    int item_index;  
+//	
+//	option_menu = (GtkOptionMenu*)lookup_widget(input_settings_window, "option_player_number");
+//  
+//    active_item = gtk_menu_get_active (GTK_MENU (option_menu->menu));  
+//    item_index = g_list_index ( GTK_MENU(option_menu->menu)->menu_shell.children, active_item);  
+//  
+//    gtk_show_config_player(item_index);
+//}
+
+
+//void
+//on_button_use_this_device_clicked      (GtkButton       *button,
+//                                        gpointer         user_data)
+//{
+//	GtkOptionMenu* option_menu;
+//    GtkWidget *active_item;
+//    int item_index;  
+//	
+//	option_menu = (GtkOptionMenu*)lookup_widget(input_settings_window, "option_device_type");
+//  
+//    active_item = gtk_menu_get_active (GTK_MENU (option_menu->menu));  
+//    item_index = g_list_index ( GTK_MENU(option_menu->menu)->menu_shell.children, active_item);  
+//  
+//    gtk_select_config_device(item_index);
+//}
 
 
 void
@@ -324,7 +303,7 @@ on_ok_button_cd_system_clicked         (GtkButton       *button,
 	GtkEntry* temp_entry;
 
 	gtk_widget_hide(fileselector_cd_system);
-	strncpy (cdsystem_path, gtk_file_selection_get_filename(fileselector_cd_system), PATH_MAX);
+	strncpy (cdsystem_path, gtk_file_selection_get_filename((GtkFileSelection*)fileselector_cd_system), PATH_MAX);
 	temp_entry = (GtkEntry*)lookup_widget(general_settings_window, "entry_cd_system_filename");
 	gtk_entry_set_text(temp_entry, cdsystem_path);	
 }
@@ -345,7 +324,7 @@ on_ok_button_cd_path_clicked           (GtkButton       *button,
 	GtkEntry* temp_entry;	
 	
 	gtk_widget_hide(fileselector_cd_path);
-	strcpy (ISO_filename, gtk_file_selection_get_filename(fileselector_cd_path));
+	strcpy (ISO_filename, gtk_file_selection_get_filename((GtkFileSelection*)fileselector_cd_path));
 	temp_entry = (GtkEntry*)lookup_widget(general_settings_window, "entry_cd_path");
 	gtk_entry_set_text(temp_entry, ISO_filename);
 
@@ -382,7 +361,7 @@ on_ok_button_rom_path_clicked          (GtkButton       *button,
 	GtkEntry* temp_entry;
 	
 	gtk_widget_hide(fileselector_rom_path);
-	strcpy (initial_path, gtk_file_selection_get_filename(fileselector_rom_path));
+	strcpy (initial_path, gtk_file_selection_get_filename((GtkFileSelection*)fileselector_rom_path));
 	if (strrchr(initial_path, '/') != NULL)
 		*strrchr(initial_path, '/') = 0;
 	temp_entry = (GtkEntry*)lookup_widget(general_settings_window, "entry_rom_basedir");
@@ -405,10 +384,141 @@ on_button_manual_close_clicked         (GtkButton       *button,
 	gtk_widget_hide(manual_window);
 }
 
+//void
+//on_input_settings_window_show          (GtkWidget       *widget,
+//                                        gpointer         user_data)
+//{
+//	gtk_show_config(0);
+//}
+
+
 void
-on_input_settings_window_show          (GtkWidget       *widget,
+on_open_cd1_activate                   (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-	gtk_show_config(0);
+
+}
+
+
+void
+on_save_settings1_activate             (GtkMenuItem     *menuitem,
+                                        gpointer         user_data)
+{
+	save_config();
+}
+
+void
+on_option_config_number_changed        (GtkOptionMenu   *optionmenu,
+                                        gpointer         user_data)
+{
+
+}
+
+
+void
+on_button_input_configuration_clicked  (GtkButton       *button,
+                                        gpointer         user_data)
+{
+	
+	char* button_name = (char*) user_data;
+	int player_number = button_name[strlen(button_name) - 1] - '0';
+	int direction_index = 0;
+		
+	if ((player_number < 0) || (player_number > 4))
+	{
+		Log("Abnormal player_number in %s at %s:%s\nAborting\n",
+			__FUNCTION__,
+			__FILE__,
+			__LINE__);
+		return;
+	}
+	
+	for (; direction_index < J_MAX; direction_index ++)
+	{
+		if (!strncmp(joymap_reverse[direction_index],
+				button_name,
+				strlen(button_name) - 1))
+			{
+				break;	
+			}
+	} 
+
+	gtk_grab_control(direction_index, player_number);
+
+}
+
+void
+on_spinbutton_configuration_value_changed
+                                        (GtkSpinButton   *spinbutton,
+                                        gpointer         user_data)
+{
+	int index = gtk_spin_button_get_value_as_int((GtkSpinButton*) spinbutton);
+	set_gui_configuration_index(index);
+}
+
+
+void
+on_window_input_settings_show          (GtkWidget       *widget,
+                                        gpointer         user_data)
+{
+	GtkSpinButton * spinbutton = (GtkSpinButton*)lookup_widget(widget, "spinbutton_configuration");
+	on_spinbutton_configuration_value_changed(spinbutton, (gpointer)NULL);
+	gtk_copy_current_configuration();
+}
+
+
+gboolean
+on_window_input_settings_delete_event  (GtkWidget       *widget,
+                                        GdkEvent        *event,
+                                        gpointer         user_data)
+{
+	gtk_widget_hide(input_settings_window);
+	return TRUE;
+}
+
+
+void
+on_button_input_ok_activate            (GtkButton       *button,
+                                        gpointer         user_data)
+{
+	gtk_confirm_configuration();
+	gtk_widget_hide(input_settings_window);
+}
+
+
+void
+on_button_input_cancel_activate        (GtkButton       *button,
+                                        gpointer         user_data)
+{
+	gtk_widget_hide(input_settings_window);
+}
+
+void
+on_spinbutton_joydev_value_changed     (GtkSpinButton   *spinbutton,
+                                        gpointer         user_data)
+{
+	GtkSpinButton* temp_spin_button = NULL;
+	int i = 0;
+	int player_number = -1;
+	
+	for (i = 0; i < 5; i++)
+	{
+		sprintf(tmp_buf, "spinbutton_joydev%d", i);
+		if (spinbutton == (GtkSpinButton*)lookup_widget(input_settings_window, tmp_buf))
+		{
+			player_number = i;
+			break;
+		}
+	}
+
+	printf("Checked that joydev %d changed\n", player_number);
+	
+	if (player_number != -1)
+	{
+		printf("Read value %d\n", gtk_spin_button_get_value_as_int(spinbutton));
+		set_gui_joydev(player_number, gtk_spin_button_get_value_as_int(spinbutton));
+	}
+	
+	gtk_update_configuration(FALSE);
 }
 

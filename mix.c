@@ -1,8 +1,19 @@
-
 #include "mix.h"
 
+#if defined(SDL)
 #include <SDL_audio.h>
 
+#if defined(LINUX) || defined(FREEBSD)
+  #include "osd_linux_sdl_machine.h"
+#elif defined(SOLARIS)
+  #include "osd_unix_sdl_machine.h"
+#elif defined(WIN32)
+  #include "osd_win_sdl_machine.h"
+#else
+  #warning no machine defined for SDL audio include
+#endif
+
+#endif
 
 void update_sound_null(void)
 {
@@ -119,12 +130,14 @@ void sdl_fill_audio(void *data, Uint8 *stream, int len)
 {
   UChar lvol, rvol;
   int i;
+  UChar center;
 #ifdef SOUND_DEBUG
   UChar first_chan;
 
 //IXION
   if ((first_chan = ((io.psg_lfo_ctrl & 3) == 0) ? 0 : 2) == 2)
-    printf("first_chan = 2\n");
+    ;
+//    printf("first_chan = 2\n");
 
   for (i = first_chan; i < 6; i++)
 #else
@@ -140,7 +153,7 @@ void sdl_fill_audio(void *data, Uint8 *stream, int len)
    * stream mix below we have (-16002..16002) which we then divide by 128 to get
    * a nice unsigned 8-bit value of 128 + (-125..125).
    */
-  if (host.stereo_sound)
+  if (host.sound.stereo)
   {
     lvol = (io.psg_volume >> 4) * 1.22;
     rvol = (io.psg_volume & 0x0F) * 1.22;
@@ -155,14 +168,22 @@ void sdl_fill_audio(void *data, Uint8 *stream, int len)
 	
   SDL_LockAudio();	
 
+  center = (host.sound.signed_sound?0:128);
+
   /*
    * Mix streams and apply master volume.
    */
   for (i = 0; i < len ; i++)
-    stream[i] = 128 + ((UInt32) ((sbuf[0][i] + sbuf[1][i] + sbuf[2][i] + sbuf[3][i] + sbuf[4][i] + sbuf[5][i] +
+    stream[i] = center + ((UInt32) ((sbuf[0][i] + sbuf[1][i] + sbuf[2][i] + sbuf[3][i] + sbuf[4][i] + sbuf[5][i] +
                 adpcmbuf[i]) * (!(i % 2) ? lvol : rvol)) >> 7);
 
   SDL_UnlockAudio();
+	
+	if (dump_snd) // We also have to write data into a file
+		{
+			dump_audio_chunck(stream, len);
+		}
+	
 }
 
 #else /* MSDOS */
@@ -375,7 +396,7 @@ UInt32 WriteBufferAdpcm8 (UChar *buf, UInt32 begin, UInt32 size, SChar *Index, S
 
 
   if (io.adpcm_rate)
-    FixedInc = ftofix ((float) io.adpcm_rate * 1000 / (float) freq_int);
+    FixedInc = ftofix ((float) io.adpcm_rate * 1000 / (float) host.sound.freq);
   else
     return 0;
 
@@ -444,7 +465,7 @@ UInt32 WriteBufferAdpcm8 (UChar *buf, UInt32 begin, UInt32 size, SChar *Index, S
   *PreviousValue = previousValue;
 
 #else
-  memset(buf, 0, host.sample_size);
+  memset(buf, 0, host.sound.sample_size);
 #endif
 
   return ret_val;
@@ -513,7 +534,7 @@ void WriteBuffer(char *buf, int ch, unsigned dwSize)
      * See the big comment in the final else clause for an explanation of this value
      * to the best of my knowledge.
      */
-    fixed_inc = ((UInt32) (3580000 / freq_int) << 16) / 0x1FF;
+    fixed_inc = ((UInt32) (3580000 / host.sound.freq) << 16) / 0x1FF;
 
     /*
      * Volume handling changed 2-24-03.
@@ -522,7 +543,7 @@ void WriteBuffer(char *buf, int ch, unsigned dwSize)
      * other people have already stated, and I believe them :)
      */
 
-    if (host.stereo_sound)
+    if (host.sound.stereo)
     {
       /*
        * We multiply the 4-bit balance values by 1.1 to get a result from (0..16.5).
@@ -559,7 +580,7 @@ void WriteBuffer(char *buf, int ch, unsigned dwSize)
        */
       *buf++ = (char) ((SInt32) (sample * lbal) >> 6);
 
-      if (host.stereo_sound)
+      if (host.sound.stereo)
       {
         /*
          * Same as above but for right channel.
@@ -609,11 +630,11 @@ void WriteBuffer(char *buf, int ch, unsigned dwSize)
 //                              for (dwPos = 0; dwPos < dwSize; dwPos += 2)
 //                              {
 //                                      k[ch] += 3000+Np*512;
-//                                      t = k[ch] / (DWORD)freq_int;
+//                                      t = k[ch] / (DWORD) host.sound.freq;
 //                                      if (t >= 1)
 //                                      {
 //                                              r[ch] = mseq(&rand_val[ch]);
-//                                              k[ch] -= freq_int*t;
+//                                              k[ch] -= host.sound.freq * t;
 //                                      }
 //                                      *buf++ = (WORD)((r[ch] ? 10*702 : -10*702)*lvol/64);
 //                                      *buf++ = (WORD)((r[ch] ? 10*702 : -10*702)*rvol/64);
@@ -636,10 +657,10 @@ void WriteBuffer(char *buf, int ch, unsigned dwSize)
     {
       k[ch] += 3000 + Np * 512;
 
-      if ((t = (k[ch] / (UInt32) freq_int)) >= 1)
+      if ((t = (k[ch] / (UInt32) host.sound.freq)) >= 1)
       {
         r[ch] = mseq(&rand_val[ch]);
-        k[ch] -= freq_int * t;
+        k[ch] -= host.sound.freq * t;
       }
 
       *buf++ = (signed char) ((r[ch] ? 10 * 702 : -10 * 702) * vol / 256 / 16); // Level 0
@@ -665,16 +686,16 @@ void WriteBuffer(char *buf, int ch, unsigned dwSize)
   {
     /*
      * Thank god for well commented code!  The original line of code read:
-     * fixed_inc = ((UInt32) (3.2 * 1118608 / freq_int) << 16) / Tp;
+     * fixed_inc = ((UInt32) (3.2 * 1118608 / host.sound.freq) << 16) / Tp;
      * and had nary a comment to be found.  It took a little head scratching to get
      * it figured out.  The 3.2 * 1118608 comes out to 3574595.6 which is obviously
      * meant to represent the 3.58mhz cpu clock speed used in the pc engine to
      * decrement the sound 'frequency'.  I haven't figured out why the original
      * author had the two numbers multiplied together to get the odd value instead of
      * just using 3580000.  I did some checking and the value will compute the same
-     * using either value divided by any standard soundcard samplerate.  The freq_int
-     * is our soundcard's samplerate which is quite a bit slower than the pce's cpu
-     * (3580000 vs. 22050/44100 typically).
+     * using either value divided by any standard soundcard samplerate.  The
+     * host.sound.freq is our soundcard's samplerate which is quite a bit slower than
+     * the pce's cpu (3580000 vs. 22050/44100 typically).
      *
      * Taken from the PSG doc written by Paul Clifford (paul@plasma.demon.co.uk)
      * <in reference to the 12 bit frequency value in PSG registers 2 and 3>
@@ -686,9 +707,9 @@ void WriteBuffer(char *buf, int ch, unsigned dwSize)
      * sampling rate into consideration with regard to the 3580000 effective pc engine
      * samplerate.  We use 16.16 fixed arithmetic for speed.
      */       
-    fixed_inc = ((UInt32) (3580000 / freq_int) << 16) / Tp;
+    fixed_inc = ((UInt32) (3580000 / host.sound.freq) << 16) / Tp;
 
-    if (host.stereo_sound)
+    if (host.sound.stereo)
     {
       /*
        * See the direct audio code above if you're curious why we're multiplying by 1.1
@@ -713,7 +734,7 @@ void WriteBuffer(char *buf, int ch, unsigned dwSize)
 
       *buf++ = (char) ((SInt16) (sample * lbal) >> 6);
 
-      if (host.stereo_sound)
+      if (host.sound.stereo)
       {
         *buf++ = (char) ((SInt32) (sample * rbal) >> 6);
         dwPos += 2;

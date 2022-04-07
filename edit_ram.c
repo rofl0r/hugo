@@ -15,6 +15,7 @@
 #define  NB_LINE        20
 // Number of displayed lines
 
+/*
 static char out;
 // To know whether we got to quit
 
@@ -23,7 +24,7 @@ static int frame_up, frame_down;
 
 static unsigned short selected_byte;
 // The current offset
-
+*/
 
 /*****************************************************************************
 
@@ -77,6 +78,7 @@ void change_value()
  return ;
  }
 
+*/
 
 /*****************************************************************************
 
@@ -90,9 +92,10 @@ void change_value()
 void
 ram_key ()
 {
-  int ch = osd_readkey ();
+
   /* TODO: deallegroize here too */
 #ifdef ALLEGRO
+  int ch = osd_readkey ();
 
   switch (ch >> 8)
     {

@@ -1,3 +1,4 @@
+#include "utils.h"
 #include "osd_linux_sdl_machine.h"
 
 int netplay_mode;
@@ -34,14 +35,12 @@ SDL_TimerID timerId;
 UInt32 interrupt_60hz(UInt32, void*);
 // declaration of the actual callback to call 60 times a second
 
-int osd_init_machine()
+int osd_init_machine(void)
 {
-
-  int result;
 
   Log ("\n--[ INITIALISE MACHINE ]--------------------------\n");
 		
-  if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+  if (SDL_Init(SDL_INIT_TIMER)) {
 	  Log("Could not initialise SDL : %s\n",SDL_GetError());
 	  return 0;
   }
@@ -52,7 +51,7 @@ int osd_init_machine()
 
   printf (MESSAGE[language][translated_by]);
 
-  if (!(XBuf = (UChar*)malloc(XBUF_WIDTH* XBUF_HEIGHT)))
+  if (!(XBuf = (UChar*)malloc(XBUF_WIDTH * XBUF_HEIGHT)))
     {
       printf (MESSAGE[language][failed_init]);
       return (0);
@@ -64,10 +63,14 @@ int osd_init_machine()
   Log ("Initiating sound\n");
   printf (MESSAGE[language][init_sound]);
   InitSound();
+
+/*
+ * Moved to play_game so changes made in the gui will take effect on the next game start
+
   if (osd_snd_init_sound ())
   {
 	  Log("Sound ok\n");
-	  printf(MESSAGE[language][audio_inited],0,"SDL sound card",0);
+	  printf(MESSAGE[language][audio_inited], 0, "SDL sound card", host.sound.freq);
 	  SDL_PauseAudio(0);
   }
   else
@@ -76,43 +79,14 @@ int osd_init_machine()
 	  printf(MESSAGE[language][audio_init_failed]);
   }
 
+  */
+
 #ifndef SDL
   /* Opening joypad number 0 */
   (int)fd[0] = open ("/dev/js0", O_NONBLOCK);
 #endif
 
-#warning enable eagle with sdl
-/*
-  if (use_eagle)
-    {
-      printf (MESSAGE[language][eagle_asked]);
-      if (!set_gfx_mode (GFX_AUTODETECT, 640, 480, 0, 0))
-	{
-	  vwidth = 640;
-	  vheight = 480;
-	  blit_x = (320 - 256) / 2;
-	  blit_y = (240 - 216) / 2;
-	  screen_blit_x = (WIDTH - io.screen_h) / 2;
-	  screen_blit_y = (HEIGHT - io.screen_w) / 2;
-	  SetPalette ();
-
-	  EAGLE_buf = create_bitmap (640, 480);
-	}
-      else
-	printf (MESSAGE[language][eagle_mode_not_init]);
-    }
-  else
-  */
-  
-/*  
-  if (!(*osd_gfx_driver_list[video_driver].init) ())
-    {
-      Log ("Can't set graphic mode\n");
-      printf (MESSAGE[language][cant_set_gmode]);
-      return 0;
-    }
-*/
-  osd_gfx_buffer = XBuf;
+  osd_gfx_buffer = XBuf + 32 + 64 * XBUF_WIDTH; // We skip the left border of 32 pixels and the 64 first top lines
 
   timerId = SDL_AddTimer(1000 / 60, interrupt_60hz, NULL);
   if (timerId)
@@ -121,6 +95,7 @@ int osd_init_machine()
 	  Log("Timer non initialised\n");
 	
   Log ("End of initialisation of the machine\n");
+
   return 1;
 }
 
@@ -139,28 +114,21 @@ osd_shut_machine (void)
 {
  
 	free(XBuf);
-
-#warning enable eagle with sdl
-/*	
-  if (EAGLE_buf)
-    destroy_bitmap (EAGLE_buf);
-*/
   
   if (sound_driver == 1)
     osd_snd_set_volume (0);
 
   if (timerId != NULL)
 	  SDL_RemoveTimer(timerId);
-  
+
+#ifndef SDL  
   /* closing joypad device */
   close ((int)fd[0]);
-    
-/*  (*fade_out_proc[rand () % nb_fadeout]) (0, 0, vwidth, vheight); */
+#endif
 
 	if (dump_snd)
 		fclose(out_snd);
-	
-  osd_snd_trash_sound ();
+
   TrashSound();
 
   SDL_Quit();
@@ -238,7 +206,6 @@ void osd_fix_filename_slashes(char* s)
 void
 osd_init_paths(int argc, char* argv[])
 {
-	#warning Check whether this is still correct since the exploding of initialisation code (= no reported bugs in version 2.11 => accepted)
 	char* home_path;
 		
 	home_path = getenv("HOME");
@@ -268,8 +235,7 @@ osd_init_paths(int argc, char* argv[])
 	mkdir(sav_basepath, 0777);
 		
 	// Set the video output directory
-    sprintf (video_path, "%svideo/", short_exe_name);
+  sprintf (video_path, "%svideo/", short_exe_name);
 	mkdir(video_path, 0777);
 
 }
-

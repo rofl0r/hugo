@@ -40,7 +40,7 @@ BITMAP *save_bg;
 #endif
 
 /* Way to accedate to the PC Engine memory */
-
+/*
 #if defined(MSDOS) || defined(WIN32)
 
 unsigned char
@@ -48,8 +48,8 @@ Op6502 (register unsigned A)
 {
   register char __AUX;
 
-  __asm__ __volatile__ ("movl _Page (, %%eax, 4), %%ecx
-			movb (%%edx, %%ecx), %%al "
+  __asm__ __volatile__ ("movl _PageR (, %%eax, 4), %%ecx "
+			"movb (%%edx, %%ecx), %%al "
                         :"=a" (__AUX)
                         :"d" (A),
 			"a" (A >> 13):"%ebx", "%ecx");
@@ -57,22 +57,17 @@ Op6502 (register unsigned A)
   return __AUX;
 };
 
-#else /* 
+#else 
        */
 
 unsigned char
-Op6502 (register unsigned A)
+Op6502 (unsigned int A)
 {
-#if defined(TEST_ROM_RELOCATED)
-  #warning REMOVE ME !!!
-  Log("Op6502 at %04x (Page %d, physical bank 0x%x) returns %d(0x%x)\n", A, A>>13,mmr[A>>13],Page[A >> 13][A],Page[A >> 13][A]);
-#endif	
-  return (Page[A >> 13][A]);
-
+  return (PageR[A >> 13][A]);
 }
 
-
-#endif /* 
+/*
+#endif 
         */
 
 void
@@ -147,7 +142,7 @@ toggle_user_breakpoint (UInt16 where)
 
 	  Bp_list[dum].flag = NOT_USED;
 
-	  _Wr6502 (where, Bp_list[dum].original_op);
+	  Wr6502 (where, Bp_list[dum].original_op);
 
 	  return 1;
 
@@ -173,7 +168,7 @@ toggle_user_breakpoint (UInt16 where)
   Bp_list[dum].original_op = Op6502 (where);
 
 
-  _Wr6502 (where, 0xB + 0x10 * dum);
+  Wr6502 (where, (UChar)(0xB + 0x10 * dum));
 
   // Put an invalid opcode
 
@@ -329,7 +324,7 @@ set_bp_following (UInt16 where, UChar nb)
   Bp_list[nb].original_op = Op6502 (next_pos);
 
 
-  _Wr6502 (next_pos, 0xB + 0x10 * nb);
+  Wr6502 (next_pos, (UChar)(0xB + 0x10 * nb));
 
 
   return;
@@ -359,64 +354,37 @@ UChar change_value (int X, int Y, UChar length, UInt32 * result)
 
   do
     {
-
       rectfill (screen, X, Y, X + 16, Y + 9, -15);
-
       textout (screen, font, value, X, Y + 1, -1);
-
       ch = osd_readkey ();
-
 
       // first switch by scancode
       switch (ch >> 8)
-
 	{
-
 	case KEY_ESC:
-
 	  return 0;
-
 	case KEY_ENTER:
-
 	  *result = cvtnum (value);
-
 	  return 1;
-
 	case KEY_BACKSPACE:
-
 	  if (index)
-
 	    value[--index] = 0;
-
 	  break;
-
 	}
-
 
       // Now by ascii code
       switch (ch & 0xff)
-
 	{
-
 	case '0'...'9':
-
 	case 'a'...'f':
-
 	case 'A'...'F':
-
 	  if (index < length)
-
 	    value[index++] = toupper (ch & 0xff);
-
 	  break;
-
 	}
-
     }
   while (1);
-
-
-  return;
 #endif
 
+  return 0;
 }

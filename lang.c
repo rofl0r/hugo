@@ -39,7 +39,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "\n * no audio device found.",
    "\n * %s device found.",	/* 30 */
    "\n * Audio initialization failed.\n",
-   "\n * Audio device initialized at %d bits %s %u Hz\n",
+   "\n * %d-bit audio device \"%s\" initialized at %uHz\n",
    "BYTE AT %d SET TO %d",
    "SEARCH FAILED",
    "FOUND AT %d",

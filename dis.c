@@ -60,7 +60,9 @@ UChar running_mode;
 void
 forward_one_line ()
 {
-  unsigned char op = Op6502 (init_pos);
+  unsigned char op;
+
+	op = get_8bit_addr(init_pos);
   if ((op & 0xF) == 0xB)
     {
       if (Bp_list[op >> 4].flag == NOT_USED)
@@ -86,7 +88,9 @@ forward_one_line ()
 void
 backward_one_line ()
 {
-  char line, Try, try_pos[MAX_TRY] = { 1, 2, 3, 4, 7 };
+  char line;
+  unsigned char Try;
+  UInt16 try_pos[MAX_TRY] = { 1, 2, 3, 4, 7 };
   unsigned short temp_pos;
   char possible;
   unsigned char op, size, i;
@@ -94,13 +98,13 @@ backward_one_line ()
   for (Try = 0; Try < MAX_TRY; Try++)
     {
       if (init_pos >= try_pos[Try])
-	temp_pos = init_pos - try_pos[Try];
+        temp_pos = init_pos - try_pos[Try];
       line = 0;
       possible = 1;
 
       while ((line < NB_LINE) && (temp_pos != 0xFFFF))
 	{
-	  op = Op6502 (temp_pos);
+	  op = get_8bit_addr (temp_pos);
 
 	  if ((op & 0xF) == 0xB)
 	    {			// It's a breakpoint, we replace it and set the bp_color variable
@@ -114,7 +118,7 @@ backward_one_line ()
 	  opbuf[0] = op;
 	  temp_pos++;
 	  for (i = 1; i < size; i++)
-	    opbuf[i] = Op6502 (temp_pos++);
+	    opbuf[i] = get_8bit_addr (temp_pos++);
 
 	  if (((op & 0xF) == 0xB) || (!strcmp (optable_debug[op].opname, "???")))
 	    {			// If it's still a breakpoint, it wasn't set and shouldn't be here
@@ -154,9 +158,10 @@ backward_one_line ()
 int
 dis_key ()
 {
-  int ch = osd_readkey ();
+ 
 /* TODO: deallegroization needed here */
 #ifdef ALLEGRO
+  int ch = osd_readkey ();
   switch (ch >> 8)
     {
     case KEY_DOWN:

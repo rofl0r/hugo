@@ -2,6 +2,7 @@
 #define _INCLUDE_SYS_INP_H
 
 #include "cleantyp.h"
+#include "SDL_net.h"
 
 /*
  * Input section
@@ -10,28 +11,41 @@
  * It's called every vsync I think, i.e. almost 60 times a sec
  */
 
-/*
- * osd_keyboard
- *
+/*!
  * Updates the Joypad variables, save/load game, make screenshots, display
  * gui or launch fileselector if asked
- * return 1 if we must quit the emulation
- * else 0
+ * \return 1 if we must quit the emulation
+ * \return 0 else
  */
 int osd_keyboard(void);
 	
-/*
- * osd_init_input
- *
+/*!
  * Initialize the input services
- * return 1 if the initialization failed, 0 on success
+ * \return 1 if the initialization failed
+ * \return 0 on success
  */
 int osd_init_input(void);
 
+/*!
+ * Shutdown input services
+ */
+void osd_shutdown_input(void);
 
-/*
- * current_config
- *
+#if defined(ENABLE_NETPLAY)
+/*!
+ * Initialize the netplay support
+ * \return 1 if the initialization failed
+ * \return 0 on success
+ */
+int osd_init_netplay(void);
+
+/*!
+ * Shutdown netplay support
+ */
+void osd_shutdown_netplay(void);
+#endif
+
+/*!
  * Number of the input configuration
  */
 extern UChar current_config;
@@ -50,13 +64,13 @@ typedef enum
   J_I,
   J_II,
   J_SELECT,
-  J_START,
+  J_RUN,
   J_AUTOI,
   J_AUTOII,
   J_PI,
   J_PII,
   J_PSELECT,
-  J_PSTART,
+  J_PRUN,
   J_PAUTOI,
   J_PAUTOII,
   J_PXAXIS,
@@ -66,22 +80,49 @@ typedef enum
   J_PAD_START = J_PI
 } joymap;
 
+extern const char* joymap_reverse[J_MAX];
+
 /* 
  * input_config
  *
  * Definition of the type representating an input configuration
  */	  
+
+/*
+ * local_input means the input data can be read locally and need not been relayed
+ * server_input means the data 
+ */
+
+typedef enum { LOCAL_PROTOCOL, LAN_PROTOCOL, INTERNET_PROTOCOL } netplay_type ;
+
 typedef struct
 {
-  UInt16 (*pad[5])();
-  UChar input_type[5];
-  UChar autoI[5];
-  UChar autoII[5];
-  UChar firedI[5];
-  UChar firedII[5];
-  UInt16 joy_mapping[5][J_MAX]; // Now can handle UTF codes
-} input_config;
+	
+	//! Mouse device, 0 for none
+	UChar mousedev;
+	
+	//! Joypad device, 0 for none
+	UChar joydev;
+	
+	//! whether autofire is set
+	UChar autoI;
+	UChar autoII;
+	
+	//! whether autofire triggered event
+	UChar firedI;
+	UChar firedII;
+	
+	//! mapping for joypad and keyboard
+	//! J_UP to J_PAD_START (excluded) are for use with the keyboard, others are
+	//! for the joypad
+	UInt16 joy_mapping[J_MAX];
+	
+} individual_input_config;
 
+typedef struct
+{
+  individual_input_config individual_config[5];
+} input_config;
 
 /*
  * config

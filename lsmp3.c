@@ -136,12 +136,11 @@ MP3_length (char *argv)
   int fOriginal = 0;
   uint4 Head;
   long n;
-  long Length;
+/*   long Length; */
   long TotTime = 0;
   long TotLength = 0;
   long TotNum = 0;
   int i;
-  int j;
 
   /* Add a few extra bytes so we may overstep our buffer */
   if ((pBuf = (unsigned char *) malloc (FRAME_SIZ + 8)) == NULL)

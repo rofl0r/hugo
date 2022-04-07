@@ -1,16 +1,37 @@
+/*
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
 /**************************************************************************/
 /*                 'Portable' PC-Engine Emulator Source file              */
 /*                                                                        */
 /*      1998 by BERO bero@geocities.co.jp                                 */
 /*                                                                        */
 /*    Modified 1998 by hmmx hmmx@geocities.co.jp                          */
-/*    Modified 1999-2003 by Zeograd (Olivier Jolly) zeograd@caramail.com  */
+/*    Modified 1999-2003 by Zeograd (Olivier Jolly) zeograd@zeograd.com   */
 /**************************************************************************/
 
 /* Header section */
 
 #include "pce.h"
 #include "iso_ent.h"
+#include "miniunz.h"
+#include "utils.h"
+#if defined(BSD_CD_HARDWARE_SUPPORT)
+#include "pcecd.h"
+#endif
 
 #define LOG_NAME "hugo.log"
 
@@ -36,7 +57,6 @@ const UInt32 PopRAMsize = 0x8000;
 
 #define ZW      64
 //byte ZBuf[ZW*256];
-UChar *Page[8], *ROMMap[256];
 //BOOL IsROM[8];
 
 UChar *ROM;
@@ -88,7 +108,7 @@ UInt32 TimerCount;
 int scanlines_per_frame = 263;
 
 //int MinLine = 0,MaxLine = 255;
-#define MAXDISP 227
+//#define MAXDISP 227
 
 char cart_name[PATH_MAX] = "";
 // Name of the file containing the ROM
@@ -100,10 +120,6 @@ char short_cart_name[PATH_MAX];
 char short_iso_name[PATH_MAX];
 // Just the ISO filename without the extension (with a dot)
 // you just have to add your own extension...
-
-char log_filename[PATH_MAX];
-// real filename of the logging file
-// it thus also includes full path on advanced system
 
 UChar hook_start_cd_system = 0;
 // Do we hook CD system to avoid pressing start on main screen
@@ -232,13 +248,10 @@ Track CD_track[0x100];
 ####################################
 */
 
-UInt32 freq_int = 22050;
-// frequency of interrupt to be used to make sound
-
 volatile SChar key_delay = 0;
-// delay to avoid to many key strokes
+// delay to avoid too many key strokes
 
-volatile char can_blit = 1;
+static volatile unsigned char can_blit = 1;
 // used to sync screen to 60 image/sec.
 
 volatile UInt32 message_delay = 0;
@@ -259,9 +272,6 @@ UChar language;
  * 7 -> Polish
  * 8 -> Italian
  */
-
-UChar cd_fade;
-// the byte set by the fade function
 
 unsigned char binbcd[0x100] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
@@ -290,14 +300,17 @@ unsigned char bcdbin[0x100] = {
   0x5a, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, 0x60, 0x61, 0x62, 0x63, 0, 0, 0, 0, 0, 0,
 };
 
-
-UChar cd_port_180b = 0;
-
 UChar pce_cd_adpcm_trans_done = 0;
 
-UChar pce_cd_cmdcnt;
-
 FILE *iso_FILE = NULL;
+
+const char* joymap_reverse[J_MAX] = {
+	"UP", "DOWN", "LEFT", "RIGHT",
+	"I", "II", "SELECT", "RUN",
+	"AUTOI", "AUTOII", "PI", "PII",
+	"PSELECT", "PRUN", "PAUTOI", "PAUTOII",
+	"PXAXIS", "PYAXIS"};
+
 
 /*
 ####################################
@@ -329,20 +342,6 @@ UInt32 packed_iso_filesize = 0;
 
 UInt32 ISQ_position = 0;
 
-UInt32 pce_cd_sectoraddy;
-
-UChar pce_cd_sectoraddress[3];
-
-UChar pce_cd_temp_dirinfo[4];
-
-UChar pce_cd_temp_play[4];
-
-UChar pce_cd_temp_stop[4];
-
-UChar pce_cd_dirinfo[4];
-
-
-
 // struct cdrom_tocentry pce_cd_tocentry;
 
 UChar nb_max_track = 24;	//(NO MORE BCD!!!!!)
@@ -367,6 +366,11 @@ UChar video_driver = 0;
  * 2 => Scanline graphism
  */
 
+#if defined(SHARED_MEMORY)
+//! Handle for shared memory holding the rom content
+static int shm_rom_handle;
+#endif
+
 // Pre declaration of reading function routines
 void read_sector_dummy (unsigned char *, UInt32);
 void read_sector_CD (unsigned char *, UInt32);
@@ -381,74 +385,19 @@ read_sector_dummy,
     read_sector_CD,
     read_sector_ISO, read_sector_ISQ, read_sector_BIN, read_sector_HCD};
 
-char *
+static char *
 check_char (char *s, char c)
 {
   while ((*s) && (*s != c))
     s++;
-
   return *s == c ? s : NULL;
-
 }
 
-char*
-strupr(char *s)
-{
-	char* t = s;
-	while (*s)
-	{
-		*s = toupper(*s);
-		s++;
-	}
-	return t;
-}
-
-
-#if !defined(FREEBSD)
-
-char *
-strcasestr (char *s1, char *s2)
-{
-
-  char *tmps1 = (char *) strupr (strdup (s1));
-  char *tmps2 = (char *) strupr (strdup (s2));
-
-  char *result = strstr (tmps1, tmps2);
-
-  free (tmps1);
-  free (tmps2);
-
-  return result;
-
-}
-#endif
-
-#if !defined(WIN32)
-
-int
-stricmp (char *s1, char *s2)
-{
-
-  char *tmps1 = (char *) strupr (strdup (s1));
-  char *tmps2 = (char *) strupr (strdup (s2));
-
-  int result = strcmp (tmps1, tmps2);
-
-  free (tmps1);
-  free (tmps2);
-
-  return result;
-
-}
-#endif
 
 #if defined(ALLEGRO)
-void
-interrupt_60hz ()
-#else
-  #if defined(SDL)
-  UInt32 interrupt_60hz (UInt32 interval, void *param)
-  #endif
+void interrupt_60hz (void)
+#elif defined(SDL)
+UInt32 interrupt_60hz (UInt32 interval, void *param)
 #endif
 {
 
@@ -466,18 +415,16 @@ interrupt_60hz ()
   /* number of call of this function */
   timer_60++;
 
-#if defined(ALLEGRO)  
-  
+#if defined(ALLEGRO)
+
   /* If we've pressed a key recently, make it less recent =) */
   if (key_delay)
     key_delay--;
-    
+
   return;
-#else
-   #if defined(SDL)
-      return interval;
-   #endif
- #endif
+#elif defined(SDL)
+  return interval;
+#endif
 };
 
 /*
@@ -519,42 +466,9 @@ void
 delete_file_tmp (char *name, int dummy, int dummy2)
 {
   delete_file (name);
-  return;
 };
 
 #endif
-
-/*****************************************************************************
-
-    Function: Log
-
-    Description: log data into LOG_NAME
-    Parameters: like printf
-    Return: nothing
-
-*****************************************************************************/
-void
-Log (char *format, ...)
-{
-  FILE *log_file;
-  char buf[256];
-
-  va_list ap;
-  va_start (ap, format);
-  vsprintf (buf, format, ap);
-  va_end (ap);
-
-  if (!(log_file = fopen (log_filename, "at")))
-    return;
-
-  fprintf (log_file, buf);
-
-  fflush (log_file);
-
-  fclose (log_file);
-
-  return;
-}
 
 /*****************************************************************************
 
@@ -583,23 +497,32 @@ init_log_file ()
   getdate (&Date);
   gettime (&Time);
   Log
-    ("Creating Dos Hu-Go! log file on %02d:%02d:%02d.%02d, the %d/%d/%d\nVersion 2.10 of %s\n",
+    ("Creating Dos Hu-Go! log file on %02d:%02d:%02d.%02d, the %d/%d/%d\nVersion 2.11 of %s\n",
      Time.ti_hour, Time.ti_min, Time.ti_sec, Time.ti_hund, Date.da_day,
      Date.da_mon, Date.da_year, __DATE__);
 
 #elif defined(LINUX)
-  Log ("Creating Linux log file version 2.10 of %s ($Revision: 1.33 $)\n", __DATE__);
+  Log ("Creating Linux log file version 2.11 of %s ($Revision: 1.60 $)\n", __DATE__);
 #elif defined(WIN32)
-  Log ("Creating Win32 log file version 2.10 of %s ($Revision: 1.33 $)\n", __DATE__);
+  Log ("Creating Win32 log file version 2.11 of %s ($Revision: 1.60 $)\n", __DATE__);
 #endif
 
 }
 
 extern int op6502_nb;
 
+#if 0
 UChar
 _Rd6502 (UInt16 A)
 {
+#if defined(CD_DEBUG)
+  if ((mmr[A >> 13] >= 0x40)  && (mmr[A >> 13] <= 0x43))
+    {
+      // fprintf(stderr, "reading AC pseudo bank (%d)\n", mmr[A >> 13] - 0x40);
+      return IO_read(0x1A00 + ((mmr[A >> 13] - 0x40) << 4));
+    }
+#endif
+
   if (Page[A >> 13] != IOAREA)
     return Page[A >> 13][A];
   else
@@ -609,6 +532,16 @@ _Rd6502 (UInt16 A)
 void
 _Wr6502 (UInt16 A, UChar V)
 {
+//fprintf(stderr, "writing 0x%02x to 0x%04x\n", V, A);
+
+#if defined(CD_DEBUG)
+  if ((mmr[A >> 13] >= 0x40)  && (mmr[A >> 13] <= 0x43))
+    {
+      // fprintf(stderr, "writing 0x%02x to AC pseudo bank (%d)\n", V, mmr[A >> 13] - 0x40);
+      return IO_write(0x1A00 + ((mmr[A >> 13] - 0x40) << 4), V);
+    }
+#endif
+
 #ifndef SF2
   /*
      if (A>0xE000)
@@ -616,7 +549,7 @@ _Wr6502 (UInt16 A, UChar V)
      Log("Write in rom bios at PC = 0X%04X\n",M.PC.W);
      return;
      }
-   */
+  */
   if (Page[A >> 13] != IOAREA)
     Page[A >> 13][A] = V;
   else
@@ -628,10 +561,10 @@ _Wr6502 (UInt16 A, UChar V)
           if (A>>13<0x68)
              if ((A & 0x1ffc) == 0x1ff0) {
                 int i;
-                
+
                 ROMMap[0x40] = ROMMap[0] + 0x80000;
                 ROMMap[0x40] += (A & 3) * 0x80000;
-                
+
                 for (i = 0x41; i <= 0x7f; i++) {
                     ROMMap[i] = ROMMap[i-1] + 0x2000;
                 }
@@ -643,10 +576,11 @@ _Wr6502 (UInt16 A, UChar V)
 */
 
 #else
+
   if (Page[A >> 13] == IOAREA)
     IO_write (A, V);
   else
-    /* support for SF2CE silliness */
+    // support for SF2CE silliness
   if ((A & 0x1ffc) == 0x1ff0)
     {
       int i;
@@ -664,6 +598,7 @@ _Wr6502 (UInt16 A, UChar V)
 
 #endif
 }
+#endif
 
 void
 fill_cd_info ()
@@ -800,8 +735,8 @@ fill_cd_info ()
 void
 read_sector_BIN (unsigned char *p, UInt32 sector)
 {
-  static first_read = 1;
-  static second_track_sector = 0;
+  static int first_read = 1;
+  static long second_track_sector = 0;
   int result;
 
 
@@ -869,6 +804,9 @@ read_sector_BIN (unsigned char *p, UInt32 sector)
 void
 read_sector_ISQ (unsigned char *p, UInt32 sector)
 {
+
+#ifdef ALLEGRO
+
   int result;
   UInt32 dummy;
 
@@ -883,8 +821,6 @@ read_sector_ISQ (unsigned char *p, UInt32 sector)
 ####################################
 ####################################
 */
-
-#ifdef ALLEGRO
 
   for (result = bcdbin[nb_max_track]; result > 0x01; result--)
     {
@@ -947,33 +883,32 @@ read_sector_CD (unsigned char *p, UInt32 sector)
 {
   int i;
 #ifndef FINAL_RELEASE
-  Log ("Lecture du secteur : %d\n", sector);
+  Log ("Reading sector : %d\n", sector);
 #endif
 
   if (cd_buf != NULL)
     if ((sector >= first_sector) &&
-	(sector <= first_sector + CD_BUF_LENGTH - 1))
+				(sector <= first_sector + CD_BUF_LENGTH - 1))
       {
-	memcpy (p, cd_buf + 2048 * (sector - first_sector), 2048);
-	return;
-      }
+				memcpy (p, cd_buf + 2048 * (sector - first_sector), 2048);
+				return;
+			}
     else
       {
-	for (i = 0; i < CD_BUF_LENGTH; i++)
-	  osd_cd_read (cd_buf + 2048 * i, sector + i);
-	first_sector = sector;
-	memcpy (p, cd_buf, 2048);
+				for (i = 0; i < CD_BUF_LENGTH; i++)
+					osd_cd_read (cd_buf + 2048 * i, sector + i);
+				first_sector = sector;
+				memcpy (p, cd_buf, 2048);
       }
   else
     {
       cd_buf = (UChar *) malloc (CD_BUF_LENGTH * 2048);
       for (i = 0; i < CD_BUF_LENGTH; i++)
-	osd_cd_read (cd_buf + 2048 * i, sector + i);
+				osd_cd_read (cd_buf + 2048 * i, sector + i);
       first_sector = sector;
       memcpy (p, cd_buf, 2048);
     }
 
-  //  osd_cd_read(p,sector);
 }
 
 void
@@ -1013,7 +948,7 @@ read_sector_ISO (unsigned char *p, UInt32 sector)
        */
 
       for (i = 0; i < 2048; i += 4)
-	*(UInt32 *) & p[i] = 0xDEADBEEF;
+				*(UInt32 *) & p[i] = 0xDEADBEEF;
 
       return;
     }
@@ -1021,10 +956,10 @@ read_sector_ISO (unsigned char *p, UInt32 sector)
   if (sector == CD_track[result].beg_lsn)
     {				/* We're reading the first sector, the header */
       if (force_header)
-	{
-	  memcpy (p, ISO_header, 0x800);
-	  return;
-	}
+				{
+					memcpy (p, ISO_header, 0x800);
+					return;
+				}
     }
 
   fseek (iso_FILE, (sector - CD_track[result].beg_lsn) * 2048, SEEK_SET);
@@ -1050,7 +985,7 @@ pce_cd_read_sector (void)
 
   printf("Reading sector %d (in pce_cd_read_sector)\n", pce_cd_sectoraddy);
 #endif
-  
+
   (*read_sector_method[CD_emulation]) (cd_sector_buffer, pce_cd_sectoraddy);
 
   pce_cd_sectoraddy++;
@@ -1059,18 +994,18 @@ pce_cd_read_sector (void)
   for (result = 0; result < 2048; result++)
     {
       if ((result & 15) == 0)
-	{
-	  fprintf (stderr, "%03x: ", result);
-	}
+				{
+					fprintf (stderr, "%03x: ", result);
+				}
       fprintf (stderr, "%02x", cd_sector_buffer[result]);
       if ((result & 15) == 15)
-	{
-	  fprintf (stderr, "\n");
-	}
+				{
+					fprintf (stderr, "\n");
+				}
       else
-	{
-	  fprintf (stderr, " ");
-	}
+				{
+					fprintf (stderr, " ");
+				}
     }
 #endif
 
@@ -1085,19 +1020,19 @@ pce_cd_read_sector (void)
 
     for (result = 0; result < 2048; result++)
       {
-	if ((result & 15) == 0)
-	  {
-	    fprintf (g, "%03x: ", result);
-	  }
-	fprintf (g, "%02x", cd_sector_buffer[result]);
-	if ((result & 15) == 15)
-	  {
-	    fprintf (g, "\n");
-	  }
-	else
-	  {
-	    fprintf (g, " ");
-	  }
+				if ((result & 15) == 0)
+					{
+						fprintf (g, "%03x: ", result);
+					}
+				fprintf (g, "%02x", cd_sector_buffer[result]);
+				if ((result & 15) == 15)
+					{
+						fprintf (g, "\n");
+					}
+				else
+					{
+						fprintf (g, " ");
+					}
       }
 
     fclose (g);
@@ -1117,41 +1052,23 @@ pce_cd_read_sector (void)
 void
 issue_ADPCM_dma (void)
 {
-
 #ifndef FINAL_RELEASE
-  fprintf (stderr, "Will make DMA transfert\n");
+  fprintf (stderr, "Will make DMA transfer\n");
   Log ("ADPCM DMA will begin\n");
 #endif
 
   while (cd_sectorcnt--)
     {
       memcpy (PCM + io.adpcm_dmaptr, cd_read_buffer, pce_cd_read_datacnt);
-
       cd_read_buffer = NULL;
-
       io.adpcm_dmaptr += pce_cd_read_datacnt;
-
       pce_cd_read_datacnt = 0;
-
       pce_cd_read_sector ();
-
     }
 
   pce_cd_read_datacnt = 0;
-
   pce_cd_adpcm_trans_done = 1;
-
   cd_read_buffer = NULL;
-
-}
-
-
-void
-pce_cd_set_sector_address (void)
-{
-  pce_cd_sectoraddy = pce_cd_sectoraddress[0] << 16;
-  pce_cd_sectoraddy += pce_cd_sectoraddress[1] << 8;
-  pce_cd_sectoraddy += pce_cd_sectoraddress[2];
 }
 
 /*
@@ -1196,368 +1113,21 @@ nb_sect2msf (UInt32 lsn, UChar * min, UChar * sec, UChar * frm)
 }
 
 void
-pce_cd_handle_command (void)
-{
-
-  if (pce_cd_cmdcnt)
-    {
-#ifdef CD_DEBUG
-      fprintf (stderr, "Command arg received: 0x%02x.\n", cd_port_1801);
-#endif
-
-      if (--pce_cd_cmdcnt)
-	cd_port_1800 = 0xd0;
-      else
-	cd_port_1800 = 0xc8;
-
-      switch (pce_cd_curcmd)
-	{
-	case 0x08:
-	  if (!pce_cd_cmdcnt)
-	    {
-#ifdef CD_DEBUG
-	      fprintf (stderr, "Read command: %d sectors.\n", cd_port_1801);
-	      fprintf (stderr, "Starting at %02x:%02x:%02x.\n",
-		       pce_cd_sectoraddress[0], pce_cd_sectoraddress[1],
-		       pce_cd_sectoraddress[2]);
-	      fprintf (stderr, "MODE : %x\n", Rd6502 (0x20FF));
-#endif
-
-	      cd_sectorcnt = cd_port_1801;
-	      pce_cd_set_sector_address ();
-	      pce_cd_read_sector ();
-
-
-	      /* TEST */
-	      // cd_port_1800 = 0xD0; // Xanadu 2 doesn't block but still crash
-	      /* TEST */
-
-#ifdef CD_DEBUG
-	      fprintf (stderr, "Result of reading : $1800 = 0X%02X\n\n\n",
-		       cd_port_1800);
-#endif
-
-/* TEST ZEO
-    if (Rd6502(0x20ff)==0xfe)
-     cd_port_1800 = 0x98;
-    else
-     cd_port_1800 = 0xc8;
-/* ******** */
-
-	    }
-	  else
-	    pce_cd_sectoraddress[3 - pce_cd_cmdcnt] = cd_port_1801;
-
-	  break;
-	case 0xd8:
-
-	  pce_cd_temp_play[pce_cd_cmdcnt] = cd_port_1801;
-
-	  if (!pce_cd_cmdcnt)
-	    {
-	      cd_port_1800 = 0xd8;
-	    }
-	  break;
-	case 0xd9:
-
-	  pce_cd_temp_stop[pce_cd_cmdcnt] = cd_port_1801;
-
-	  if (!pce_cd_cmdcnt)
-	    {
-	      cd_port_1800 = 0xd8;
-/*
-               if (pce_cd_temp_stop[3] == 1)
-                 osd_cd_play_audio_track(bcdbin[pce_cd_temp_play[2]]);
-               else
-*/
-	      if ((pce_cd_temp_play[0] |
-		   pce_cd_temp_play[1] |
-		   pce_cd_temp_stop[0] | pce_cd_temp_stop[1]) == 0)
-		{
-		  if (CD_emulation == 5)
-		    HCD_play_track (bcdbin[pce_cd_temp_play[2]], 1);
-		  else
-		    osd_cd_play_audio_track (bcdbin[pce_cd_temp_play[2]]);
-		}
-	      else
-		{
-		  if (CD_emulation == 5)
-		    HCD_play_sectors (Time2Frame (bcdbin[pce_cd_temp_play[2]],
-						  bcdbin[pce_cd_temp_play[1]],
-						  bcdbin[pce_cd_temp_play
-							 [0]]),
-				      Time2Frame (bcdbin[pce_cd_temp_stop[2]],
-						  bcdbin[pce_cd_temp_stop[1]],
-						  bcdbin[pce_cd_temp_stop
-							 [0]]),
-				      pce_cd_temp_stop[3] == 1);
-		  else
-		    osd_cd_play_audio_range (bcdbin[pce_cd_temp_play[2]],
-					     bcdbin[pce_cd_temp_play[1]],
-					     bcdbin[pce_cd_temp_play[0]],
-					     bcdbin[pce_cd_temp_stop[2]],
-					     bcdbin[pce_cd_temp_stop[1]],
-					     bcdbin[pce_cd_temp_stop[0]]);
-		}
-	      Log ("play from %d:%d:%d:(%d) to %d:%d:%d:(%d)\nloop = %d\n",
-		   bcdbin[pce_cd_temp_play[2]],
-		   bcdbin[pce_cd_temp_play[1]],
-		   bcdbin[pce_cd_temp_play[0]],
-		   pce_cd_temp_play[3],
-		   bcdbin[pce_cd_temp_stop[2]],
-		   bcdbin[pce_cd_temp_stop[1]],
-		   bcdbin[pce_cd_temp_stop[0]],
-		   pce_cd_temp_stop[3], pce_cd_temp_stop[3] == 1);
-
-	    }
-	  break;
-	case 0xde:
-
-#ifdef CD_DEBUG
-	  Log (" Arg for 0xde command is %X, command count is %d\n",
-	       cd_port_1801, pce_cd_cmdcnt);
-#endif
-
-	  if (pce_cd_cmdcnt)
-	    pce_cd_temp_dirinfo[pce_cd_cmdcnt] = cd_port_1801;
-	  else
-	    {
-	      // We have received two arguments in pce_cd_temp_dirinfo
-	      // We can use only one
-	      // There's an argument indicating the kind of info we want
-	      // and an optional argument for track number
-
-	      pce_cd_temp_dirinfo[0] = cd_port_1801;
-
-#ifdef CD_DEBUG
-	      Log
-		(" I'll answer to 0xde command request\nArguments are %x, %x, %x, %x\n",
-		 pce_cd_temp_dirinfo[0], pce_cd_temp_dirinfo[1],
-		 pce_cd_temp_dirinfo[2], pce_cd_temp_dirinfo[3]);
-#endif
-
-	      switch (pce_cd_temp_dirinfo[1])
-		{
-		case 0:
-		  // We want info on number of first and last track
-
-		  switch (CD_emulation)
-		    {
-		    case 2:
-		    case 3:
-		    case 4:
-		      pce_cd_dirinfo[0] = binbcd[01];	// Number of first track  (BCD)
-		      pce_cd_dirinfo[1] = binbcd[nb_max_track];	// Number of last track (BCD)
-		      break;
-		    case 1:
-		      {
-			int first_track, last_track;
-			osd_cd_nb_tracks (&first_track, &last_track);
-			pce_cd_dirinfo[0] = binbcd[first_track];
-			pce_cd_dirinfo[1] = binbcd[last_track];
-		      }
-		      break;
-		    case 5:
-		      Log ("HCD: first track %d, last track %d\n",
-			   HCD_first_track, HCD_last_track);
-		      pce_cd_dirinfo[0] = binbcd[HCD_first_track];
-		      pce_cd_dirinfo[1] = binbcd[HCD_last_track];
-		      break;
-		    }		// switch CD emulation
-
-		  cd_read_buffer = pce_cd_dirinfo;
-		  pce_cd_read_datacnt = 2;
-
-#ifdef CD_DEBUG
-		  Log (" Data resulting of 0xde request is %x and %x\n",
-		       cd_read_buffer[0], cd_read_buffer[1]);
-#endif
-		  break;
-
-		case 2:
-
-		  // We want info on the track whose number is pce_cd_temp_dirinfo[0]
-
-		  switch (CD_emulation)
-		    {
-		    case 2:
-		    case 3:
-		    case 4:
-		    case 5:
-
-		      pce_cd_dirinfo[0] =
-			CD_track[bcdbin[pce_cd_temp_dirinfo[0]]].beg_min;
-		      pce_cd_dirinfo[1] =
-			CD_track[bcdbin[pce_cd_temp_dirinfo[0]]].beg_sec;
-		      pce_cd_dirinfo[2] =
-			CD_track[bcdbin[pce_cd_temp_dirinfo[0]]].beg_fra;
-		      pce_cd_dirinfo[3] =
-			CD_track[bcdbin[pce_cd_temp_dirinfo[0]]].type;
-
-#ifdef CD_DEBUG
-		      Log ("Type of track %d is %d\n",
-			   bcdbin[pce_cd_temp_dirinfo[0]],
-			   CD_track[bcdbin[pce_cd_temp_dirinfo[0]]].type);
-#endif
-		      break;
-		    case 1:
-		      {
-			int Min, Sec, Fra, Ctrl;
-			UChar *buffer = (UChar *) alloca (7);
-			osd_cd_track_info (bcdbin[pce_cd_temp_dirinfo[0]],
-					   &Min, &Sec, &Fra, &Ctrl);
-
-			pce_cd_dirinfo[0] = binbcd[Min];
-			pce_cd_dirinfo[1] = binbcd[Sec];
-			pce_cd_dirinfo[2] = binbcd[Fra];
-			pce_cd_dirinfo[3] = Ctrl;
-
-			Log
-			  ("The control byte of the audio track #%d is 0x%02X\n",
-			   bcdbin[pce_cd_temp_dirinfo[0]], pce_cd_dirinfo[3]);
-
-			break;
-
-		      }		// case CD emulation = 1
-
-		    }		// switch CD emulation
-
-		  pce_cd_read_datacnt = 3;
-		  cd_read_buffer = pce_cd_dirinfo;
-
-		  break;
-
-		case 1:
-
-		  switch (CD_emulation)
-		    {
-		    case 1:
-		      {
-
-			int min, sec, fra;
-
-			osd_cd_length (&min, &sec, &fra);
-
-			pce_cd_dirinfo[0] = binbcd[min];
-			pce_cd_dirinfo[1] = binbcd[sec];
-			pce_cd_dirinfo[2] = binbcd[fra];
-
-			break;
-		      }		// case Cd emulation = 1
-		    default:
-		      pce_cd_dirinfo[0] = 0x25;
-		      pce_cd_dirinfo[1] = 0x06;
-		      pce_cd_dirinfo[2] = 0x00;
-		    }		// switch CD emulation
-
-		  pce_cd_read_datacnt = 3;
-		  cd_read_buffer = pce_cd_dirinfo;
-
-		  break;
-
-		}		// switch command of request 0xde
-
-	    }			// end if of request 0xde (receiving command or executing them)
-
-	}			// switch of request
-
-    }				// end if of command arg or new request
-  else
-    {
-
-      // it's an command ID we're receiving
-
-#ifdef CD_DEBUG
-      fprintf (stderr, "Command byte received: 0x%02x.\n", cd_port_1801);
-#endif
-
-      switch (cd_port_1801)
-	{
-	case 0x00:
-	  cd_port_1800 = 0xD8;
-	  break;
-	case 0x08:
-	  pce_cd_curcmd = cd_port_1801;
-	  pce_cd_cmdcnt = 4;
-	  break;
-	case 0xD8:
-	  pce_cd_curcmd = cd_port_1801;
-	  pce_cd_cmdcnt = 4;
-	  break;
-	case 0xD9:
-	  pce_cd_curcmd = cd_port_1801;
-	  pce_cd_cmdcnt = 4;
-	  break;
-	case 0xDA:
-	  pce_cd_curcmd = cd_port_1801;
-	  pce_cd_cmdcnt = 0;
-
-	  if (CD_emulation == 1)
-	    osd_cd_stop_audio ();
-	  else if (CD_emulation == 5)
-	    HCD_pause_playing ();
-
-	  break;
-	case 0xDE:
-	  /* Get CD directory info */
-	  /* First arg is command? */
-	  /* Second arg is track? */
-	  cd_port_1800 = 0xd0;
-	  pce_cd_cmdcnt = 2;
-	  pce_cd_read_datacnt = 3;	/* 4 bytes */
-	  pce_cd_curcmd = cd_port_1801;
-	  break;
-	}
-
-/*
-        if (cd_port_1801 == 0x00) {
-            cd_port_1800 = 0xd8;
-        } else if (cd_port_1801 == 0x08) {
-            pce_cd_curcmd = cd_port_1801;
-            pce_cd_cmdcnt = 4;
-        } else if (cd_port_1801 == 0xd8) {
-            pce_cd_cmdcnt = 4;
-            pce_cd_curcmd = cd_port_1801;
-        } else if (cd_port_1801 == 0xd9) {
-            pce_cd_cmdcnt = 4;
-            pce_cd_curcmd = cd_port_1801;
-        } else if (cd_port_1801 == 0xde) {
-            // Get CD directory info
-            // First arg is command?
-            // Second arg is track?
-            cd_port_1800 = 0xd0;
-            pce_cd_cmdcnt = 2;
-            pce_cd_read_datacnt = 3; // 4 bytes
-            pce_cd_curcmd = cd_port_1801;
-        }
-*/
-
-    }
-}
-
-
-void
 IO_write (UInt16 A, UChar V)
 {
   //printf("w%04x,%02x ",A&0x3FFF,V);
+
+  if ((A >= 0x800) && (A < 0x1800)) // We keep the io buffer value
+    io.io_buffer = V;
 
 #ifndef FINAL_RELEASE
   if ((A & 0x1F00) == 0x1A00)
     Log ("\nAC Write %02x at %04x\n", V, A);
 #endif
 
-  /* CAREFUL */
-  // switch(A&0x1CC0) { /* BE CAREFUL, MAY BE VERY VERY UNSTABLE !!!!!!! */
-  /* DANGER */
-
   switch (A & 0x1F00)
     {
     case 0x0000:		/* VDC */
-      /* TEST */
-      /* if (M.PC.W<0xe000)
-         if ((io.vdc_reg) && (io.vdc_reg != 2))
-         Log("Writing %x to port %04x, reg = 0x%x\n",V,A,io.vdc_reg);
-       */
       switch (A & 3)
 	{
 	case 0:
@@ -1574,91 +1144,135 @@ IO_write (UInt16 A, UChar V)
 	      return;
 	    case HDR:		/* Horizontal Definition */
 	      {
-		typeof (io.screen_w) old_value = io.screen_w;
-		io.screen_w = (V + 1) * 8;
+                typeof (io.screen_w) old_value = io.screen_w;
+                io.screen_w = (V + 1) * 8;
 
-		if (io.screen_w == old_value)
-		  break;
+                if (io.screen_w == old_value)
+                  break;
 
-/*
-####################################
-####################################
-####################################
-####################################
-2KILL :: BEGIN
-####################################
-####################################
-####################################
-####################################
-*/
-		/* TODO: checking if needed, this could remove an ALLEGRO 
-		 * related piece of code
-		 */
+                /* TODO: checking if needed, this could remove an ALLEGRO
+                 * related piece of code
+                 */
 #ifdef ALLEGRO
-		clear (screen);
+                clear (screen);
 #endif
-/*
-####################################
-####################################
-####################################
-####################################
-2KILL :: END
-####################################
-####################################
-####################################
-####################################
-*/
 
-		// (*init_normal_mode[video_driver]) ();
-		(*osd_gfx_driver_list[video_driver].mode) ();
+                // (*init_normal_mode[video_driver]) ();
+#if defined(NEW_GFX_ENGINE)
+                gfx_need_video_mode_change = 1;
+#else
+                (*osd_gfx_driver_list[video_driver].mode) ();
+#endif
 
 
-		{
-		  UInt32 x, y = (WIDTH - io.screen_w) / 2 - 512 * WIDTH;
-		  for (x = 0; x < 1024; x++)
-		    {
-		      spr_init_pos[x] = y;
-		      y += WIDTH;
-		    }
-		}
+                {
+                  UInt32 x, y = (WIDTH - io.screen_w) / 2 - 512 * WIDTH;
+                  for (x = 0; x < 1024; x++)
+                    {
+                      spr_init_pos[x] = y;
+                      y += WIDTH;
+                    }
+                }
 	      }
 	      break;
 
 	    case MWR:		/* size of the virtual background screen */
 	      {
-		static UChar bgw[] = { 32, 64, 128, 128 };
-		io.bg_h = (V & 0x40) ? 64 : 32;
-		io.bg_w = bgw[(V >> 4) & 3];
+                static UChar bgw[] = { 32, 64, 128, 128 };
+                io.bg_h = (V & 0x40) ? 64 : 32;
+                io.bg_w = bgw[(V >> 4) & 3];
 	      }
 	      break;
 
 	    case BYR:		/* Vertical screen offset */
+
+				/*
+				if (io.VDC[BYR].B.l == V)
+					return;
+				*/
+
+#if defined(NEW_GFX_ENGINE)
+              save_gfx_context(0);
+#endif
+
 	      if (!scroll)
-		{
-		  oldScrollX = ScrollX;
-		  oldScrollY = ScrollY;
-		  oldScrollYDiff = ScrollYDiff;
-		}
+                {
+                  oldScrollX = ScrollX;
+                  oldScrollY = ScrollY;
+                  oldScrollYDiff = ScrollYDiff;
+                }
 	      io.VDC[BYR].B.l = V;
 	      scroll = 1;
 	      ScrollYDiff = scanline - 1;
+#if defined(NEW_GFX_ENGINE)
+              ScrollYDiff -= io.VDC[VPR].B.h + io.VDC[VPR].B.l;
+#endif
+
+#if defined(GFX_DEBUG)
+              gfx_debug_printf("ScrollY = %d (l)", ScrollY);
+#endif
 	      return;
 	    case BXR:		/* Horizontal screen offset */
+
+				/*
+				if (io.VDC[BXR].B.l == V)
+					return;
+				*/
+
+#if defined(NEW_GFX_ENGINE)
+              save_gfx_context(0);
+#endif
+
 	      if (!scroll)
-		{
-		  oldScrollX = ScrollX;
-		  oldScrollY = ScrollY;
-		  oldScrollYDiff = ScrollYDiff;
-		}
+                {
+                  oldScrollX = ScrollX;
+                  oldScrollY = ScrollY;
+                  oldScrollYDiff = ScrollYDiff;
+                }
 	      io.VDC[BXR].B.l = V;
 	      scroll = 1;
 	      return;
+
+#if defined(NEW_GFX_ENGINE)
+
+            case CR:
+              if (io.VDC[io.vdc_reg].B.l == V)
+                return;
+              save_gfx_context(0);
+              io.VDC[io.vdc_reg].B.l = V;
+              return;
+
+            case VCR:
+              io.VDC[io.vdc_reg].B.l = V;
+              gfx_need_video_mode_change = 1;
+              return;
+
+            case HSR:
+              io.VDC[io.vdc_reg].B.l = V;
+              gfx_need_video_mode_change = 1;
+              return;
+
+            case VPR:
+              io.VDC[io.vdc_reg].B.l = V;
+              gfx_need_video_mode_change = 1;
+              return;
+
+	    case VDW:
+              io.VDC[io.vdc_reg].B.l = V;
+              gfx_need_video_mode_change = 1;
+              return;
+
+#endif
 	    }
 
 	  io.VDC[io.vdc_reg].B.l = V;
 	  /* all others reg just need to get the value, without
 	     additional stuff */
 
+
+#if defined(GFX_DEBUG) && !defined(FINAL_RELEASE)
+          gfx_debug_printf("VDC[%02x]=0x%02x", io.vdc_reg, V);
+#endif
 
 #ifndef FINAL_RELEASE
 	  if (io.vdc_reg > 19)
@@ -1680,54 +1294,49 @@ IO_write (UInt16 A, UChar V)
 	      vchanges[io.VDC[MAWR].W / 64] = 1;
 
 	      io.VDC[MAWR].W += io.vdc_inc;
-	      io.vdc_ratch = 0;
+
+              /* vdc_ratch shouldn't be reset between writes */
+	      // io.vdc_ratch = 0;
 	      return;
 
+#if defined(NEW_GFX_ENGINE)
+
+            case VCR:
+              io.VDC[io.vdc_reg].B.h = V;
+              gfx_need_video_mode_change = 1;
+              return;
+
+            case HSR:
+              io.VDC[io.vdc_reg].B.h = V;
+              gfx_need_video_mode_change = 1;
+              return;
+
+            case VPR:
+              io.VDC[io.vdc_reg].B.h = V;
+              gfx_need_video_mode_change = 1;
+              return;
+
 	    case VDW:		/* screen height */
+              io.VDC[io.vdc_reg].B.h = V;
+              gfx_need_video_mode_change = 1;
+              return;
+#else
+            case VDW:
 	      {
 		typeof (io.screen_h) temp_h = io.screen_h;
 		io.VDC[VDW].B.h = V;
 
 		io.screen_h = (io.VDC[VDW].W & 511) + 1;
 
-		//if (CD_emulation)
-		//  io.screen_h += 16;
-
-		/*
-		   if (io.screen_h > 224)
-		   io.screen_h = 224;
-		 */
-
 		MaxLine = io.screen_h - 1;
 
 		if (temp_h == io.screen_h)
 		  return;
 		/* TODO: check utility here too, cf upper */
-/*
-####################################
-####################################
-####################################
-####################################
-2KILL :: BEGIN
-####################################
-####################################
-####################################
-####################################
-*/
+
 #ifdef ALLEGRO
 		clear (screen);
 #endif
-/*
-####################################
-####################################
-####################################
-####################################
-2KILL :: END
-####################################
-####################################
-####################################
-####################################
-*/
 
 		// (*init_normal_mode[video_driver]) ();
 		(*osd_gfx_driver_list[video_driver].mode) ();
@@ -1735,76 +1344,84 @@ IO_write (UInt16 A, UChar V)
 	      }
 	      return;
 
+#endif
+
 	    case LENR:		/* DMA transfert */
-			
-#warning todo: if vcd_dma_control bit 3 is set, do the transfert in reverse sense		
-		
+
 	      io.VDC[LENR].B.h = V;
 
-		  { // black-- 's code
-			  
-			  int sourcecount = (io.VDC[DCR].W & 8) ? -1 : 1;
-			  int destcount = (io.VDC[DCR].W & 4) ? -1 : 1;
-			  
-			  int source = io.VDC[SOUR].W * 2;
-			  int dest = io.VDC[DISTR].W * 2;
-			  
-			  int i;
-			
-			  printf("New DMA Code used (%d,%d)\n", sourcecount, destcount);
-			  
-			  for (i = 0; i < (io.VDC[LENR].W + 1) * 2; i++)
-				  {
-					  *(VRAM + dest) = *(VRAM + source);
-					  dest += destcount;
-					  source += sourcecount;
-				  }
+              { // black-- 's code
 
-			  io.VDC[SOUR].W = source;
-			  io.VDC[DISTR].W = dest;
-				  
-		  }
+                int sourcecount = (io.VDC[DCR].W & 8) ? -1 : 1;
+                int destcount = (io.VDC[DCR].W & 4) ? -1 : 1;
 
-		  io.VDC[LENR].W = 0xFFFF;
-		  
-		  memset(vchange, 1, VRAMSIZE / 32);
-		  memset(vchanges,1, VRAMSIZE / 128);
-		  
-		  /*
-		  
-		  // VRAM to VRAM DMA
-		  memcpy (VRAM + io.VDC[DISTR].W * 2, VRAM + io.VDC[SOUR].W * 2,
-			(io.VDC[LENR].W + 1) * 2);
+                int source = io.VDC[SOUR].W * 2;
+                int dest = io.VDC[DISTR].W * 2;
 
-		  memset (vchange + io.VDC[DISTR].W / 16, 1,
-			(io.VDC[LENR].W + 1) / 16);
-		  memset (vchange + io.VDC[DISTR].W / 64, 1,
-			(io.VDC[LENR].W + 1) / 64);
+                int i;
 
-		  io.VDC[DISTR].W += io.VDC[LENR].W + 1;
-		  io.VDC[SOUR].W += io.VDC[LENR].W + 1;
-	   
-		  */
-		  
-		  
-		  
-	      io.vdc_status |= VDC_DMAfinish;
+                for (i = 0; i < (io.VDC[LENR].W + 1) * 2; i++)
+                  {
+                    *(VRAM + dest) = *(VRAM + source);
+                    dest += destcount;
+                    source += sourcecount;
+                  }
+
+                /*
+                  io.VDC[SOUR].W = source;
+                  io.VDC[DISTR].W = dest;
+                */
+                // Erich Kitzmuller fix follows
+                io.VDC[SOUR].W = source / 2;
+                io.VDC[DISTR].W = dest / 2;
+
+              }
+
+              io.VDC[LENR].W = 0xFFFF;
+
+              memset(vchange, 1, VRAMSIZE / 32);
+              memset(vchanges,1, VRAMSIZE / 128);
+
+
+              /* TODO: check whether this flag can be ignored */
+              io.vdc_status |= VDC_DMAfinish;
 
 	      return;
 
 	    case CR:		/* Auto increment size */
 	      {
-		static UChar incsize[] = { 1, 32, 64, 128 };
-		io.vdc_inc = incsize[(V >> 3) & 3];
+                static UChar incsize[] = { 1, 32, 64, 128 };
+                /*
+                  if (io.VDC[CR].B.h == V)
+                  return;
+                */
+#if defined(NEW_GFX_ENGINE)
+                save_gfx_context(0);
+#endif
+                io.vdc_inc = incsize[(V >> 3) & 3];
+                io.VDC[CR].B.h = V;
 	      }
 	      break;
 	    case HDR:		/* Horizontal display end */
 	      /* TODO : well, maybe we should implement it */
 	      //io.screen_w = (io.VDC_ratch[HDR]+1)*8;
 	      //TRACE0("HDRh\n");
+#if defined(GFX_DEBUG)
+              gfx_debug_printf("VDC[HDR].h = %d", V);
+#endif
 	      break;
 
 	    case BYR:		/* Vertical screen offset */
+
+				/*
+				if (io.VDC[BYR].B.h == (V & 1))
+					return;
+				*/
+
+#if defined(NEW_GFX_ENGINE)
+              save_gfx_context(0);
+#endif
+
 	      if (!scroll)
 		{
 		  oldScrollX = ScrollX;
@@ -1814,6 +1431,18 @@ IO_write (UInt16 A, UChar V)
 	      io.VDC[BYR].B.h = V & 1;
 	      scroll = 1;
 	      ScrollYDiff = scanline - 1;
+#if defined(NEW_GFX_ENGINE)
+              ScrollYDiff -= io.VDC[VPR].B.h + io.VDC[VPR].B.l;
+#if defined(GFX_DEBUG)
+              if (ScrollYDiff < 0)
+                gfx_debug_printf("ScrollYDiff went negative when substraction VPR.h/.l (%d,%d)", io.VDC[VPR].B.h, io.VDC[VPR].B.l);
+#endif
+#endif
+
+#if defined(GFX_DEBUG)
+              gfx_debug_printf("ScrollY = %d (h)", ScrollY);
+#endif
+
 	      return;
 	    case SATB:		/* DMA from VRAM to SATB */
 	      io.VDC[SATB].B.h = V;
@@ -1821,6 +1450,14 @@ IO_write (UInt16 A, UChar V)
 	      io.vdc_status &= ~VDC_SATBfinish;
 	      return;
 	    case BXR:		/* Horizontal screen offset */
+
+              if (io.VDC[BXR].B.h == (V & 3))
+                return;
+
+#if defined(NEW_GFX_ENGINE)
+              save_gfx_context(0);
+#endif
+
 	      if (!scroll)
 		{
 		  oldScrollX = ScrollX;
@@ -1847,8 +1484,9 @@ IO_write (UInt16 A, UChar V)
     case 0x0400:		/* VCE */
       switch (A & 7)
 	{
-	case 0:		/*io.vce_reg.W = 0; io.vce_ratch=0; *//*?? */
-	  /*TRACE("VCE 0, V=%X\n", V); */ return;
+	case 0:
+	  /*TRACE("VCE 0, V=%X\n", V); */
+          return;
 
 	  /* Choose color index */
 	case 2:
@@ -1874,9 +1512,8 @@ IO_write (UInt16 A, UChar V)
 	    else if (n & 15)
 	      Pal[n] = c;
 	  }
-
-
 	  return;
+
 	case 5:
 	  io.VCE[io.vce_reg.W].B.h = V;
 	  {
@@ -1939,21 +1576,21 @@ IO_write (UInt16 A, UChar V)
 	  /* Put a value into the waveform or direct audio buffers */
 	case 6:
           if (io.PSG[io.psg_ch][PSG_DDA_REG] & PSG_DDA_DIRECT_ACCESS)
-          {
-            io.psg_da_data[io.psg_ch][io.psg_da_index[io.psg_ch]] = V;
-            io.psg_da_index[io.psg_ch] = (io.psg_da_index[io.psg_ch] + 1) & 0x3FF;
-            if (io.psg_da_count[io.psg_ch]++ > (PSG_DIRECT_ACCESS_BUFSIZE - 1))
             {
-              if (!io.psg_channel_disabled[io.psg_ch])
-                printf("Audio being stuffed into the direct access buffer faster than it's being played.\n");
-              io.psg_da_count[io.psg_ch] = 0;
+              io.psg_da_data[io.psg_ch][io.psg_da_index[io.psg_ch]] = V;
+              io.psg_da_index[io.psg_ch] = (io.psg_da_index[io.psg_ch] + 1) & 0x3FF;
+              if (io.psg_da_count[io.psg_ch]++ > (PSG_DIRECT_ACCESS_BUFSIZE - 1))
+                {
+                  if (!io.psg_channel_disabled[io.psg_ch])
+                    printf("Audio being stuffed into the direct access buffer faster than it's being played.\n");
+                  io.psg_da_count[io.psg_ch] = 0;
+                }
             }
-          }
           else
-          {
-            io.wave[io.psg_ch][io.PSG[io.psg_ch][PSG_DATA_INDEX_REG]] = V;
-            io.PSG[io.psg_ch][PSG_DATA_INDEX_REG] = (io.PSG[io.psg_ch][PSG_DATA_INDEX_REG] + 1) & 0x1F;
-          }
+            {
+              io.wave[io.psg_ch][io.PSG[io.psg_ch][PSG_DATA_INDEX_REG]] = V;
+              io.PSG[io.psg_ch][PSG_DATA_INDEX_REG] = (io.PSG[io.psg_ch][PSG_DATA_INDEX_REG] + 1) & 0x1F;
+            }
 	  break;
 
 	case 7:
@@ -2058,6 +1695,10 @@ IO_write (UInt16 A, UChar V)
 
 		if (io.ac_control[ac_port] & AC_USE_OFFSET)
 		  {
+#if defined(CD_DEBUG)
+		    // fprintf(stderr,"Write %d to 0x%04X (base + offset)\n",V,
+		    //           io.ac_offset[ac_port] + io.ac_base[ac_port]);
+#endif
 		    // Log("Write %d to 0x%04X (base + offset)\n",V,
 		    //           io.ac_offset[ac_port] + io.ac_base[ac_port]);
 		    ac_extra_mem[((io.ac_base[ac_port] +
@@ -2065,6 +1706,9 @@ IO_write (UInt16 A, UChar V)
 		  }
 		else
 		  {
+#if defined(CD_DEBUG)
+		    // fprintf(stderr, "Write %d to 0x%04X (base)\n",V, io.ac_base[ac_port]);
+#endif
 		    // Log("Write %d to 0x%04X (base)\n",V, io.ac_base[ac_port]);
 		    ac_extra_mem[((io.ac_base[ac_port]) & 0x1fffff)] = V;
 		  }
@@ -2081,6 +1725,7 @@ IO_write (UInt16 A, UChar V)
 			 io.ac_incr[ac_port]) & 0xffffff;
 		  }
 
+		return;
 	      case 2:
 		io.ac_base[ac_port] = (io.ac_base[ac_port] & 0xffff00) | V;
 		return;
@@ -2113,10 +1758,9 @@ IO_write (UInt16 A, UChar V)
 		io.ac_control[ac_port] = V;
 		return;
 	      case 0xa:
-		if (io.
-		    ac_control[ac_port] & (AC_ENABLE_OFFSET_BASE_A |
-					   AC_ENABLE_OFFSET_BASE_6) ==
-		    (AC_ENABLE_OFFSET_BASE_A | AC_ENABLE_OFFSET_BASE_6))
+		if ((io.ac_control[ac_port]
+                    & (AC_ENABLE_OFFSET_BASE_A | AC_ENABLE_OFFSET_BASE_6))
+                    == (AC_ENABLE_OFFSET_BASE_A | AC_ENABLE_OFFSET_BASE_6))
 		  io.ac_base[ac_port] =
 		    (io.ac_base[ac_port] + io.ac_offset[ac_port]) & 0xffffff;
 		return;
@@ -2129,332 +1773,11 @@ IO_write (UInt16 A, UChar V)
       break;
 
     case 0x1800:		/* CD-ROM extention */
-      switch (A & 15)
-	{
-
-	case 7:
-	  io.backup = ENABLE;
-	  return;
-
-	case 0:
-	  if (V == 0x81)
-	    cd_port_1800 = 0xD0;
-	  return;
-	case 1:
-	  cd_port_1801 = V;
-	  if (!pce_cd_cmdcnt)
-	    switch (V)
-	      {
-	      case 0:
-/*
-#ifndef FINAL_RELEASE
-        fprintf(stderr,"RESET? command at 1801\n");
+#if defined(BSD_CD_HARDWARE_SUPPORT)
+      pce_cd_handle_write_1800(A, V);
+#else
+      gpl_pce_cd_handle_write_1800(A, V);
 #endif
-*/
-		return;
-	      case 3:
-/*
-#ifndef FINAL_RELEASE
-        fprintf(stderr,"GET SYSTEM STATUS? command at 1801\n");
-#endif
-*/
-		return;
-	      case 8:
-/*
-#ifndef FINAL_RELEASE
-        fprintf(stderr,"READ SECTOR command at 1801\n");
-#endif*/
-		return;
-	      case 0x81:
-/*
-#ifndef FINAL_RELEASE
-        fprintf(stderr,"ANOTHER RESET? command at 1801\n");
-#endif
-*/
-		cd_port_1800 = 0x40;
-		return;
-	      case 0xD8:
-	      case 0xD9:
-/*
-#ifndef FINAL_RELEASE
-        fprintf(stderr,"PLAY AUDIO? command at 1801\n");
-#endif
-*/
-		return;
-
-	      case 0xDA:
-/*
-#ifndef FINAL_RELEASE
-        fprintf(stderr,"PAUSE AUDIO PLAYING? command at 1801\n");
-#endif
-*/
-		return;
-
-	      case 0xDD:
-/*
-#ifndef FINAL_RELEASE
-        fprintf(stderr,"READ Q CHANNEL? command at 1801\n");
-#endif
-*/
-		return;
-	      case 0xDE:
-/*
-#ifndef FINAL_RELEASE
-        fprintf(stderr,"GET DIRECTORY INFO? command at 1801\n");
-#endif
-*/
-
-		return;
-
-	      default:
-/*
-#ifndef FINAL_RELEASE
-        if (!pce_cd_cmdcnt)
-         fprintf(stderr,"ERROR, unknown command %x at 1801\n",V);
-#endif
-*/
-		return;
-	      }
-
-	  return;
-
-	case 2:
-#ifndef FINAL_RELEASE
-	  // fprintf(stderr,"trying to access port 1802 in write\n");
-#endif
-
-	  if ((!(cd_port_1802 & 0x80)) && (V & 0x80))
-	    {
-	      cd_port_1800 &= ~0x40;
-	    }
-	  else if ((cd_port_1802 & 0x80) && (!(V & 0x80)))
-	    {
-	      cd_port_1800 |= 0x40;
-
-#ifndef FINAL_RELEASE
-	      Log ("ADPCM trans = %d\n", pce_cd_adpcm_trans_done);
-#endif
-	      if (pce_cd_adpcm_trans_done)
-		{
-
-#ifndef FINAL_RELEASE
-		  Log ("ack the DMA transfert of ADPCM data\n");
-#endif
-
-		  cd_port_1800 |= 0x10;
-		  pce_cd_curcmd = 0x00;
-		  pce_cd_adpcm_trans_done = 0;
-
-		}
-
-	      if (cd_port_1800 & 0x08)
-		{
-/*              deb_printf("pce_cd: data byte acknowledged.\n"); */
-		  if (cd_port_1800 & 0x20)
-		    {
-		      cd_port_1800 &= ~0x80;
-		    }
-		  else if (!pce_cd_read_datacnt)
-		    {
-		      if (pce_cd_curcmd == 0x08)
-			{
-			  if (!--cd_sectorcnt)
-			    {
-#ifndef FINAL_RELEASE
-			      fprintf (stderr, "sector data count over.\n");
-#endif
-			      cd_port_1800 |= 0x10;	/* wrong */
-			      pce_cd_curcmd = 0x00;
-			    }
-			  else
-			    {
-#ifndef FINAL_RELEASE
-			      fprintf (stderr, "sector data count %d.\n",
-				       cd_sectorcnt);
-#endif
-			      pce_cd_read_sector ();
-			    }
-			}
-		      else
-			{
-			  if (cd_port_1800 & 0x10)
-			    {
-			      cd_port_1800 |= 0x20;
-			    }
-			  else
-			    {
-			      cd_port_1800 |= 0x10;
-			    }
-			}
-		    }
-		  else
-		    {
-		      pce_cd_read_datacnt--;
-		    }
-		}
-	      else
-		{
-		  pce_cd_handle_command ();
-		}
-	    }
-
-	  cd_port_1802 = V;
-	  return;
-	case 4:
-	  if (V & 2)
-	    {			// Reset asked
-	      // do nothing for now
-#ifndef FINAL_RELEASE
-	      fprintf (stderr, "Reset mode for CD asked\n");
-#endif
-
-	      switch (CD_emulation)
-		{
-		case 1:
-		  if (osd_cd_init (ISO_filename) != 0)
-		    {
-		      Log ("CD rom drive couldn't be initialised\n");
-		      exit (4);
-		    }
-		  break;
-		case 2:
-		case 3:
-		case 4:
-		  fill_cd_info ();
-		  break;
-/*
-                case 5:
-                     fill_HCD_info(ISO_);
-                     break;
-*/
-		}
-
-	      _Wr6502 (0x222D, 1);
-	      // This byte is set to 1 if a disc if present
-
-	      //cd_port_1800 &= ~0x40;
-	      cd_port_1804 = V;
-	    }
-	  else
-	    {			// Normal utilisation
-#ifndef FINAL_RELEASE
-	      fprintf (stderr, "Normal mode for CD asked\n");
-#endif
-	      cd_port_1804 = V;
-	      // cd_port_1800 |= 0x40; // Maybe the previous reset is enough
-	      // cd_port_1800 |= 0xD0;
-	      // Indicates that the Hardware is ready after such a reset
-	    }
-	  return;
-
-	case 8:
-	  io.adpcm_ptr.B.l = V;
-	  return;
-	case 9:
-	  io.adpcm_ptr.B.h = V;
-	  return;
-
-	case 0x0A:
-	  PCM[io.adpcm_wptr++] = V;
-#ifndef FINAL_RELEASE
-	  fprintf (stderr, "Wrote %02X to ADPCM buffer[%04X]\n", V,
-		   io.adpcm_wptr - 1);
-	  Log ("wrote to ADPCM, %02X at PCM[0X%04X]\n", V, io.adpcm_wptr - 1);
-#endif
-	  return;
-	case 0x0B:		// DMA enable ?
-
-	  if ((V & 2) && (!(cd_port_180b & 2)))
-	    {
-	      issue_ADPCM_dma ();
-	      cd_port_180b = V;
-	      return;
-	    }
-
-
-	  /* TEST */
-	  if (!V)
-	    {
-	      cd_port_1800 &= ~0xF8;
-	      cd_port_1800 |= 0xD8;
-	    }
-
-	  cd_port_180b = V;
-
-	  return;
-
-	case 0x0C:		/* TEST, not nyef code */
-	  // well, do nothing
-
-	  return;
-	case 0x0D:
-
-	  if ((V & 0x03) == 0x03)
-	    {
-	      io.adpcm_dmaptr = io.adpcm_ptr.W;	// set DMA pointer
-#ifndef FINAL_RELEASE
-	      fprintf (stderr, "Set DMA pointer to %x\n", io.adpcm_dmaptr);
-#endif
-	    }
-
-	  if (V & 0x04)
-	    {
-	      io.adpcm_wptr = io.adpcm_ptr.W;	// set write pointer
-#ifndef FINAL_RELEASE
-	      fprintf (stderr, "Set write pointer to %x\n", io.adpcm_wptr);
-#endif
-	    }
-
-	  if (V & 0x08)		// set read pointer
-	    {
-	      io.adpcm_rptr = io.adpcm_ptr.W;
-	      io.adpcm_firstread = 2;
-
-#ifndef FINAL_RELEASE
-	      fprintf (stderr, "Set read pointer to %x\n", io.adpcm_rptr);
-#endif
-
-	    }
-
-/* TEST
-                else { io.adpcm_rptr = io.adpcm_ptr.W; io.adpcm_firstread = TRUE; }
-*/
-	  /* TEST */
-	  //if (V&0x08) io.
-
-	  if (V & 0x80)
-	    {			// ADPCM reset
-#ifndef FINAL_RELEASE
-	      fprintf (stderr, "Reset mode for ADPCM\n");
-#endif
-	    }
-	  else
-	    {			// Normal ADPCM utilisation
-#ifndef FINAL_RELEASE
-	      fprintf (stderr, "Normal mode for ADPCM\n");
-#endif
-	    }
-
-
-
-	  return;
-
-	case 0xe:		// Set ADPCM playback rate
-	  io.adpcm_rate = 32 / (16 - (V & 15));
-
-#ifndef FINAL_RELEASE
-	  fprintf (stderr, "ADPCM rate set to %d kHz\n", io.adpcm_rate);
-#endif
-	  return;
-
-	case 0xf:		// don't know how to use it
-#ifndef FINAL_RELEASE
-	  fprintf (stderr, "Fade setting to %d\n", V);
-#endif
-
-	  cd_fade = V;
-	  return;
-	}			// A&15 switch, i.e. CD ports
       break;
     }
 #ifndef FINAL_RELEASE
@@ -2471,46 +1794,7 @@ IO_write (UInt16 A, UChar V)
 //      DebugDumpTrace(4, TRUE);
 }
 
-static double osd_getTime(void)
-{
-#ifdef WIN32  
-  return (SDL_GetTicks() * 1e-3);
-#elif defined(DJGPP)
-  return uclock() * (1.0 / UCLOCKS_PER_SEC);
-#else
-  struct timeval tp;
-
-  gettimeofday(&tp, NULL);
-  // printf("current microsec = %f\n",tp.tv_sec + 1e-6 * tp.tv_usec);
-  return tp.tv_sec + 1e-6 * tp.tv_usec;
-#endif
-}
-
-static void osd_sleep(double s)
-{
-  // emu_too_fast = 0;
-	// printf("Sleeping %d micro seconds\n", s);
-	// Log("Sleeping %f seconds\n", s);
-  if (s > 0)
-  {
-#ifdef linux
-    struct timeval tp;
-
-    tp.tv_sec = 0;
-    tp.tv_usec = 1e6 * s;
-    select(1,NULL,NULL,NULL,&tp);
-#elif defined(WIN32)
-    SDL_Delay((UInt32)(s * 1e3));
-#elif defined(DJGPP)
-    double curtime = osd_time();
-    while ((curtime + s) > osd_time());
-#else
-    usleep(s * 1e6);
-#endif
-    // emu_too_fast = 1;
-  }
-}
-
+#if !defined(NEW_GFX_ENGINE)
 
 #ifndef KERNEL_DS
 
@@ -2525,8 +1809,8 @@ UChar
 Loop6502 ()
 #endif
 {
-  static double lasttime = 0, lastcurtime = 0, frametime = 0.1;	
-	
+  static double lasttime = 0, lastcurtime = 0, frametime = 0.1;
+
   static int UCount = 0;
   static int prevline;
   int dispmin, dispmax;
@@ -2544,17 +1828,17 @@ Loop6502 ()
 */
 
   scanline = (scanline + 1) % scanlines_per_frame;
-  //printf("scan %d\n",scanline);
+
   ret = INT_NONE;
-  
-  #warning Check if this doesn t create problems in some games
+
+#warning "Check if this doesn t create problems in some games"
   // io.vdc_status &= ~VDC_RasHit;
   io.vdc_status &= ~(VDC_RasHit | VDC_SATBfinish);
-  
+
   if (scanline > MaxLine)
     io.vdc_status |= VDC_InVBlank;
 //      if (scanline==MinLine+scanlines_per_frame-1)
-//      else 
+//      else
   if (scanline == MinLine)
     {
       io.vdc_status &= ~VDC_InVBlank;
@@ -2571,171 +1855,165 @@ Loop6502 ()
   else if (scanline == MaxLine)
     {
       if (CheckSprites ())
-	io.vdc_status |= VDC_SpHit;
+        io.vdc_status |= VDC_SpHit;
       else
-	io.vdc_status &= ~VDC_SpHit;
+        io.vdc_status &= ~VDC_SpHit;
+
       if (UCount)
-	UCount--;
+        UCount--;
       else
-	{
-	  if (SpriteON && SPONSwitch)
-	    RefreshSpriteExact (prevline, dispmax, 0);
-	  RefreshLine (prevline, dispmax - 1);
-	  if (SpriteON && SPONSwitch)
-	    RefreshSpriteExact (prevline, dispmax, 1);
-	  prevline = dispmax;
-	  UCount = UPeriod;
-	  RefreshScreen ();
-	}
+        {
+
+          if (SpriteON && SPONSwitch)
+            RefreshSpriteExact (prevline, dispmax, 0);
+          RefreshLine (prevline, dispmax);
+          // RefreshLine (prevline, dispmax - 1);
+          if (SpriteON && SPONSwitch)
+            RefreshSpriteExact (prevline, dispmax, 1);
+          prevline = dispmax;
+          UCount = UPeriod;
+          RefreshScreen ();
+        }
     }
   if (scanline >= MinLine && scanline <= MaxLine)
     {
       if (scanline == (io.VDC[RCR].W & 1023) - 64)
-	{
-	  if (RasHitON && !UCount && dispmin <= scanline
-	      && scanline <= dispmax)
-	    {
-	      /* TODO : check the '6' there */
-	      if (SpriteON && SPONSwitch)
-		RefreshSpriteExact (prevline - 0, scanline, 0);
-	      RefreshLine (prevline - 0, scanline - 1);
-	      if (SpriteON && SPONSwitch)
-		RefreshSpriteExact (prevline - 0, scanline, 1);
-	      prevline = scanline;
-	    }
-	  io.vdc_status |= VDC_RasHit;
-	  if (RasHitON)
-	    {
-	      //TRACE("rcr=%d\n", scanline);
-	      ret = INT_IRQ;
-	    }
-	}
+        {
+          if (RasHitON && !UCount && dispmin <= scanline
+              && scanline <= dispmax)
+            {
+              if (SpriteON && SPONSwitch)
+                RefreshSpriteExact (prevline - 0, scanline, 0);
+              RefreshLine (prevline - 0, scanline - 1);
+              if (SpriteON && SPONSwitch)
+                RefreshSpriteExact (prevline - 0, scanline, 1);
+              prevline = scanline;
+            }
+          io.vdc_status |= VDC_RasHit;
+          if (RasHitON)
+            {
+              //TRACE("rcr=%d\n", scanline);
+              ret = INT_IRQ;
+            }
+        }
       else if (scroll)
-	{
-	  if (scanline - 1 > prevline && !UCount)
-	    {
-	      int tmpScrollX, tmpScrollY, tmpScrollYDiff;
-	      tmpScrollX = ScrollX;
-	      tmpScrollY = ScrollY;
-	      tmpScrollYDiff = ScrollYDiff;
-	      ScrollX = oldScrollX;
-	      ScrollY = oldScrollY;
-	      ScrollYDiff = oldScrollYDiff;
-	      if (SpriteON && SPONSwitch)
-		RefreshSpriteExact (prevline, scanline - 1, 0);
-	      RefreshLine (prevline, scanline - 2);
-	      if (SpriteON && SPONSwitch)
-		RefreshSpriteExact (prevline, scanline - 1, 1);
-	      prevline = scanline - 1;
-	      ScrollX = tmpScrollX;
-	      ScrollY = tmpScrollY;
-	      ScrollYDiff = tmpScrollYDiff;
-	    }
-	}
+        {
+          if (scanline - 1 > prevline && !UCount)
+            {
+              int tmpScrollX, tmpScrollY, tmpScrollYDiff;
+              tmpScrollX = ScrollX;
+              tmpScrollY = ScrollY;
+              tmpScrollYDiff = ScrollYDiff;
+              ScrollX = oldScrollX;
+              ScrollY = oldScrollY;
+              ScrollYDiff = oldScrollYDiff;
+              if (SpriteON && SPONSwitch)
+                RefreshSpriteExact (prevline, scanline - 1, 0);
+
+              RefreshLine (prevline, scanline - 2);
+              if (SpriteON && SPONSwitch)
+                RefreshSpriteExact (prevline, scanline - 1, 1);
+              prevline = scanline - 1;
+              ScrollX = tmpScrollX;
+              ScrollY = tmpScrollY;
+              ScrollYDiff = tmpScrollYDiff;
+            }
+        }
     }
   else
     {
       int rcr = (io.VDC[RCR].W & 1023) - 64;
       if (scanline == rcr)
-	{
-//                      ScrollYDiff = scanline;
-	  if (RasHitON)
-	    {
-	      //TRACE("rcr=%d\n", scanline);
-	      io.vdc_status |= VDC_RasHit;
-	      ret = INT_IRQ;
-	    }
-	}
+        {
+          //ScrollYDiff = scanline;
+          if (RasHitON)
+            {
+              //TRACE("rcr=%d\n", scanline);
+              io.vdc_status |= VDC_RasHit;
+              ret = INT_IRQ;
+            }
+        }
     }
   scroll = 0;
   if (scanline == MaxLine + 1)
     {
 
       if (osd_keyboard ())
-	return INT_QUIT;
-	 
+        return INT_QUIT;
+
 #if defined(GTK)
-	    while (gtk_events_pending())
-	      gtk_main_iteration();
+      while (gtk_events_pending())
+      {
+        if (gtk_main_iteration())
+        {
+        	return INT_QUIT;
+        }
+      }
 #endif
-		
-	  	{
-        double curtime;
-		const double deltatime = (1.0 / 60.0);
 
-         curtime = osd_getTime();
-		
-		 // printf("lasttime = %8f, curtime = %8f, aimed = %8f\n", lasttime, curtime, lasttime + deltatime);
-		
-          osd_sleep(lasttime + deltatime - curtime);
-          curtime = osd_getTime();
-
-          /* make average time */
-          // frametime = (frametime * 4.0 + curtime - lastcurtime) * 0.2;
-          // fps = 1.0 / frametime;
-          lastcurtime = curtime;
-
-          lasttime += deltatime;
-          if ((lasttime + deltatime) < curtime)
-            lasttime = curtime;
-
-	}
-	  
+      wait_next_vsync();
 
       /* VRAM to SATB DMA */
       if (io.vdc_satb == 1 || io.VDC[DCR].W & 0x0010)
-	{
-	  memcpy (SPRAM, VRAM + io.VDC[SATB].W * 2, 64 * 8);
-	  io.vdc_satb = 1;
-	  io.vdc_status &= ~VDC_SATBfinish;
-	}
-	
+        {
+#if defined(WORDS_BIGENDIAN)
+          swab(VRAM + io.VDC[SATB].W * 2, SPRAM, 64 * 8);
+#else
+          memcpy (SPRAM, VRAM + io.VDC[SATB].W * 2, 64 * 8);
+#endif
+          io.vdc_satb = 1;
+          io.vdc_status &= ~VDC_SATBfinish;
+        }
+
       if (ret == INT_IRQ)
-	io.vdc_pendvsync = 1;
+        io.vdc_pendvsync = 1;
       else
-	{
-	  //io.vdc_status|=VDC_InVBlank;
-	  if (VBlankON)
-	    {
-	      ret = INT_IRQ;
-	    }
-	}
+        {
+          //io.vdc_status|=VDC_InVBlank;
+          if (VBlankON)
+            {
+              ret = INT_IRQ;
+            }
+        }
     }
   else if (scanline == min (MaxLine + 5, scanlines_per_frame - 1))
     {
       if (io.vdc_satb)
-	{
-	  io.vdc_status |= VDC_SATBfinish;
-	  io.vdc_satb = 0;
-	  if (SATBIntON)
-	    {
-	      ret = INT_IRQ;
-	    }
-/*              } else {
-                        io.vdc_status&=~VDC_SATBfinish;
-                        io.vdc_satb = 0;
-*/ }
+        {
+          io.vdc_status |= VDC_SATBfinish;
+          io.vdc_satb = 0;
+          if (SATBIntON)
+            {
+              ret = INT_IRQ;
+            }
+          /* } else {
+          io.vdc_status&=~VDC_SATBfinish;
+          io.vdc_satb = 0;
+          */
+        }
     }
   else if (io.vdc_pendvsync && ret != INT_IRQ)
     {
       io.vdc_pendvsync = 0;
       //io.vdc_status|=VDC_InVBlank;
       if (VBlankON)
-	{
-	  //TRACE("vsync=%d\n", scanline);
-	  ret = INT_IRQ;
-	}
+        {
+          //TRACE("vsync=%d\n", scanline);
+          ret = INT_IRQ;
+        }
     }
   if (ret == INT_IRQ)
     {
       if (!(io.irq_mask & IRQ1))
-	{
-	  io.irq_status |= IRQ1;
-	  return ret;
-	}
+        {
+          io.irq_status |= IRQ1;
+          return ret;
+        }
     }
   return INT_NONE;
 }
+
+#endif
 
 UChar
 TimerInt ()
@@ -2758,17 +2036,6 @@ TimerInt ()
   return INT_NONE;
 }
 
-/*
-####################################
-####################################
-####################################
-####################################
-2KILL :: BEGIN
-####################################
-####################################
-####################################
-####################################
-*/
 #ifdef ALLEGRO
 
 #ifdef EXTERNAL_DAT
@@ -2783,22 +2050,9 @@ TimerInt ()
 
 #else
 
-// #define LOAD_INTEGRATED_SYS_FILE ROM_size = 32; ROM = malloc(32 * 0x2000); {FILE* f = fopen("syscard.pce","rb");fread(ROM,32,0x2000,f); fclose(f);}; builtin_system_used = 1;
-
 #define LOAD_INTEGRATED_SYS_FILE return search_syscard();
 
 #endif
-/*
-####################################
-####################################
-####################################
-####################################
-2KILL :: END
-####################################
-####################################
-####################################
-####################################
-*/
 
 /*****************************************************************************
 
@@ -2813,71 +2067,63 @@ TimerInt ()
 SInt32
 search_syscard()
 {
-	FILE* f;	
-	
-	#define POSSIBLE_LOCATION_COUNT 5
-	const char* POSSIBLE_LOCATION[POSSIBLE_LOCATION_COUNT] = {
-		"./","../","/usr/local/lib/hugo/","/usr/lib/hugo/","c:/"
-	};
-	
-	#define POSSIBLE_FILENAME_COUNT  4
-	const char* POSSIBLE_FILENAME[POSSIBLE_FILENAME_COUNT] = {
-		"syscard.pce","syscard3.pce","syscard30.pce","cd-rom~1.pce"
-	};
-	
-	int location, filename;
-	char temp_buffer[PATH_MAX];
-	
-	if ((cdsystem_path != NULL) && (strcmp(cdsystem_path, "")))
-	  {
-			Log("Testing syscard location : %s\n",cdsystem_path);
-			if ((f = fopen(cdsystem_path,"rb")) != NULL)
-			{
-				int CD_emulation_bak = CD_emulation;
-				int return_value;
-				
-				fclose(f);
+  FILE* f;
 
-				CD_emulation = 0;
-				
-				return_value = CartLoad(cdsystem_path);
-				
-				CD_emulation = CD_emulation_bak;
-				
-				return return_value;
-			}
-		}
-			
-	
-	for (location = 0; location <= POSSIBLE_LOCATION_COUNT; location++)
-		for (filename = 0; filename < POSSIBLE_FILENAME_COUNT; filename++)
-		{
-			
-			if (location < POSSIBLE_LOCATION_COUNT)
-				strcpy(temp_buffer, POSSIBLE_LOCATION[location]);
-			else
-				strcpy(temp_buffer, short_exe_name);
-			
-			strcat(temp_buffer, POSSIBLE_FILENAME[filename]);
-			Log("Testing syscard location : %s\n",temp_buffer);
-			if ((f = fopen(temp_buffer,"rb")) != NULL)
-			{
-				int CD_emulation_bak = CD_emulation;
-				int return_value;
-				
-				fclose(f);
+#define POSSIBLE_LOCATION_COUNT 5
+  const char* POSSIBLE_LOCATION[POSSIBLE_LOCATION_COUNT] = {
+    "./","../","/usr/local/lib/hugo/","/usr/lib/hugo/","c:/"
+  };
 
-				CD_emulation = 0;
-				
-				return_value = CartLoad(temp_buffer);
-				
-				CD_emulation = CD_emulation_bak;
-				
-				return return_value;
-			}
-		}
-		
-	return -1;
+#define POSSIBLE_FILENAME_COUNT  4
+  const char* POSSIBLE_FILENAME[POSSIBLE_FILENAME_COUNT] = {
+    "syscard.pce","syscard3.pce","syscard30.pce","cd-rom~1.pce"
+  };
+
+  int location, filename;
+  char temp_buffer[PATH_MAX];
+
+  if ((cdsystem_path != NULL) && (strcmp(cdsystem_path, "")))
+    {
+      Log("Testing syscard location : %s\n",cdsystem_path);
+      if ((f = fopen(cdsystem_path,"rb")) != NULL)
+        {
+          int CD_emulation_bak = CD_emulation;
+          int return_value;
+
+          fclose(f);
+          CD_emulation = 0;
+          return_value = CartLoad(cdsystem_path);
+          CD_emulation = CD_emulation_bak;
+          return return_value;
+        }
+    }
+
+
+  for (location = 0; location <= POSSIBLE_LOCATION_COUNT; location++)
+    for (filename = 0; filename < POSSIBLE_FILENAME_COUNT; filename++)
+      {
+
+        if (location < POSSIBLE_LOCATION_COUNT)
+          strcpy(temp_buffer, POSSIBLE_LOCATION[location]);
+        else
+          strcpy(temp_buffer, short_exe_name);
+
+        strcat(temp_buffer, POSSIBLE_FILENAME[filename]);
+        Log("Testing syscard location : %s\n",temp_buffer);
+        if ((f = fopen(temp_buffer,"rb")) != NULL)
+          {
+            int CD_emulation_bak = CD_emulation;
+            int return_value;
+
+            fclose(f);
+            CD_emulation = 0;
+            return_value = CartLoad(temp_buffer);
+            CD_emulation = CD_emulation_bak;
+            return return_value;
+          }
+      }
+
+  return -1;
 }
 
 /*****************************************************************************
@@ -2893,9 +2139,11 @@ search_syscard()
 SInt32
 CartLoad (char *name)
 {
-  FILE *fp;
+  FILE *fp = NULL;
   int fsize;
+#ifdef MSDOS
   char tmp_path[80];
+#endif
 
   if (CD_emulation == 1)
     {
@@ -2938,7 +2186,7 @@ CartLoad (char *name)
 
       // Load correct ISO filename
       strcpy (ISO_filename, name);
-		
+
       LOAD_INTEGRATED_SYS_FILE;
     }
   else if (strcasestr (name, ".ISQ"))
@@ -2965,7 +2213,7 @@ CartLoad (char *name)
     }
   else if (strcasestr (name, ".ZIP"))
     {
-#ifdef MSDOS		
+#ifdef MSDOS
       char tmp_char[128], tmp_char2[128], tmp_char3[128];
       char *array_arg[6] =
 	{ tmp_char3, tmp_char, "-Cjoqq", tmp_char2, "*.pce", NULL };
@@ -2986,11 +2234,26 @@ CartLoad (char *name)
       else
 	sprintf (tmp_path, "%sHU-GO!.TMP/%s", short_exe_name,
 		 name_to_extract);
+#else
+      char* filename_in_archive = NULL;
 
-#endif	  
-	  
+      Log("Testing archive %s\n", name);
+      filename_in_archive = find_possible_filename_in_zip(name);
+      Log("Return value = (%p) %s\n", filename_in_archive, filename_in_archive);
+      if (strcmp(filename_in_archive,""))
+        {
+          chdir(tmp_basepath);
+          Log("Found %s in %s\n", filename_in_archive, name);
+          extractFile(name, filename_in_archive);
+          sprintf(true_file_name, "%s/%s", tmp_basepath, filename_in_archive);
+          fp = fopen(true_file_name, "rb");
+        }
+#endif
+
+      /*
       strcpy (true_file_name, tmp_path);
       fp = fopen (tmp_path, "rb");
+      */
     }
   else
     {
@@ -3004,21 +2267,25 @@ CartLoad (char *name)
     {
 
       if (!check_char (name, '.'))	//if dot omitted, we try with PCE extension
-	{
-	  strcat (name, ".pce");
-	  return CartLoad (name);
-	};
+        {
+          strcat (name, ".pce");
+          return CartLoad (name);
+        };
 
       if (strcasestr (name, ".pce"))	//if filename with .PCE doesn't exist, it may be in ZIP
-	{
-	  strcpy (&name[strlen (name) - 4], ".ZIP");
-	  return CartLoad (name);
-	};
+        {
+          strcpy (&name[strlen (name) - 4], ".zip");
+          return CartLoad (name);
+        };
 
       return -1;
     }
 
-  strcpy (cart_name, name);
+	if (cart_name != name)
+	{	// Avoids warning when copying passing cart_name as parameter
+		#warning find where this weird call is done
+  		strcpy (cart_name, name);
+	}
 
   // find file size
   fseek (fp, 0, SEEK_END);
@@ -3029,16 +2296,28 @@ CartLoad (char *name)
   fsize &= ~0x1fff;
 
   // read ROM
-  ROM = (UChar *) malloc (fsize);
+#if defined(SHARED_MEMORY)
+	shm_rom_handle =
+		shmget ((key_t) SHM_ROM_HANDLE, fsize,
+			IPC_CREAT | IPC_EXCL | 0666);
+
+	if (shm_rom_handle == -1)
+		fprintf (stderr, "Couldn't get shared memory (%d bytes)\n", fsize);
+	else
+	{
+		ROM = (char *) shmat (shm_rom_handle, NULL, 0);
+		if (ROM == NULL)
+			fprintf (stderr, "Couldn't attach shared memory\n");
+	}
+
+#else
+	ROM = (UChar *) malloc (fsize);
+#endif
   ROM_size = fsize / 0x2000;
   fread (ROM, 1, fsize, fp);
 
   fclose (fp);
 
-#if defined(TEST_ROM_RELOCATED)
-	printf("ROM = %x %x %x %x ....\n",ROM[0],ROM[1],ROM[2],ROM[3]);
-#endif
-	
   return 0;
 }
 
@@ -3105,7 +2384,7 @@ ResetPCE (M6502 * M)
 
       Bp_list[GIVE_HAND_BP].flag = ENABLED;
 
-      _Wr6502 (M->PC.W, 0xB + 0x10 * GIVE_HAND_BP);
+      Wr6502 (M->PC.W, 0xB + 0x10 * GIVE_HAND_BP);
 
     }
 
@@ -3196,8 +2475,8 @@ ResetPCE (M6502 * M)
 	      CDBIOS_replace[x][0] = Op6502 (dest);
 	      CDBIOS_replace[x][1] = Op6502 (dest + 1);
 
-	      _Wr6502 (dest, 0xFC);
-	      _Wr6502 (dest + 1, x);
+	      Wr6502 (dest, 0xFC);
+	      Wr6502 (dest + 1, x);
 
 	    }
 
@@ -3255,15 +2534,11 @@ ResetPCE ()
       io.PSG[i][4] = 0x80;
     }
   CycleOld = 0;
-	
+
 #if !defined(TEST_ROM_RELOCATED)
   mmr[7] = 0x00;
   bank_set (7, 0x00);
-#else
-  mmr[7] = 0x68;
-  bank_set (7, 0x68);	
-#endif
-	
+
   mmr[6] = 0x05;
   bank_set (6, 0x05);
 
@@ -3278,6 +2553,27 @@ ResetPCE ()
 
   mmr[2] = 0x01;
   bank_set (2, 0x01);
+
+#else
+  mmr[7] = 0x68;
+  bank_set (7, 0x68);
+
+  mmr[6] = 0x05;
+  bank_set (6, 0x05 + 0x68);
+
+  mmr[5] = 0x04;
+  bank_set (5, 0x04 + 0x68);
+
+  mmr[4] = 0x03;
+  bank_set (4, 0x03 + 0x68);
+
+  mmr[3] = 0x02;
+  bank_set (3, 0x02 + 0x68);
+
+  mmr[2] = 0x01;
+  bank_set (2, 0x01 + 0x68);
+
+#endif
 
   mmr[1] = 0xF8;
   bank_set (1, 0xF8);
@@ -3303,7 +2599,10 @@ ResetPCE ()
 
       Bp_list[GIVE_HAND_BP].flag = ENABLED;
 
-      _Wr6502 (reg_pc, 0xB + 0x10 * GIVE_HAND_BP);
+      Wr6502 (
+				reg_pc,
+				0xB + 0x10 * GIVE_HAND_BP
+			);
 
     }
 
@@ -3395,8 +2694,8 @@ ResetPCE ()
 	      CDBIOS_replace[x][0] = Op6502 (dest);
 	      CDBIOS_replace[x][1] = Op6502 (dest + 1);
 
-	      _Wr6502 (dest, 0xFC);
-	      _Wr6502 (dest + 1, x);
+	      Wr6502 (dest, 0xFC);
+	      Wr6502 (dest + 1, x);
 
 	    }
 
@@ -3426,8 +2725,10 @@ InitPCE (char *name, char *backmemname)
     tmp_dummy++;
 
   memset (short_cart_name, 0, 80);
-  while ((tmp_dummy[i]) && (tmp_dummy[i] != '.'))
-    short_cart_name[i] = tmp_dummy[i++];
+  while ((tmp_dummy[i]) && (tmp_dummy[i] != '.')) {
+    short_cart_name[i] = tmp_dummy[i];
+    i++;
+  }
 
   if (strlen (short_cart_name))
     if (short_cart_name[strlen (short_cart_name) - 1] != '.')
@@ -3436,16 +2737,7 @@ InitPCE (char *name, char *backmemname)
 	short_cart_name[strlen (short_cart_name)] = '.';
       }
 
-#warning homogeneize calls
-#if defined(ALLEGRO)
-  fix_filename_slashes (ISO_filename);
-#else
-	    #if defined(SDL)
-	    osd_fix_filename_slashes(ISO_filename);
-	  #else
-	    #error unknown lib
-	  #endif
-#endif
+	osd_fix_filename_slashes(ISO_filename);
 
   if (!(tmp_dummy = (char *) (strrchr (ISO_filename, '\\'))))
     tmp_dummy = &ISO_filename[0];
@@ -3455,14 +2747,16 @@ InitPCE (char *name, char *backmemname)
 
   memset (short_iso_name, 0, 80);
   i = 0;
-  while ((tmp_dummy[i]) && (tmp_dummy[i] != '.'))
-    short_iso_name[i] = tmp_dummy[i++];
+  while ((tmp_dummy[i]) && (tmp_dummy[i] != '.')) {
+    short_iso_name[i] = tmp_dummy[i];
+    i++;
+  }
 
   if (strlen (short_iso_name))
     if (short_iso_name[strlen (short_iso_name) - 1] != '.')
       {
-	short_iso_name[strlen (short_iso_name) + 1] = 0;
-	short_iso_name[strlen (short_iso_name)] = '.';
+        short_iso_name[strlen (short_iso_name) + 1] = 0;
+        short_iso_name[strlen (short_iso_name)] = '.';
       }
 
 #ifndef LINUX
@@ -3514,21 +2808,21 @@ InitPCE (char *name, char *backmemname)
 
 #endif
 
-	// Set the base frequency
-	BaseClock = 7800000;
-	
-	// Set the interruption period
-	IPeriod = BaseClock / (scanlines_per_frame * 60);
-	
+  // Set the base frequency
+  BaseClock = 7800000;
+
+  // Set the interruption period
+  IPeriod = BaseClock / (scanlines_per_frame * 60);
+
   hard_init();
 
-  pce_build_romlist();	
-	
-	/* TEST */
+  pce_build_romlist();
+
+  /* TEST */
   io.screen_h = 224;
   /* TEST */
   io.screen_w = 256;
-		
+
   if (!builtin_system_used)
     {
 
@@ -3543,10 +2837,10 @@ InitPCE (char *name, char *backmemname)
 	  NO_ROM = dummy;
     }
   else
-	{
-    NO_ROM = 255;
-		printf("ROM not in database: CRC=%x\n", CRC);
-	}
+    {
+      NO_ROM = 255;
+      printf("ROM not in database: CRC=%lx\n", CRC);
+    }
 
   memset (WRAM, 0, 0x2000);
   WRAM[0] = 0x48;		/* 'H' */
@@ -3578,6 +2872,14 @@ InitPCE (char *name, char *backmemname)
    if ((NO_ROM != 0xFFFF) && (pce_romlist + NO_ROM) && (pce_romlist[NO_ROM].flags & US_ENCODED))
     US_encoded_card = 1;
 
+   if (ROM[0x1FFF] < 0xE0)
+   {
+	   Log("This rom is probably US encrypted, decrypting ..\n");
+#if !defined(FINAL_RELEASE)
+	   fprintf(stderr, "This rom is probably US encrypted, decrypting ..\n");
+#endif
+		US_encoded_card = 1;
+   }
 
   if (US_encoded_card)
     {
@@ -3602,7 +2904,7 @@ InitPCE (char *name, char *backmemname)
 
 	}
     }
-
+/*
   if (CD_emulation)
     {
 
@@ -3620,6 +2922,8 @@ InitPCE (char *name, char *backmemname)
       // cd_read_buffer = (UChar *)malloc(0x2000);
 
     }
+*/
+
 /*
 ####################################
 ####################################
@@ -3669,49 +2973,76 @@ InitPCE (char *name, char *backmemname)
   fprintf (stderr, "ROMmask=%02X, ROM_size=%02X\n", ROMmask, ROM_size);
 #endif
 
-#if !defined(TEST_ROM_RELOCATED)
-  
-  for (i = 0; i < 0xF7; i++)
+	for (i = 0; i < 0xFF; i++)
+		{
+			ROMMapR[i] = trap_ram_read;
+			ROMMapW[i] = trap_ram_write;
+		}
+
+#if ! defined(TEST_ROM_RELOCATED)
+  for (i = 0; i < 0x80; i++)
     {
       if (ROM_size == 0x30)
-	{
-	  switch (i & 0x70)
-	    {
-	    case 0x00:
-	    case 0x10:
-	    case 0x50:
-	      ROMMap[i] = ROM + (i & ROMmask) * 0x2000;
-	      break;
-	    case 0x20:
-	    case 0x60:
-	      ROMMap[i] = ROM + ((i - 0x20) & ROMmask) * 0x2000;
-	      break;
-	    case 0x30:
-	    case 0x70:
-	      ROMMap[i] = ROM + ((i - 0x10) & ROMmask) * 0x2000;
-	      break;
-	    case 0x40:
-	      ROMMap[i] = ROM + ((i - 0x20) & ROMmask) * 0x2000;
-	      break;
-	    }
-	}
+				{
+					switch (i & 0x70)
+						{
+							case 0x00:
+							case 0x10:
+							case 0x50:
+								ROMMapR[i] = ROM + (i & ROMmask) * 0x2000;
+								break;
+							case 0x20:
+							case 0x60:
+								ROMMapR[i] = ROM + (i & ROMmask) * 0x2000;
+								break;
+							case 0x30:
+							case 0x70:
+								ROMMapR[i] = ROM + (i & ROMmask) * 0x2000;
+								break;
+							case 0x40:
+								ROMMapR[i] = ROM + (i & ROMmask) * 0x2000;
+								break;
+						}
+				}
       else
-	ROMMap[i] = ROM + (i & ROMmask) * 0x2000;
+				ROMMapR[i] = ROM + (i & ROMmask) * 0x2000;
     }
 #else
-	  #warning TEST_ROM_RELOCATED is on !
-	
-	for (i = 0; i < ROM_size; i++)
-		ROMMap[0x68 + i] = ROM + i * 0x2000;
-	
+  for (i = 0x68; i < 0x88; i++)
+    {
+      if (ROM_size == 0x30)
+				{
+					switch (i & 0x70)
+						{
+							case 0x00:
+							case 0x10:
+							case 0x50:
+								ROMMapR[i] = ROM + ((i - 0x68) & ROMmask) * 0x2000;
+								ROMMapW[i] = ROM + ((i - 0x68) & ROMmask) * 0x2000;
+								break;
+							case 0x20:
+							case 0x60:
+								ROMMapR[i] = ROM + (((i - 0x68) - 0x20) & ROMmask) * 0x2000;
+								ROMMapW[i] = ROM + (((i - 0x68) - 0x20) & ROMmask) * 0x2000;
+								break;
+							case 0x30:
+							case 0x70:
+								ROMMapR[i] = ROM + (((i - 0x68) - 0x10) & ROMmask) * 0x2000;
+								ROMMapW[i] = ROM + (((i - 0x68) - 0x10) & ROMmask) * 0x2000;
+								break;
+							case 0x40:
+								ROMMapR[i] = ROM + (((i - 0x68) - 0x20) & ROMmask) * 0x2000;
+								ROMMapW[i] = ROM + (((i - 0x68) - 0x20) & ROMmask) * 0x2000;
+								break;
+						}
+				}
+      else
+				{
+					ROMMapR[i] = ROM + ((i - 0x68) & ROMmask) * 0x2000;
+					ROMMapW[i] = ROM + ((i - 0x68) & ROMmask) * 0x2000;
+				}
+    }
 #endif
-	
-//              ROMMap[i]=ROM+(i%ROM_size+i/ROM_size*0x10)*0x2000;
-/*              if (((i&ROMmask)+i/(ROMmask+1)) < ROM_size)
-                        ROMMap[i]=ROM+((i&ROMmask)+i/(ROMmask+1)*0x20)*0x2000;
-                else
-                        ROMMap[i]=ROM;
-*///            ROMMap[i]=ROM+(i&ROMmask)*0x2000;
 
   if (NO_ROM != 0xFFFF)
     {
@@ -3734,11 +3065,18 @@ InitPCE (char *name, char *backmemname)
       fprintf (stderr, "POPULOUS DETECTED!!!\n");
 #endif
       if (!(PopRAM = (UChar *) malloc (PopRAMsize)))
-	perror (MESSAGE[language][no_mem]);
-      ROMMap[0x40] = PopRAM;
-      ROMMap[0x41] = PopRAM + 0x2000;
-      ROMMap[0x42] = PopRAM + 0x4000;
-      ROMMap[0x43] = PopRAM + 0x6000;
+				perror (MESSAGE[language][no_mem]);
+
+      ROMMapW[0x40] = PopRAM;
+      ROMMapW[0x41] = PopRAM + 0x2000;
+      ROMMapW[0x42] = PopRAM + 0x4000;
+      ROMMapW[0x43] = PopRAM + 0x6000;
+
+      ROMMapR[0x40] = PopRAM;
+      ROMMapR[0x41] = PopRAM + 0x2000;
+      ROMMapR[0x42] = PopRAM + 0x4000;
+      ROMMapR[0x43] = PopRAM + 0x6000;
+
     }
   else
     {
@@ -3749,26 +3087,57 @@ InitPCE (char *name, char *backmemname)
   if (CD_emulation)
     {
 
-      ROMMap[0x80] = cd_extra_mem;
-      ROMMap[0x81] = cd_extra_mem + 0x2000;
-      ROMMap[0x82] = cd_extra_mem + 0x4000;
-      ROMMap[0x83] = cd_extra_mem + 0x6000;
-      ROMMap[0x84] = cd_extra_mem + 0x8000;
-      ROMMap[0x85] = cd_extra_mem + 0xA000;
-      ROMMap[0x86] = cd_extra_mem + 0xC000;
-      ROMMap[0x87] = cd_extra_mem + 0xE000;
+      ROMMapR[0x80] = cd_extra_mem;
+      ROMMapR[0x81] = cd_extra_mem + 0x2000;
+      ROMMapR[0x82] = cd_extra_mem + 0x4000;
+      ROMMapR[0x83] = cd_extra_mem + 0x6000;
+      ROMMapR[0x84] = cd_extra_mem + 0x8000;
+      ROMMapR[0x85] = cd_extra_mem + 0xA000;
+      ROMMapR[0x86] = cd_extra_mem + 0xC000;
+      ROMMapR[0x87] = cd_extra_mem + 0xE000;
+
+      ROMMapW[0x80] = cd_extra_mem;
+      ROMMapW[0x81] = cd_extra_mem + 0x2000;
+      ROMMapW[0x82] = cd_extra_mem + 0x4000;
+      ROMMapW[0x83] = cd_extra_mem + 0x6000;
+      ROMMapW[0x84] = cd_extra_mem + 0x8000;
+      ROMMapW[0x85] = cd_extra_mem + 0xA000;
+      ROMMapW[0x86] = cd_extra_mem + 0xC000;
+      ROMMapW[0x87] = cd_extra_mem + 0xE000;
 
       for (i = 0x68; i < 0x80; i++)
-	ROMMap[i] = cd_extra_super_mem + 0x2000 * (i - 0x68);
+				{
+					ROMMapR[i] = cd_extra_super_mem + 0x2000 * (i - 0x68);
+					ROMMapW[i] = cd_extra_super_mem + 0x2000 * (i - 0x68);
+				}
 
     }
 
-  ROMMap[0xF7] = WRAM;
-  ROMMap[0xF8] = RAM;
-  ROMMap[0xF9] = RAM + 0x2000;
-  ROMMap[0xFA] = RAM + 0x4000;
-  ROMMap[0xFB] = RAM + 0x6000;
-  ROMMap[0xFF] = IOAREA;	//NULL; /* NULL = I/O area */
+  ROMMapR[0xF7] = WRAM;
+  ROMMapW[0xF7] = WRAM;
+
+  ROMMapR[0xF8] = RAM;
+	ROMMapW[0xF8] = RAM;
+
+	if (option.want_supergraphx_emulation)
+		{
+			ROMMapW[0xF9] = RAM + 0x2000;
+			ROMMapW[0xFA] = RAM + 0x4000;
+			ROMMapW[0xFB] = RAM + 0x6000;
+
+			ROMMapR[0xF9] = RAM + 0x2000;
+			ROMMapR[0xFA] = RAM + 0x4000;
+			ROMMapR[0xFB] = RAM + 0x6000;
+		}
+
+	/*
+	#warning REMOVE ME
+	// ROMMapR[0xFC] = RAM + 0x6000;
+	ROMMapW[0xFC] = NULL;
+	*/
+
+  ROMMapR[0xFF] = IOAREA;
+	ROMMapW[0xFF] = IOAREA;
 
   {
     FILE *fp;
@@ -3793,7 +3162,7 @@ InitPCE (char *name, char *backmemname)
       new_val = atoi (&pce_romlist[NO_ROM].note[6]);
 
       if (offset)
-	ROMMap[0xE1][offset & 0x1fff] = new_val;
+				ROMMapW[0xE1][offset & 0x1fff] = new_val;
 
     }
 
@@ -3836,19 +3205,17 @@ TrashPCE (char *backmemname)
       fwrite (WRAM, 0x2000, 1, fp);
       fclose (fp);
       Log ("%s used for saving RAM\n", backmemname);
-    }	
-	
+    }
+
   // Set volume to zero
   io.psg_volume = 0;
-	
-#if defined(ALLEGRO)	
+
+#if defined(ALLEGRO)
   sprintf (tmp_buf, "%s/HU-GO!.TMP/*.*", short_exe_name);
   for_each_file (tmp_buf, 32, delete_file_tmp, 0);
-#else
-	#if defined(LINUX)
+#elif defined(LINUX)
 		sprintf (tmp_buf, "rm -rf %s/HU-GO!.TMP/*", short_exe_name);
 	    system(tmp_buf);
-	#endif
 #endif
   sprintf (tmp_buf, "%s/HU-GO!.TMP", short_exe_name);
   rmdir (tmp_buf);
@@ -3892,10 +3259,17 @@ TrashPCE (char *backmemname)
   if (IOAREA)
     free (IOAREA);
   if (ROM)
-    free (ROM);
+		{
+#if defined(SHARED_MEMORY)
+	if (shmctl (shm_rom_handle, IPC_RMID, NULL) == -1)
+		fprintf (stderr, "Couldn't destroy shared memory\n");
+#else
+			free(ROM);
+#endif
+		}
   if (PopRAM)
     free (PopRAM);
-
+/*
   if (CD_emulation)
     {
 
@@ -3909,9 +3283,9 @@ TrashPCE (char *backmemname)
 	free (cd_buf);
 
     }
-
+*/
   hard_term();
-	
+
   return;
 };
 
@@ -3949,49 +3323,45 @@ main (int argc, char *argv[])
 #endif
 
 #ifdef LINUX
-	{
-		char* home_path;
-		
-		home_path = getenv("HOME");
-		
-		if (home_path)
-		{			
-			sprintf(short_exe_name,"%s/.hugo/",home_path);
-			mkdir(short_exe_name,0777);
-		  	sprintf(log_filename,"%s%s",short_exe_name,LOG_NAME);		
-		}
-		else
-		{
-			strcpy(short_exe_name,"./");
-		  	strcpy(home_path,LOG_NAME);
-		}
-	}
+  {
+    char* home_path;
+
+    home_path = getenv("HOME");
+
+    if (home_path)
+      {
+        sprintf(short_exe_name,"%s/.hugo/",home_path);
+        mkdir(short_exe_name,0777);
+        sprintf(log_filename,"%s%s",short_exe_name,LOG_NAME);
+      }
+    else
+      {
+        strcpy(short_exe_name,"./");
+        strcpy(home_path,LOG_NAME);
+      }
+  }
 #endif
 
 #ifdef WIN32
-
-	strcpy(log_filename,"c:\\hugo.log");
-	
+  strcpy(log_filename,"c:\\hugo.log");
 #endif
-	
-#ifdef MSDOS
 
+#ifdef MSDOS
   _crt0_startup_flags |= _CRT0_FLAG_NO_LFN;
   // Disable long filename to avoid mem waste in select_rom func.
-
 #endif
-		
-  init_log_file ();  
+
+  init_log_file ();
 
   srand (time (NULL));
 
-  parse_INIfile ();	
-	
-#warning check if ALLEGRO is ok with initializing the machine here  
-	
+  parse_INIfile ();
+
+#warning check if ALLEGRO is ok with initializing the machine here
+
   if (!osd_init_machine ())
     return -1;
-    
+
 #ifndef LINUX
 
   //  get_executable_name (short_exe_name, 256);
@@ -4074,8 +3444,8 @@ main (int argc, char *argv[])
       exit (-2);
     }
 
-#endif // ALLEGRO	
-	
+#endif // ALLEGRO
+
 #endif
 
 #endif // ALLEGRO
@@ -4261,22 +3631,22 @@ main (int argc, char *argv[])
       if ((!cart_name[0]) && (CD_emulation != 1))
 	strcpy (cart_name, (char *) select_rom ("*.pce"));
 #endif
-	  
+
       if (strcmp (cart_name, "NO FILE"))
 	if (!InitPCE (cart_name, backup_mem))
 	  {
 	    effectively_played = 1;
 	    cart_reload = 0;
-		
-		#if defined(ALLEGRO)
+
+#if defined(ALLEGRO)
 	    install_int_ex (interrupt_60hz, BPS_TO_TIMER (60));
-		#endif
+#endif
 
 	    RunPCE ();
 
-		#if defined(ALLEGRO)
+#if defined(ALLEGRO)
 	    remove_int (interrupt_60hz);
-		#endif
+#endif
 
 	    TrashPCE (backup_mem);
 	  }

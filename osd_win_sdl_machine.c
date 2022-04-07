@@ -31,14 +31,6 @@ SDL_TimerID timerId;
 UInt32 interrupt_60hz(UInt32, void*);
 // declaration of the actual callback to call 60 times a second
 
-/*!
- * Fake declaration of gtk_menu_ensure_uline_accel_group which seems to lack in current gtk win ports
- */
-int gtk_menu_ensure_uline_accel_group(void* dummy)
-{
-	return 0;
-}
-
 int osd_init_machine()
 {
 
@@ -46,7 +38,7 @@ int osd_init_machine()
 
   Log ("\n--[ INITIALISE MACHINE ]--------------------------\n");
 		
-  if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_TIMER)) {
+  if (SDL_Init(SDL_INIT_TIMER)) {
 	  Log("Could not initialise SDL : %s\n",SDL_GetError());
 	  return 0;
   }	
@@ -69,18 +61,6 @@ int osd_init_machine()
   Log ("Initiating sound\n");
   printf (MESSAGE[language][init_sound]);
   InitSound ();
-	
-  if (osd_snd_init_sound ())
-  {
-	  Log("Sound ok\n");
-	  printf(MESSAGE[language][audio_inited],0,"SDL sound card",0);
-	  SDL_PauseAudio(0);
-  }
-  else
-  {	  
-	  Log("Sound not initialized\n");
-	  printf(MESSAGE[language][audio_init_failed]);
-  }
 
 #warning enable eagle with sdl
 /*
@@ -149,7 +129,7 @@ osd_shut_machine (void)
   close ((int)fd[0]);
     
 /*  (*fade_out_proc[rand () % nb_fadeout]) (0, 0, vwidth, vheight); */
-  osd_snd_trash_sound ();
+
   TrashSound ();
 
   SDL_Quit();

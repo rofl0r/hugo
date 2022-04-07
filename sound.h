@@ -90,4 +90,10 @@ void TrashSound(void);
 void write_psg(int ch);
 void WriteBuffer(char *, int, unsigned);
 
+void write_adpcm(void);
+void dump_audio_chunck(UChar* content, int length);
+
+int start_dump_audio(void);
+void stop_dump_audio(void);
+
 #endif // HDEF_SOUND_H

@@ -14,6 +14,7 @@
 #define  NB_LINE        20
 // Number of displayed lines
 
+#ifdef ALLEGRO
 static char out;
 // To know whether we got to quit
 
@@ -22,6 +23,7 @@ static int frame_up, frame_down;
 
 static unsigned short selected_byte;
 // The current offset
+#endif
 
 
 /*****************************************************************************
@@ -36,10 +38,10 @@ static unsigned short selected_byte;
 void
 zp_key ()
 {
+#ifdef ALLEGRO
   int ch = osd_readkey ();
 
   /* TODO: we can easily handle this without allegro defines */
-#ifdef ALLEGRO
 
   switch (ch >> 8)
     {

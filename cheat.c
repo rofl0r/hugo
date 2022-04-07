@@ -1,3 +1,19 @@
+/*
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Library General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+ 
 #include "cheat.h"
 
 #if !defined(ALLEGRO)
@@ -17,13 +33,13 @@ long file_size (char* file_name)
 
 inline void fputw (UInt16 value, FILE* F)
 {
- fputc(value & 0xFF, F);
- fputc(value >> 8, F);
+ fputc((int)(value & 0xFF), F);
+ fputc((int)(value >> 8), F);
  }
 
 inline UInt16 fgetw (FILE* F)
 {
- return fgetc(F) + (fgetc(F) << 8);
+ return (UInt16)(fgetc(F) + (fgetc(F) << 8));
  }
 
 freezed_value list_to_freeze[MAX_FREEZED_VALUE];
@@ -32,26 +48,25 @@ freezed_value list_to_freeze[MAX_FREEZED_VALUE];
 unsigned char current_freezed_values;
 // Current number of values to freeze
 
-UChar
+static UChar
 bigindextobank (UInt32 index)
 {
- if (index<0x8000)
-   return 0;
- if (index<0x18000)
-   return ((index-0x8000) >> 13) + 1;
- if (index<0x48000)
-   return ((index-0x18000) >> 13) + 10;
-
- }
+  if (index<0x8000)
+    return 0;
+  if (index<0x18000)
+    return ((index-0x8000) >> 13) + 1;
+  if (index<0x48000)
+    return ((index-0x18000) >> 13) + 10;
+  // FIXME:  what to return here?
+}
 
 UInt16
 bigtosmallindex(UInt32 index)
 {
- if (index<0x8000)
-   return index;
- return index & 0x1FFF;
-
- }
+  if (index<0x8000)
+    return (UInt16)index;
+  return (UInt16)(index & 0x1FFF);
+}
 
 UChar
 readindexedram (UInt32 index)
@@ -95,29 +110,35 @@ writeindexedram (UInt32 index, UChar value)
 char
 pokebyte ()
 {
-  char tmp_str[10], new_val, index = 0;
+  char tmp_str[10], new_val;
+  unsigned char index = 0;
   unsigned addr;
 
   while (osd_keypressed())
+    /*@-retvalother*/
     osd_readkey ();			// Flushing keys
-  while ((index < 10) && ((tmp_str[index++] = osd_readkey () & 0xFF) != 13));
+    /*@=retvalother*/
+  while ((index < 10) && ((tmp_str[index++] = (char)(osd_readkey () & 0xFF)) != 13));
   tmp_str[index - 1] = 0;
-  addr = atoi (tmp_str);
+  addr = (unsigned) atoi (tmp_str);
 
   while (osd_keypressed ())
+    /*@-retvalother*/
     osd_readkey ();			// Flushing keys
+    /*@=retvalother*/
   index = 0;
-  while ((index < 10) && ((tmp_str[index++] = osd_readkey () & 0xFF) != 13));
+  while ((index < 10) && ((tmp_str[index++] = (char)(osd_readkey () & 0xFF)) != 13));
   tmp_str[index - 1] = 0;
   new_val = atoi (tmp_str);
 
-  writeindexedram(addr, new_val);
+  writeindexedram(addr, (UChar)new_val);
 
   {
-    char *tmp_buf = (char *) alloca (100);
-    sprintf (tmp_buf, MESSAGE[language][byte_set], addr, new_val);
+    char *tmp_buf = (char *) malloc (100);
+    snprintf (tmp_buf, 100, MESSAGE[language][byte_set], addr, new_val);
     osd_gfx_set_message (tmp_buf);
     message_delay = 180;
+		free(tmp_buf);
   }
 
 
@@ -145,12 +166,14 @@ searchbyte ()
   FILE *D, *O;
   SInt16 to_search;
 
-  MAX_INDEX = ( CD_emulation ? 0x48000 : 0x8000);
+  MAX_INDEX = (UInt16)( CD_emulation ? 0x48000 : 0x8000);
 
   while (osd_keypressed ())
+		/*@-retvalother*/
     osd_readkey ();			// Flushing keys
+		/*@=retvalother*/
 
-  while ((index < 10) && ((tmp_str[index++] = osd_readkey () & 0xFF) != 13));
+  while ((index < 10) && ((tmp_str[index++] = (char)(osd_readkey () & 0xFF)) != 13));
   tmp_str[index - 1] = 0;
 
   to_search = atoi (tmp_str);
@@ -181,7 +204,7 @@ searchbyte ()
 
   for (index = 0; index < MAX_INDEX; index++)
     {
-      if (readindexedram(index) == to_search)
+      if (readindexedram(index) == (UChar)to_search)
 	{
 
 	  if (first_research)
@@ -195,7 +218,7 @@ searchbyte ()
 	      while (!(feof (O)))
 		{
                   fgetc (O);
-                  bank = fgetc(O);
+                  bank = (UChar)fgetc(O);
 		  tmp_word = fgetw(O);
 
 		  if ((bank > bigindextobank(index))
@@ -207,7 +230,7 @@ searchbyte ()
 		    }
 		}
 
-	      if ((bigtosmallindex(index) == tmp_word) &&
+	      if ((bigtosmallindex(index) == (UInt16)tmp_word) &&
                   (bigindextobank(index) == bank))
 		{
                   fputc (to_search, D);
@@ -238,7 +261,7 @@ searchbyte ()
 	      while (!(feof (O)))
 		{
                   fgetc (O);
-                  bank = fgetc(O);
+                  bank = (UChar)fgetc(O);
 		  tmp_word = fgetw(O);
 
 		  if ((bank > bigindextobank(index))
@@ -251,7 +274,7 @@ searchbyte ()
 		}
 
 	      if ((bigindextobank(index) == bank) &&
-                  (bigtosmallindex(index) == tmp_word) &&
+                  (bigtosmallindex(index) == (UInt16)tmp_word) &&
                   (readindexedram(index) == old_value + to_search))
 		{
                   fputc (readindexedram(index), D);
@@ -280,10 +303,11 @@ searchbyte ()
 
   if (file_size (old_filename) == 4)
     {
-      char *tmp_buf = (char *) alloca (100);
-      sprintf (tmp_buf, MESSAGE[language][found_at], last_index);
+      char *tmp_buf = (char *) malloc (100);
+      snprintf (tmp_buf, 100, MESSAGE[language][found_at], last_index);
       osd_gfx_set_message (tmp_buf);
       message_delay = 60 * 5;
+			free(tmp_buf);
     }
   else
     {
@@ -292,7 +316,9 @@ searchbyte ()
     }
 
   while (osd_keypressed ())
+		/*@-retvalother*/
     osd_readkey ();			// Flushing keys
+		/*@=retvalother*/
 
   return 0;
 }
@@ -421,11 +447,8 @@ loadgame ()
     {
 
       pack_fread (mmr, sizeof(mmr[0])*8, fp);
-      pack_fread (&irequest, sizeof(irequest), fp);
-      pack_fread (&aftercli, sizeof(aftercli), fp);
       pack_fread (&cyclecount, sizeof(cyclecount), fp);
       pack_fread (&cyclecountold, sizeof(cyclecountold), fp);
-      pack_fread (&ibackup, sizeof(ibackup), fp);
 
       // registers
 
@@ -438,7 +461,6 @@ loadgame ()
 
       pack_fread (&halt_flag, sizeof(halt_flag), fp);
       pack_fread (&cycles, sizeof(cycles), fp);
-      pack_fread (&frames, sizeof(frames), fp);
 
      }
 
@@ -487,16 +509,17 @@ loadgame ()
   
   if (fread(hard_pce, 1, sizeof(struct_hard_pce), saved_file) != sizeof(struct_hard_pce))
     {
-	  fclose(saved_file);
-	  return 1;
-	}
+			fclose(saved_file);
+			return 1;
+		}
   
   {
-	int mmr_index;
+		int mmr_index;
 	  
     for (mmr_index = 0; mmr_index < 8; mmr_index++)
       {
-	    bank_set(mmr_index, mmr[mmr_index]);
+				bank_set((UChar)mmr_index, mmr[mmr_index]);
+				printf("Setting bank %d to 0x%02x\n", mmr_index, mmr[mmr_index]);
       }
   }
 	
@@ -592,11 +615,8 @@ savegame ()
 
   // pack_fwrite (&M, sizeof (M6502), fp);
   pack_fwrite (mmr, sizeof(mmr[0])*8, fp);
-  pack_fwrite (&irequest, sizeof(irequest), fp);
-  pack_fwrite (&aftercli, sizeof(aftercli), fp);
   pack_fwrite (&cyclecount, sizeof(cyclecount), fp);
   pack_fwrite (&cyclecountold, sizeof(cyclecountold), fp);
-  pack_fwrite (&ibackup, sizeof(ibackup), fp);
 
   // registers
 
@@ -609,7 +629,6 @@ savegame ()
 
   pack_fwrite (&halt_flag, sizeof(halt_flag), fp);
   pack_fwrite (&cycles, sizeof(cycles), fp);
-  pack_fwrite (&frames, sizeof(frames), fp);
 
   if (populus)
     pack_fwrite (PopRAM, PopRAMsize, fp);
@@ -677,22 +696,24 @@ savegame ()
 
 *****************************************************************************/
 int
-freeze_value ()
+freeze_value (void)
 {
   char tmp_str[10];
   unsigned char index = 0;
   unsigned where;
 
   while (osd_keypressed ())
+		/*@-retvalother*/
     osd_readkey ();			// Flushing keys
+		/*@=retvalother*/
 
-  while ((index < 10) && ((tmp_str[index++] = osd_readkey () & 0xFF) != 13));
+  while ((index < 10) && ((tmp_str[index++] = (char)(osd_readkey () & 0xFF)) != 13));
   tmp_str[index - 1] = 0;
 
-  where = atoi (tmp_str);
+  where = (unsigned)atoi (tmp_str);
 
   for (index = 0; index < current_freezed_values; index++)
-    if (list_to_freeze[index].position == where)
+    if (list_to_freeze[index].position == (unsigned short)where)
       {
 	// We entered an already freezed offset
 
@@ -709,12 +730,12 @@ freeze_value ()
 
   if (current_freezed_values < MAX_FREEZED_VALUE)
     {
-      list_to_freeze[current_freezed_values].position = where;
+      list_to_freeze[current_freezed_values].position = (unsigned short)where;
 
-      while ((index < 10) && ((tmp_str[index++] = osd_readkey () & 0xFF) != 13));
+      while ((index < 10) && ((tmp_str[index++] = (char)(osd_readkey () & 0xFF)) != 13));
       tmp_str[index - 1] = 0;
 
-      list_to_freeze[current_freezed_values++].value = atoi (tmp_str);
+      list_to_freeze[current_freezed_values++].value = (unsigned) atoi (tmp_str);
 
       return 1;
     }

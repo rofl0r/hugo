@@ -8,11 +8,18 @@
 
 /* Header */
 
+#include "utils.h"
 #include "sound.h"
 
+#if defined(SDL) && !defined(SDL_mixer)
 #include <SDL_audio.h>
 SDL_AudioSpec wanted; /* For SDL Audio */
 extern void sdl_fill_audio(void *data, Uint8 *stream, int len);
+#endif
+
+#ifdef SDL_mixer
+	#include "osd_linux_sdl_music.h"
+#endif
 
 /* Variables definition */
 
@@ -20,6 +27,7 @@ UChar sound_driver = 1;
 // 0 =-¯ No sound driver
 // 1 =-¯ Allegro sound driver
 // 2 =-¯ Seal sound driver
+// 3 =-¯ SDL/SDL_Mixer driver
 
 char MP3_playing = 0;
 // is MP3 playing ?
@@ -92,53 +100,59 @@ UInt32 sbuf_size = 10 * 1024;
 
 /* Functions definition */
 
-int
-InitSound (void)
+int InitSound(void)
 {
 
   sound_driver=3; // USE SDL!
   
   for (silent = 0; silent < 6; silent++)
-    {
-      sbuf[silent] = (char *) malloc (SBUF_SIZE_BYTE);
-      memset (sbuf[silent], 0, SBUF_SIZE_BYTE);
-    }
+    sbuf[silent] = (char *) calloc(sizeof(char), SBUF_SIZE_BYTE);
 
-  adpcmbuf = (char *) malloc (SBUF_SIZE_BYTE);
-  memset (adpcmbuf, 0, SBUF_SIZE_BYTE);
+  adpcmbuf = (char *) calloc(sizeof(char), SBUF_SIZE_BYTE);
 
   silent = 1;
 
   if (smode == 0)		// No sound
     return TRUE;
 
-/* SDL Audio Begin */
+/* SDL Audio / Mixer Begin */
   if (sound_driver == 3)
     {
 		/*
+#if defined(SDL) && !defined(SDL_mixer)
 	  SDL_AudioSpec obtained;
       Log ("Initialisation of SDL sound... ");
-      wanted.freq = freq_int; // Frequency
-      printf("Frequency = %d\n", freq_int);
+      wanted.freq = option.want_snd_freq; // Frequency
+      printf("Frequency = %d\n", option.want_snd_freq);
       wanted.format = AUDIO_U8; // Unsigned 8 bits
       wanted.channels = 1; // Mono
       wanted.samples = 512; //SBUF_SIZE_BYTE;
-//      wanted.size = SBUF_SIZE_BYTE;
- //     printf("wanted.size = %d\n",wanted.size);
+      wanted.size = SBUF_SIZE_BYTE;
+      printf("wanted.size = %d\n",wanted.size);
       wanted.callback = sdl_fill_audio;
       wanted.userdata = main_buf;//NULL;
       
       if (SDL_OpenAudio(&wanted,&obtained) < 0) {
-        printf("Couldn't Open SDL Audio: %s\n",SDL_GetError());
+		  printf("Couldn't Open SDL Audio: %s\n",SDL_GetError());
+#endif // driver = 3 && SDL_mixer
+      if (Mix_OpenAudio(option.want_snd_freq,AUDIO_U8,1,512) < 0) {
+		  printf("Couldn't Open SDL Mixer: %s\n",Mix_GetError());
+
 	return FALSE;
       }
+
+#if defined(SDL) && !defined(SDL_mixer)
       Log ("OK\nObtained frequency = %d\n",obtained.freq);
-      silent=0;
       SDL_PauseAudio(0);
+#endif
+
+      silent=0;
+	  Mix_Resume(-1);
 	  */
 	  silent = 0;
+
     }
-/* End of SDL Audio */
+/* End of SDL Audio / Mixer */
 
 #ifdef MSDOS
   if (sound_driver == 2)	// Seal Sound
@@ -155,7 +169,7 @@ InitSound (void)
 	  UINT nDeviceId;
 
 	  printf (MESSAGE[language][autodetect_mode]);
-
+ 
 	  if (APingAudio (&nDeviceId) != AUDIO_ERROR_NONE)
 	    {
 	      printf (MESSAGE[language][no_device_found]);
@@ -178,7 +192,7 @@ InitSound (void)
 
 	info.nDeviceId = AUDIO_DEVICE_MAPPER;
 	info.wFormat = AUDIO_FORMAT_8BITS | AUDIO_FORMAT_MONO;
-	info.nSampleRate = freq_int;
+	info.nSampleRate = option.want_snd_freq;
 	if (AOpenAudio (&info) != AUDIO_ERROR_NONE)
 	  {
 	    printf (MESSAGE[language][audio_init_failed]);
@@ -208,7 +222,7 @@ InitSound (void)
 	    /* create a 8-bit mono one-shot waveform object */
 	    lpWave->wFormat =
 	      AUDIO_FORMAT_8BITS | AUDIO_FORMAT_MONO | AUDIO_FORMAT_LOOP;
-	    lpWave->nSampleRate = freq_int;
+	    lpWave->nSampleRate = host.sound.freq;
 	    lpWave->dwLength = SBUF_SIZE_BYTE;
 	    lpWave->dwLoopStart = 0;
 #if defined(DOUBLE_BUFFER)
@@ -287,7 +301,7 @@ InitSound (void)
       set_volume (gen_vol, 0);
 
       PCM_stream =
-	play_audio_stream (sbuf_size, 8, FALSE, freq_int, 128, 128);
+	play_audio_stream (sbuf_size, 8, FALSE, host.sound.freq, 128, 128);
       if (!PCM_stream)
 	{
 	  Log ("Error creating audio stream!\n");
@@ -312,11 +326,6 @@ TrashSound (void)		/* Shut down sound  */
 
   if (!silent)
     {
-      if (sound_driver == 3) // SDL
-	{
-		SDL_PauseAudio(1);
-		SDL_CloseAudio();
-	}
 #ifdef MSDOS
       if (sound_driver == 2)	// Seal sound
 	{
@@ -355,8 +364,8 @@ TrashSound (void)		/* Shut down sound  */
 
     }
 
-  return;
 }
+
 
 void
 write_psg (int ch)
@@ -369,7 +378,7 @@ write_psg (int ch)
       CycleOld = CycleNew;
 
       dwNewPos =
-	(unsigned) ((float) (freq_int) * (float) Cycle / (float) BaseClock);
+	(unsigned) ((float) (host.sound.freq) * (float) Cycle / (float) BaseClock);
       // in fact, size of the data to write
 
     };
@@ -389,38 +398,40 @@ write_psg (int ch)
 */
   
   if (sound_driver == 2) // || sound_driver == 3) /* Added 3 (SDL) */
-    if (dwNewPos > (UInt32) freq_int * SOUND_BUF_MS / 1000)
-      {
+    {
+      if (dwNewPos > (UInt32) host.sound.freq * SOUND_BUF_MS / 1000)
+        {
 #ifdef SOUND_DEBUG
-	fprintf (stderr, "sound buffer overrun\n");
+          fprintf (stderr, "sound buffer overrun\n");
 #endif
-	dwNewPos = freq_int * SOUND_BUF_MS / 1000;
-	// Ask it to fill the buffer
-      }
-    else if (sound_driver == 1)
-      {
+          dwNewPos = host.sound.freq * SOUND_BUF_MS / 1000;
+          // Ask it to fill the buffer
+        }
+      else if (sound_driver == 1)
+        {
 #ifdef SOUND_DEBUG
-	Log ("dwNewPos = %d / %d\n", dwNewPos, sbuf_size);
+          Log ("dwNewPos = %d / %d\n", dwNewPos, sbuf_size);
 #endif
-	if (dwNewPos > sbuf_size)
-	  {
+          if (dwNewPos > sbuf_size)
+            {
 #ifdef SOUND_DEBUG
-	    fprintf (stderr, "sound buffer overrun\n");
+              fprintf (stderr, "sound buffer overrun\n");
 #endif
-	    dwNewPos = sbuf_size;
-	    // Ask it to fill the buffer
-	  }
+              dwNewPos = sbuf_size;
+              // Ask it to fill the buffer
+            }
 
 #ifdef SOUND_DEBUG
-	Log ("After correction, dwNewPos = %d\n", dwNewPos);
+          Log ("After correction, dwNewPos = %d\n", dwNewPos);
 #endif
 
-      }
+        }
+    }
 
 #ifdef SOUND_DEBUG
   Log ("Buffer %d will be filled\n", ch);
 #endif
-
+  Log ("Buffer %d will be filled\n", ch);
   WriteBuffer (&sbuf[ch][0], ch, dwNewPos * ds_nChannels);
   // write DATA 'til dwNewPos
 
@@ -447,7 +458,7 @@ void write_adpcm(void)
       CycleOld = CycleNew;
 
       dwNewPos =
-	(unsigned) ((float) (freq_int) * (float) Cycle / (float) BaseClock);
+	(unsigned) ((float) (host.sound.freq) * (float) Cycle / (float) BaseClock);
       // in fact, size of the data to write
     };
 
@@ -482,3 +493,148 @@ void write_adpcm(void)
 #endif
 
 };
+
+//! file for dumping audio
+static FILE* audio_output_file = NULL;
+
+//! Size (in byte) of audio data dumped
+static int sound_dump_length;
+
+//! Cycle of the last sound output
+static UInt32 sound_dump_last_cycle;
+
+//! Start the audio dump process
+//! return 1 if audio dumping began, else 0
+int start_dump_audio(void)
+	{
+		char audio_output_filename[PATH_MAX];
+		struct tm * tm_current_time;
+		time_t time_t_current_time;
+		
+		if (audio_output_file != NULL)
+			return 0;
+		
+		time(&time_t_current_time);
+		tm_current_time = localtime(&time_t_current_time);
+		
+		snprintf(audio_output_filename, PATH_MAX, "%saudio-%04d-%02d-%02d %02d-%02d-%02d.wav", 
+			video_path,
+			tm_current_time->tm_year + 1900,
+			tm_current_time->tm_mon + 1,
+			tm_current_time->tm_mday,
+			tm_current_time->tm_hour,
+			tm_current_time->tm_min,
+			tm_current_time->tm_sec);
+		
+		audio_output_file = fopen(audio_output_filename, "wb");
+		
+		sound_dump_length = 0;
+		
+		fwrite ("RIFF\145\330\073\0WAVEfmt ", 16, 1,
+			audio_output_file);
+		putc (0x10, audio_output_file);	// size
+		putc (0x00, audio_output_file);
+		putc (0x00, audio_output_file);
+		putc (0x00, audio_output_file);
+		putc (1, audio_output_file);	// PCM data
+		putc (0, audio_output_file);
+		
+		if (host.sound.stereo)
+			putc(2, audio_output_file);		// stereo
+		else
+			putc (1, audio_output_file);	// mono
+		
+		putc (0, audio_output_file);
+		
+		putc (host.sound.freq, audio_output_file);	// frequency
+		putc (host.sound.freq >> 8, audio_output_file);
+		putc (host.sound.freq >> 16, audio_output_file);
+		putc (host.sound.freq >> 24, audio_output_file);
+		
+		if (host.sound.stereo)
+			{
+				putc (host.sound.freq << 1, audio_output_file);	// size of data per second
+				putc (host.sound.freq >> 7, audio_output_file);
+				putc (host.sound.freq >> 15, audio_output_file);
+				putc (host.sound.freq >> 23, audio_output_file);
+			}
+		else
+			{
+				putc (host.sound.freq, audio_output_file);	// size of data per second
+				putc (host.sound.freq >> 8, audio_output_file);
+				putc (host.sound.freq >> 16, audio_output_file);
+				putc (host.sound.freq >> 24, audio_output_file);
+			}
+		
+		if (host.sound.stereo)
+			putc (2, audio_output_file);	// byte per sample
+		else
+			putc (1, audio_output_file);
+		putc (0, audio_output_file);
+		
+		putc (8, audio_output_file);	// 8 bits
+		putc (0, audio_output_file);
+		
+		fwrite ("data\377\377\377\377", 1, 9,
+			audio_output_file);
+		osd_gfx_set_message (MESSAGE[language]
+			[dump_on]);
+			
+		return (audio_output_file != NULL ? 1 : 0);
+	}
+
+void stop_dump_audio(void)
+	{
+		UInt32 dum;
+		
+		if (audio_output_file == NULL)
+			return;
+		
+		dum = sound_dump_length + 0x2C; // Total file size, header is 0x2C long
+		fseek (audio_output_file, 4, SEEK_SET);
+		putc(dum      , audio_output_file);
+		putc(dum >> 8 , audio_output_file);
+		putc(dum >> 16, audio_output_file);
+		putc(dum >> 24, audio_output_file);
+		
+		dum = sound_dump_length; // Audio stream size
+		fseek (audio_output_file, 0x28, SEEK_SET);
+		putc(dum      , audio_output_file);
+		putc(dum >> 8 , audio_output_file);
+		putc(dum >> 16, audio_output_file);
+		putc(dum >> 24, audio_output_file);
+		
+		fclose(audio_output_file);
+		
+		osd_gfx_set_message (MESSAGE[language]
+	    [dump_off]);
+	}
+
+void dump_audio_chunck(UChar* content, int length)
+	{
+		int cycle;
+		int real_length;
+		
+		real_length = 0;
+		
+		if (audio_output_file == NULL)
+			return;
+		
+	  if (CycleNew != sound_dump_last_cycle)
+    	{
+				cycle = CycleNew - sound_dump_last_cycle;
+				sound_dump_last_cycle = CycleNew;
+				
+				real_length = (unsigned) ((float) (host.sound.freq) * (float) cycle / (float) BaseClock);
+				// in fact, size of the data to write
+			};
+		
+		printf("given length = %5d\treal length = %5d\n", length, real_length);
+		
+		if (real_length > length)
+			real_length = length;
+		
+		fwrite(content, real_length, 1, audio_output_file);
+		
+		sound_dump_length += real_length;
+	}

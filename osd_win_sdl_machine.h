@@ -19,7 +19,7 @@
 #include "sys_dep.h"
 #include "lang.h"
 #include "pce.h"
-#include "osd_win_sdl_gfx.h"
+#include "osd_sdl_gfx.h"
 
 extern UChar gamepad;
 // gamepad detected ?
@@ -35,5 +35,12 @@ extern char dump_snd;
 
 extern int *fd[4];
 // handle for joypad devices
+
+#if defined(ENABLE_NETPLAY)
+
+#include "netplay.h"
+
+#endif
+
 
 #endif

@@ -1,6 +1,9 @@
-
+#include <sys/types.h>
+#include <unistd.h>
+#include <string.h>
 #include "osd_linux_cd.h"
-
+#include "utils.h"
+#include "hard_pce.h"
 
 int cd_drive_handle = 0;
 
@@ -32,7 +35,7 @@ void osd_cd_close()
 }
 
 
-int osd_cd_read(UChar *p, UInt32 sector)
+void osd_cd_read(UChar *p, UInt32 sector)
 {
   int retries = 0;
   char buf[128];
@@ -77,17 +80,17 @@ void osd_cd_subchannel_info(unsigned short offset)
   }
 */
 
-  put_8bit_addr(offset, subc.cdsc_audiostatus - 0x11);
+  Wr6502(offset, subc.cdsc_audiostatus - 0x11);
 
-  put_8bit_addr(offset + 1, subc.cdsc_ctrl);
-  put_8bit_addr(offset + 2, binbcd[subc.cdsc_trk]);
-  put_8bit_addr(offset + 3, binbcd[subc.cdsc_ind]);
-  put_8bit_addr(offset + 4, binbcd[subc.cdsc_reladdr.msf.minute]);
-  put_8bit_addr(offset + 5, binbcd[subc.cdsc_reladdr.msf.second]);
-  put_8bit_addr(offset + 6, binbcd[subc.cdsc_reladdr.msf.frame]);
-  put_8bit_addr(offset + 7, binbcd[subc.cdsc_absaddr.msf.minute]);
-  put_8bit_addr(offset + 8, binbcd[subc.cdsc_absaddr.msf.second]);
-  put_8bit_addr(offset + 9, binbcd[subc.cdsc_absaddr.msf.frame]);
+  Wr6502(offset + 1, subc.cdsc_ctrl);
+  Wr6502(offset + 2, binbcd[subc.cdsc_trk]);
+  Wr6502(offset + 3, binbcd[subc.cdsc_ind]);
+  Wr6502(offset + 4, binbcd[subc.cdsc_reladdr.msf.minute]);
+  Wr6502(offset + 5, binbcd[subc.cdsc_reladdr.msf.second]);
+  Wr6502(offset + 6, binbcd[subc.cdsc_reladdr.msf.frame]);
+  Wr6502(offset + 7, binbcd[subc.cdsc_absaddr.msf.minute]);
+  Wr6502(offset + 8, binbcd[subc.cdsc_absaddr.msf.second]);
+  Wr6502(offset + 9, binbcd[subc.cdsc_absaddr.msf.frame]);
 }
 
 
@@ -187,7 +190,7 @@ void osd_cd_play_audio_track(UChar track)
       track + 1,
       0
     };
-
+	
   if (ioctl(cd_drive_handle, CDROMPLAYTRKIND, &cdrom_ti_dat) == -1)
     perror("play_audio_track");
 }

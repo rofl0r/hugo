@@ -3,8 +3,8 @@
  
  Data for TG Disassembler
  ****************************************************************************/
-#ifndef _DJGPP_INCLUDE_DIS_H
-#define _DJGPP_INCLUDE_DIS_H
+#ifndef _INCLUDE_DIS_H
+#define _INCLUDE_DIS_H
 
 #include "format.h"
 

@@ -1,5 +1,5 @@
 #include "list_rom.h"
-#include "crc_ctl.h"
+#include "utils.h"
 
 #if defined(LINUX)
   #include "linux/limits.h"
@@ -9738,6 +9738,7 @@ UInt32 CRC_file (char *name)
   return CRC;
 }
 
+static
 void pce_build_romlist_fail(FILE *rlf, int entry)
 {
   fprintf(stdout, "Error in entry %d of roms.db\n", entry + 1);
@@ -9776,7 +9777,7 @@ void pce_build_romlist(void)
 
   for (i = 0; i < pce_romlist_size; i++)
   {
-    if (fscanf(rlf, "%x\n", &pce_romlist[i].CRC) == EOF) {
+    if (fscanf(rlf, "%lx\n", &pce_romlist[i].CRC) == EOF) {
       pce_build_romlist_fail(rlf, i);
       return;
     }

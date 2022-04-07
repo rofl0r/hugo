@@ -294,4 +294,3 @@ operation optable_runtime[256] = {
   { inc_absx,   AM_ABSX,    "INC" },      /* $FE */
   { bbs7,       AM_PSREL,   "BBS7"}       /* $FF */
 };
-

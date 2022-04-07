@@ -40,11 +40,11 @@ static int HaId;static int Target;static int Lun;static int aspi_init = 0;D
  loadASPI(); for (HaId_in = 0; HaId_in < 8; HaId_in++)    for (Target_in = 0; Target_in < 8; Target_in++)       for (Lun_in = 0; Lun_in < 8; Lun_in++)          {/*          Log("Trying %d:%d:%d\n",                      HaId_in,                      Target_in,                      Lun_in);*/          if (ReadDevice(HaId_in,                         Target_in,                         Lun_in) != 5)            continue;/*          Log("Found 1 CD...\n");*/          if (--nb)            continue;	  Log ("CD found at %d:%d:%d\n", HaId_in, Target_in, Lun_in);          HaId = HaId_in;          Target = Target_in;          Lun = Lun_in;
 		  
 		  ReadToc();
-		            return 0;          }    return 1;  }void osd_cd_close(){}int osd_cd_read(UChar* p, UInt32 sector){  HANDLE hEvent;  SRB_ExecSCSICmd s;  DWORD dwStatus;  // BYTE* intern_buffer = (BYTE*)malloc(2352);
+		            return 0;          }    return 1;  }void osd_cd_close(){}void osd_cd_read(UChar* p, UInt32 sector){  HANDLE hEvent;  SRB_ExecSCSICmd s;  DWORD dwStatus;  // BYTE* intern_buffer = (BYTE*)malloc(2352);
 	
 	printf("Reading sector %d in %s - %s\n", sector, __FILE__, __LINE__);
 	
-	return 1;
+	return;
 	
 	/* if (aspi_init == 0)   loadASPI();		  hEvent = CreateEvent( NULL, TRUE, FALSE, NULL );		  memset (&s, 0, sizeof (s));		  s.SRB_Cmd = SC_EXEC_SCSI_CMD;		  s.SRB_HaID = HaId;		  s.SRB_Target = Target;		  s.SRB_Lun = Lun;		  s.SRB_Flags = SRB_DIR_IN | SRB_EVENT_NOTIFY;		  s.SRB_BufLen = 2352;		  s.SRB_BufPointer = intern_buffer;		  s.SRB_SenseLen = SENSE_LEN;		  s.SRB_CDBLen = 12;		  s.SRB_PostProc = (LPVOID) hEvent;		  s.CDBByte[0] = 0xBE;	// read CD Raw                  s.CDBByte[3] = (sector >> 16) & 0xFF;                  s.CDBByte[4] = (sector >> 8) & 0xFF;                  s.CDBByte[5] = sector & 0xFF;                  s.CDBByte[8] = 1;		  s.CDBByte[9] = 0xF0;		  ResetEvent (hEvent);		  dwStatus = pfnSendASPI32Command ((LPSRB) & s);		  if (dwStatus == SS_PENDING)		    {		      WaitForSingleObject (hEvent, INFINITE);		    }		  if (s.SRB_Status != SS_COMP) {
 			  free(intern_buffer);                    return s.SRB_Status;
@@ -60,7 +60,7 @@ static int HaId;static int Target;static int Lun;static int aspi_init = 0;D
 
 void osd_cd_subchannel_info(unsigned short offset)
 {
-      put_8bit_addr(offset, 4);
+  Wr6502(offset, 4);
   }
 
 
@@ -207,12 +207,12 @@ int osd_cd_init( char* dummy )
 }
 
 void osd_cd_close(){  osd_cd_stop_audio();
-	shut_akrip();}int osd_cd_read(UChar* p, UInt32 sector){
+	shut_akrip();}void osd_cd_read(UChar* p, UInt32 sector){
   if (akrip_read( handle_CD, sector ) == 0)
-		{			memcpy(p, track_buffer->buf + 16 , 2048);						return 0;
+		{			memcpy(p, track_buffer->buf + 16 , 2048);						return;
 		}
 	Log("Error reading cd sector %d at %s - %d\n", sector, __FILE__, __LINE__);
-  return 1;
+  return;
 	}
 
 
@@ -278,7 +278,7 @@ void osd_cd_play_audio_range(
 
 void osd_cd_subchannel_info(unsigned short offset)
 {
-      put_8bit_addr(offset, 4);
+      Wr6502(offset, 4);
 }
 
 

@@ -17,9 +17,17 @@
 
 #if defined(SHARED_MEMORY)
 
+#if !defined(WIN32)
+
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#else
+
+#include "utils.h"
+
+#endif
 
 #endif
 
@@ -45,127 +53,25 @@
 #define PSG_NOISE_REG           7
 #define PSG_NOISE_ENABLE        0x80 /* bit 7 */
 
-#define PSG_DIRECT_ACCESS_BUFSIZE 1024
-
-/**
-  * Exported structure types
-  **/
-
-typedef union
-{
-  struct { UChar l,h; } B;
-  UInt16 W;
-} pair;
-
-/* The structure containing all variables relatives to Input and Output */
-typedef struct tagIO {
-        /* VCE */
-	pair VCE[0x200]; /* palette info */
-	pair vce_reg;    /* currently selected color */
-	UChar vce_ratch; /* temporary value to keep track of the first byte
-                          * when setting a 16 bits value with two byte access
-                          */
-	/* VDC */
-        pair VDC[32];    /* value of each VDC register */
-	UInt16 vdc_inc;  /* VRAM pointer increment once accessed */
-	UInt16 vdc_raster_count; /* unused as far as I know */
-	UChar vdc_reg;   /* currently selected VDC register */
-	UChar vdc_status; /* current VCD status (end of line, end of screen, ...) */
-	UChar vdc_ratch; /* temporary value to keep track of the first byte
-                          * when setting a 16 bits value with two byte access
-                          */
-	UChar vdc_satb;  /* boolean which keeps track of the need to copy
-                          * the SATB from VRAM to internal SATB
-                          */
-	UChar vdc_pendvsync; /* unsure, set if a end of screen IRQ is waiting */
-	Int32 bg_h;      /* number of tiles vertically in virtual screen */
-	Int32 bg_w;      /* number of tiles horizontaly in virtual screen */
-	Int32 screen_w;  /* size of real screen in pixels */
-	Int32 screen_h;  /* size of real screen in pixels */
-	Int32 scroll_y;
-	Int32 minline;
-        Int32 maxline;
-	/* joypad */
-	UChar JOY[16];   /* value of pressed button/direct for each pad
-                          * (why 16 ? 5 should be enough for everyone :)
-                          */
-	UChar joy_select; /* used to know what nibble we must return */
-	UChar joy_counter; /* current addressed joypad */
-	/* PSG */
-	UChar PSG[6][8], wave[6][32];
-        // PSG STRUCTURE
-        // 0 : dda_out
-        // 2 : freq (lo byte)  | In reality it's a divisor
-        // 3 : freq (hi byte)	 | 3.7 Mhz / freq => true snd freq
-        // 4 : dda_ctrl
-        //     000XXXXX
-        //     ^^  ^
-        //     ||  ch. volume
-        //     ||
-        //     |direct access (everything at byte 0)
-        //     |
-        //    enable
-        // 5 : pan (left vol = hi nibble, right vol = low nibble)
-        // 6 : wave ringbuffer index
-        // 7 : noise data for channels 5 and 6
-
-	UChar psg_ch,psg_volume,psg_lfo_freq,psg_lfo_ctrl;
-
-    UChar psg_da_data[6][PSG_DIRECT_ACCESS_BUFSIZE];
-    UInt16 psg_da_index[6], psg_da_count[6];
-    boolean psg_channel_disabled[6];
-
-	/* TIMER */
-	UChar timer_reload,timer_start,timer_counter;
-
-	/* IRQ */
-	UChar irq_mask,irq_status;
-
-	/* CDROM extention */
-	SInt32 backup,adpcm_firstread;
-
-        /* Adpcm related variables */
-	pair adpcm_ptr;
-	UInt16 adpcm_rptr,adpcm_wptr;
-        UInt16 adpcm_dmaptr;
-        UChar adpcm_rate;
-        UInt32 adpcm_pptr; /* to know where to begin playing adpcm (in nibbles) */
-        UInt32 adpcm_psize; /* to know how many 4-bit samples to play */
-
-        /* Arcade Card variables */
-        UInt32 ac_base[4];     /* base address for AC ram accessing */
-        UInt16 ac_offset[4];   /* offset address for AC ram accessing */
-        UInt16 ac_incr[4];     /* incrment value after read or write accordingly to the control bit */
-
-        UChar  ac_control[4];  /* bit 7: unused */
-
-                               /* bit 6: only $1AX6 hits will add offset to base*/
-                               /* bit 5 + bit 6: either hit to $1AX6 or $1AXA will add offset to base */
-
-                               /* bit 4: auto increment offset if 0, and auto */
-                               /* increment base if 1 */
-                               /* bit 3: unknown */
-                               /* bit 2: unknown */
-                               /* bit 1: use offset address in the effective address */
-                               /*   computation */
-
-                               /* bit 0: apply autoincrement if set */
-
-        UInt32 ac_shift;
-        UChar  ac_shiftbits;   /* number of bits to shift by */
-
-/*        UChar  ac_unknown3; */
-        UChar  ac_unknown4;
-
-} IO;
-
 /**
   * Exported functions to access hardware
   **/
 
-void    IO_write (UInt16 A,UChar V);
-UChar   IO_read  (UInt16 A);
-void    bank_set (UChar P, UChar V);
+void hard_init (void);
+void hard_term (void);
+
+void	IO_write (UInt16 A,UChar V);
+UChar	IO_read  (UInt16 A);
+void	bank_set (UChar P, UChar V);
+
+void	(*write_memory_function)(UInt16,UChar);
+UChar	(*read_memory_function)(UInt16);
+
+#define Wr6502(A,V) ((*write_memory_function)((A),(V)))
+
+#define Rd6502(A) ((*read_memory_function)(A))
+
+void dump_pce_cpu_environment();
 
 /**
   * Global structure for all hardware variables
@@ -180,7 +86,9 @@ void    bank_set (UChar P, UChar V);
 extern struct_hard_pce* hard_pce;
 // The global structure for all hardware variables
 
-extern IO io;
+#define io (*p_io)
+
+extern IO *p_io;
 // the global I/O status
 
 extern UChar *RAM;
@@ -209,7 +117,7 @@ extern UChar *Pal;
 // Each of the 512 available PCE colors (333 RGB -> 512 colors)
 // got a correspondancy in the 256 fixed colors palette
 
-extern UInt32 *VRAM2,*VRAMS;
+extern UChar *VRAM2,*VRAMS;
 // These are array to keep in memory the result of the linearisation of
 // PCE sprites and tiles
 
@@ -226,36 +134,30 @@ extern UInt32 *p_scanline;
 extern UChar *PCM;
 // The ADPCM array (0x10000 bytes)
 
-extern UChar cd_port_1800;
-extern UChar cd_port_1801;
-extern UChar cd_port_1802;
-extern UChar cd_port_1804;
-// Some meaningfull variables to emulate cd ports
-
+//! A pointer to know where we're currently reading data in the cd buffer
 extern UChar *cd_sector_buffer;
-// A pointer to know where we're currently reading data in the cd buffer
 
+//! The real buffer into which data are written from the cd and in which we
+//! takes data to gives it back throught the cd ports
 extern UChar *cd_read_buffer;
-// The real buffer into which data are written from the cd and in which we
-// takes data to gives it back throught the cd ports
 
+//! extra ram provided by the system CD card
 extern UChar *cd_extra_mem;
-// extra ram provided by the system CD card
 
+//! extra ram provided by the super system CD card
 extern UChar *cd_extra_super_mem;
-// extra ram provided by the super system CD card
 
+//! extra ram provided by the Arcade card
 extern UChar *ac_extra_mem;
-// extra ram provided by the Arcade card
 
+//! remaining useful data in cd_read_buffer
 extern UInt32 pce_cd_read_datacnt;
-// remaining useful data in cd_read_buffer
 
+//! number of sectors we must still read on cd
 extern UChar cd_sectorcnt;
-// number of sectors we must still read on cd
 
+//! number of the current command of the cd interface
 extern UChar pce_cd_curcmd;
-// number of the current command of the cd interface
 
 extern UChar* zp_base;
 // pointer to the beginning of the Zero Page area
@@ -266,24 +168,21 @@ extern UChar* sp_base;
 extern UChar* mmr;
 // Value of each of the MMR registers
 
-extern UChar *Page[8];
-// physical address on emulator machine less 0x2000 by index (trick to access "faster" the mem)
-
 extern UChar *IOAREA;
 // physical address on emulator machine of the IO area (fake address as it has to be handled specially)
 
-extern UChar *ROMMap[256];
+//! 
+extern UChar *PageR[8];
+extern UChar *ROMMapR[256];
+
+extern UChar *PageW[8];
+extern UChar *ROMMapW[256];
+
+//! False "ram"s in which you can read/write (to homogeneize writes into RAM, BRAM, ... as well as in rom) but the result isn't coherent
+extern UChar* trap_ram_read;
+extern UChar* trap_ram_write;
+
 // physical address on emulator machine of each of the 256 banks
-
-#define irequest (*p_irequest)
-
-extern UChar *p_irequest;
-// bit field storing awaiting interruptions
-
-#define aftercli (*p_aftercli)
-
-extern UChar *p_aftercli;
-// boolean to know whether we've just encoutered a cli
 
 #define cyclecount (*p_cyclecount)
 
@@ -294,11 +193,6 @@ extern UInt32 *p_cyclecount;
 
 extern UInt32 *p_cyclecountold;
 // Previous number of elapsed cycles
-
-#define ibackup (*p_ibackup)
-
-extern UInt32 *p_ibackup;
-// Backup value for elapsed cycle when executing interrupts
 
 #define external_control_cpu (*p_external_control_cpu)
 
@@ -341,21 +235,33 @@ extern UChar  reg_s;
 extern UInt32 *p_cycles;
 // Number of pc engine cycles elapsed since the resetting of the emulated console
 
-#define frames (*p_frames)
-
-extern UInt32 *p_frames;
-// Number of frames the console would have rendered (i.e. when setting frameskip to 1,
-// This is the double of frame rendered on pc)
-
 /**
   * Definitions to ease writing
   **/
 
 #define	VRR	2
 enum _VDC_REG {
-	MAWR,MARR,VWR,vdc3,vdc4,CR,RCR,BXR,
-	BYR,MWR,HSR,HDR,VPR,VDW,VCR,DCR,
-	SOUR,DISTR,LENR,SATB};
+  MAWR,	/*  0 */ /* Memory Address Write Register */
+  MARR,	/*  1 */ /* Memory Adress Read Register */
+  VWR,	/*  2 */ /* VRAM Read Register / VRAM Write Register */
+  vdc3,	/*  3 */
+  vdc4,	/*  4 */
+  CR,   /*  5 */ /* Control Register */
+  RCR,	/*  6 */ /* Raster Compare Register */
+  BXR,	/*  7 */ /* Horizontal scroll offset */
+  BYR,	/*  8 */ /* Vertical scroll offset */
+  MWR,	/*  9 */ /* Memory Width Register */
+  HSR,	/*  A */ /* Unknown, other horizontal definition */
+  HDR,	/*  B */ /* Horizontal Definition */
+  VPR,	/*  C */ /* Higher byte = VDS, lower byte = VSW */
+  VDW,	/*  D */ /* Vertical Definition */
+  VCR,	/*  E */ /* Vertical counter between restarting of display*/
+  DCR,	/*  F */ /* DMA Control */
+  SOUR,	/* 10 */ /* Source Address of DMA transfert */
+  DISTR,/* 11 */ /* Destination Address of DMA transfert */
+  LENR,	/* 12 */ /* Length of DMA transfert */
+  SATB	/* 13 */ /* Adress of SATB */
+};
 
 #define	NODATA	   0xff
 #define	ENABLE	   1

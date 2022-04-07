@@ -68,4 +68,10 @@
    */
    SInt32 osd_gfx_set_hugo_mode(SInt32 mode,SInt32 width,SInt32 height);
 
+	/*
+	 * osd_gfx_set_message
+	 *
+	 * Display a message
+	 */
+	void osd_gfx_set_message(char* message);
 #endif

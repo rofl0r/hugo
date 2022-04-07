@@ -5,30 +5,30 @@
 #include "dis.h"
 #include "optable.h"
 // #include "osd_gfx.h"
-	
+
 #define  MAX_BP        16
 // Max number of breakpoints
-	
+
 #define  MAX_USER_BP   14
 // Max number of breakpoints user definabled
-	
+
 #define  RESTORE_BP    14
 // Place in the list of a pseudo-break point for internal usage
-	
+
 #define  GIVE_HAND_BP  15
 // Place in the list of the breakpoint used in stepping...
-	
+
 // Some defines for the flag value
-#define	NOT_USED   0
-#define  ENABLED    1
-#define  DISABLED	  2
+#define NOT_USED   0
+#define ENABLED    1
+#define DISABLED   2
 
 
 typedef struct
 {
-	UInt16 position;
-	UChar flag;	
-	UChar original_op;
+  UInt16 position;
+  UChar flag;
+  UChar original_op;
 }
 Breakpoint;
 
@@ -40,6 +40,8 @@ extern Breakpoint Bp_list[MAX_BP];
 
 extern UChar save_background;
 // Do we have to preserve the background
+
+unsigned char Op6502 (unsigned int A);
 
 void disass_menu ();
 // Kind of front end for the true disassemble function

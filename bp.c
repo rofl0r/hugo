@@ -14,6 +14,9 @@
 
 #include "globals.h"
 #include "debug.h"
+#include "h6280.h"
+
+int handle_bp(int nb_bp);
 
 int handle_bp0()
 {
@@ -104,17 +107,17 @@ int handle_bp(int nb_bp)
    fprintf(stderr,"After the disassembly function, the position is %X\n",reg_pc);
 #endif
 
-     if ((Op6502(reg_pc)&0x0F)==0x0B)
+     if ((get_8bit_addr(reg_pc)&0x0F)==0x0B)
        {  // We only look here for Bp since PC or bp status can have changed
 
 #ifndef FINAL_RELEASE
    fprintf(stderr,"run trick: a bp has been asked to be put at %X\n",reg_pc);
 #endif
 
-	  _Wr6502(reg_pc,Bp_list[Op6502(reg_pc)>>4].original_op);
+	  Wr6502(reg_pc,Bp_list[get_8bit_addr(reg_pc)>>4].original_op);
           // Replace the opcode in the rom
 
-          Bp_list[Op6502(reg_pc)>>4].flag=NOT_USED;
+          Bp_list[get_8bit_addr(reg_pc)>>4].flag=NOT_USED;
 	  // Temporary, the breakpoint disappears
 	  // to be replaced by the restore_bp
 
@@ -135,7 +138,7 @@ int
 handle_bp14()
 {
      // We must restore the Bp_to_restore Breakpoint
-     _Wr6502(reg_pc,Bp_list[14].original_op);
+     Wr6502(reg_pc,Bp_list[14].original_op);
 
      // Replace the opcode in the rom
 
@@ -156,7 +159,7 @@ int
 handle_bp15(){
    // We must make it disappear and call the disassembler
 
-   _Wr6502(reg_pc,Bp_list[15].original_op);
+   Wr6502(reg_pc,Bp_list[15].original_op);
    // Replace the opcode in the rom
 
    Bp_list[15].flag=NOT_USED;
