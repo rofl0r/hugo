@@ -158,7 +158,7 @@ sp2pixel (int no)
   // 2 longs -> 16 nibbles => 32 loops for a 16*16 spr
   for (i = 0; i < 32; i++, C++, C2 += 4)
     {
-      long L;
+      Int32 L;
       M = C[0];
       L =
 	((M & 0x88) >> 3) | ((M & 0x44) << 6) | ((M & 0x22) << 15) |
@@ -278,7 +278,7 @@ RefreshLine (int Y1, int Y2)
 	      for (i = 0; i < h; i++, P += WIDTH, C2 += 4, C += 2)
 #endif
 		{
-		  unsigned long L;
+		  UInt32 L;
 		  UChar J;
 		  J = (C[0] | C[1] | C[16] | C[17]);
 		  if (!J)
@@ -394,11 +394,11 @@ PutSprite (UChar * P, UChar * C, UChar * C2, UChar * R, int h, int inc)
 }
 
 void
-PutSpriteHandleFull (UChar * P, UChar * C, unsigned long *C2, UChar * R,
+PutSpriteHandleFull (UChar * P, UChar * C, void * C2void, UChar * R,
 		     int h, int inc)
 {
   int i, J;
-  unsigned long L;
+  Uint32 L, *C2 = C2void;
 #if defined(NEW_GFX_ENGINE)
   for (i = 0; i < h; i++, C += inc, C2 += inc, P += XBUF_WIDTH)
 #else
@@ -482,11 +482,12 @@ PutSpriteHandleFull (UChar * P, UChar * C, unsigned long *C2, UChar * R,
 
 
 static void
-PutSpriteHflip (UChar * P, UChar * C, unsigned long *C2, UChar * R, int h,
+PutSpriteHflip (UChar * P, UChar * C, void * C2void, UChar * R, int h,
 		int inc)
 {
   int i, J;
-  unsigned long L;
+  UInt32 L;
+  UInt32 *C2 = C2void; // hack hack
 #if defined(NEW_GFX_ENGINE)
   for (i = 0; i < h; i++, C += inc, C2 += inc, P += XBUF_WIDTH)
 #else
@@ -564,7 +565,7 @@ PutSpriteM (UChar * P, UChar * C, UChar * C2, UChar * R, int h, int inc,
 	    UChar * M, UChar pr)
 {
   int i, J;
-  unsigned long L;
+  Uint32 L;
 #if defined(NEW_GFX_ENGINE)
   for (i = 0; i < h;
        i++, C += inc, C2 += inc * 4, P += XBUF_WIDTH, M += XBUF_WIDTH)
@@ -629,7 +630,7 @@ PutSpriteHflipM (UChar * P, UChar * C, UChar * C2, UChar * R, int h,
 		 int inc, UChar * M, UChar pr)
 {
   int i, J;
-  unsigned long L;
+  Uint32 L;
 #if defined(NEW_GFX_ENGINE)
   for (i = 0; i < h;
        i++, C += inc, C2 += inc * 4, P += XBUF_WIDTH, M += XBUF_WIDTH)
@@ -693,7 +694,7 @@ PutSpriteMakeMask (UChar * P, UChar * C, UChar * C2, UChar * R, int h,
 {
   int i;
   UInt16 J;
-  unsigned long L;
+  UInt32 L;
 #if defined(NEW_GFX_ENGINE)
   for (i = 0; i < h;
        i++, C += inc, C2 += inc * 4, P += XBUF_WIDTH, M += XBUF_WIDTH)
@@ -818,7 +819,7 @@ PutSpriteHflipMakeMask (UChar * P, UChar * C, UChar * C2, UChar * R,
 			int h, int inc, UChar * M, UChar pr)
 {
   int i, J;
-  unsigned long L;
+  Uint32 L;
 #if defined(NEW_GFX_ENGINE)
   for (i = 0; i < h;
        i++, C += inc, C2 += inc * 4, P += XBUF_WIDTH, M += XBUF_WIDTH)
