@@ -48,6 +48,15 @@ AC_CHECK_LIB(SDL_mixer,main) #,,[AC_MSG_ERROR([need SDL_mixer. See #http://www.l
 AC_CHECK_LIB(vorbis, main)
 AC_CHECK_LIB(vorbisfile, main)
 
+AC_CHECK_LIB(argp, argp_parse, [
+  AC_DEFINE([HAVE_ARGP], [1], [Define to 1 if you have the 'argp' library (-largp)])
+  LIBS="$LIBS -largp"
+], [
+  AC_CHECK_LIB(c, argp_parse, [
+   AC_DEFINE([HAVE_ARGP], [1], [Define to 1 if you have the 'argp' support in the C library])
+  ])
+])
+
 LIBZ_SUPPORT=no
 
 AC_CHECK_LIB(z, main, [

@@ -15,8 +15,9 @@
  */
 #include "iniconfig.h"
 #include "utils.h"
+#include "config.h"
 
-#if !defined(WIN32) && !defined(SOLARIS)
+#if defined(HAVE_ARGP)
 #include <argp.h>
 #endif
 
@@ -382,7 +383,7 @@ set_arg (char nb_arg, const char *val)
     }
 }
 
-#if !defined(WIN32) && !defined(SOLARIS)
+#if defined(HAVE_ARGP)
 
 //! program header for GNU argp function
 const char *argp_program_version = "Hu-Go! 2.12";
@@ -553,15 +554,12 @@ static struct argp argp = { options, parse_opt, args_doc, doc };
 void
 parse_commandline (int argc, char **argv)
 {
-#if defined(WIN32) || defined(SOLARIS)
-  char next_arg, i, arg_error = 0;
-#endif
-
   Log ("--[ PARSING COMMAND LINE ]--------------------------\n");
 
-#if !defined(WIN32) && !defined(SOLARIS)
+#if defined(HAVE_ARGP)
   argp_parse (&argp, argc, argv, 0, 0, &option);
 #else
+  char next_arg, i, arg_error = 0;
   next_arg = 0;
   for (i = 1; i < argc; i++)
     if (!next_arg)
