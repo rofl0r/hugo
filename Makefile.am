@@ -24,7 +24,7 @@ endif
 if GTK
 
 hugo_SOURCES += support.c interface.c callbacks.c gtk_main.c
-hugo_LDADD = @GTK_LIBS@
+hugo_LDADD = @GTK_LIBS@ @XLIBS@
 
 if NETPLAY
 hugod_SOURCES += support.c interface-server.c callbacks-server.c gtk_main-server.c
@@ -92,7 +92,7 @@ EXTRA_hugo_SOURCES = osd_dos_cd.c osd_dos_cd.h osd_dos_gfx.c osd_dos_gfx.h \
 	netplay.c netplay.h interface-server.h interface-server.c callbacks-server.h \
 	callbacks-server.c gtk_main-server.h gtk_main-server.c
 
-AM_CFLAGS = @GTK_CFLAGS@ @CFLAGS@ -D@HUGO_TARGET_MACHINE@ @HUGO_TARGET_LIBRARY@
+AM_CFLAGS = @GTK_CFLAGS@ @XINCS@ @CFLAGS@ -D@HUGO_TARGET_MACHINE@ @HUGO_TARGET_LIBRARY@
 
 hugo_LDFLAGS = @HUGO_TARGET_LIBRARY_LD@
 hugod_LDFLAGS = -lSDL_net
