@@ -10,7 +10,42 @@
 #ifndef _INCLUDE_HARD_PCE_H
 #define _INCLUDE_HARD_PCE_H
 
+#include <stdio.h>
+
+#include "config.h"
 #include "cleantyp.h"
+
+#if defined(SHARED_MEMORY)
+
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+#endif
+
+#define PSG_VOICE_REG           0 /* voice index */
+
+#define PSG_VOLUME_REG          1 /* master volume */
+
+#define PSG_FREQ_LSB_REG        2 /* lower 8 bits of 12 bit frequency */
+
+#define PSG_FREQ_MSB_REG        3 /* actually most significant nibble */
+
+#define PSG_DDA_REG             4
+#define PSG_DDA_ENABLE          0x80 /* bit 7 */
+#define PSG_DDA_DIRECT_ACCESS   0x40 /* bit 6 */
+#define PSG_DDA_VOICE_VOLUME    0x1F /* bits 0-4 */
+
+#define PSG_BALANCE_REG         5
+#define PSG_BALANCE_LEFT        0xF0 /* bits 4-7 */
+#define PSG_BALANCE_RIGHT       0x0F /* bits 0-3 */
+
+#define PSG_DATA_INDEX_REG      6
+
+#define PSG_NOISE_REG           7
+#define PSG_NOISE_ENABLE        0x80 /* bit 7 */
+
+#define PSG_DIRECT_ACCESS_BUFSIZE 1024
 
 /**
   * Exported structure types
@@ -57,7 +92,7 @@ typedef struct tagIO {
 	UChar joy_select; /* used to know what nibble we must return */
 	UChar joy_counter; /* current addressed joypad */
 	/* PSG */
-	UChar PSG[6][8],wave[6][32],wavofs[6];
+	UChar PSG[6][8], wave[6][32];
         // PSG STRUCTURE
         // 0 : dda_out
         // 2 : freq (lo byte)  | In reality it's a divisor
@@ -71,12 +106,21 @@ typedef struct tagIO {
         //     |
         //    enable
         // 5 : pan (left vol = hi nibble, right vol = low nibble)
-        // 7 : noise_ctrl
+        // 6 : wave ringbuffer index
+        // 7 : noise data for channels 5 and 6
+
 	UChar psg_ch,psg_volume,psg_lfo_freq,psg_lfo_ctrl;
+
+    UChar psg_da_data[6][PSG_DIRECT_ACCESS_BUFSIZE];
+    UInt16 psg_da_index[6], psg_da_count[6];
+    boolean psg_channel_disabled[6];
+
 	/* TIMER */
 	UChar timer_reload,timer_start,timer_counter;
+
 	/* IRQ */
 	UChar irq_mask,irq_status;
+
 	/* CDROM extention */
 	SInt32 backup,adpcm_firstread;
 
@@ -119,14 +163,27 @@ typedef struct tagIO {
   * Exported functions to access hardware
   **/
 
-void    IO_write(UInt16 A,UChar V);
-UChar   IO_read(UInt16 A);
+void    IO_write (UInt16 A,UChar V);
+UChar   IO_read  (UInt16 A);
+void    bank_set (UChar P, UChar V);
+
+/**
+  * Global structure for all hardware variables
+  **/
+
+#include "shared_memory.h"
 
 /**
   * Exported variables
   **/
 
-extern UChar RAM[0x8000];
+extern struct_hard_pce* hard_pce;
+// The global structure for all hardware variables
+
+extern IO io;
+// the global I/O status
+
+extern UChar *RAM;
 // mem where variables are stocked (well, RAM... )
 // in reality, only 0x2000 bytes are used in a coregraphx and 0x8000 only
 // in a supergraphx
@@ -142,12 +199,12 @@ extern UChar *VRAM;
 // about the pattern and palette to use for each tile, and patterns
 // for use in sprite/tile rendering
 
-extern UInt16 SPRAM[64*4];
+extern UInt16 *SPRAM;
 // SPRAM = sprite RAM
 // The pc engine got a function to transfert a piece VRAM toward the inner
 // gfx cpu sprite memory from where data will be grabbed to render sprites
 
-extern UChar Pal[512];
+extern UChar *Pal;
 // PCE->PC Palette convetion array
 // Each of the 512 available PCE colors (333 RGB -> 512 colors)
 // got a correspondancy in the 256 fixed colors palette
@@ -160,6 +217,11 @@ extern UChar *vchange,*vchanges;
 // These array are boolean array to know if we must update the
 // corresponding linear sprite representation in VRAM2 and VRAMS or not
 // if (vchanges[5] != 0) 6th pattern in VRAM2 must be updated
+
+#define scanline (*p_scanline)
+
+extern UInt32 *p_scanline;
+// The current rendered line on screen
 
 extern UChar *PCM;
 // The ADPCM array (0x10000 bytes)
@@ -201,41 +263,89 @@ extern UChar* zp_base;
 extern UChar* sp_base;
 // pointer to the beginning of the Stack Area
 
-extern UChar mmr[8];
+extern UChar* mmr;
 // Value of each of the MMR registers
 
-extern UChar irequest;
-// boolean to know whether some interrupts are waiting for interrupt unmasking
+extern UChar *Page[8];
+// physical address on emulator machine less 0x2000 by index (trick to access "faster" the mem)
 
-UChar aftercli;
+extern UChar *IOAREA;
+// physical address on emulator machine of the IO area (fake address as it has to be handled specially)
+
+extern UChar *ROMMap[256];
+// physical address on emulator machine of each of the 256 banks
+
+#define irequest (*p_irequest)
+
+extern UChar *p_irequest;
+// bit field storing awaiting interruptions
+
+#define aftercli (*p_aftercli)
+
+extern UChar *p_aftercli;
 // boolean to know whether we've just encoutered a cli
 
-extern UInt32 cyclecount;
+#define cyclecount (*p_cyclecount)
+
+extern UInt32 *p_cyclecount;
 // Number of elapsed cycles
 
-UInt32 cyclecountold;
+#define cyclecountold (*p_cyclecountold)
+
+extern UInt32 *p_cyclecountold;
 // Previous number of elapsed cycles
 
-UInt32 ibackup;
+#define ibackup (*p_ibackup)
+
+extern UInt32 *p_ibackup;
 // Backup value for elapsed cycle when executing interrupts
+
+#define external_control_cpu (*p_external_control_cpu)
+
+extern SInt32 *p_external_control_cpu;
 
 extern const UInt32 TimerPeriod;
 // Base period for the timer
 
 // registers:
 
+#if defined(SHARED_MEMORY)
+
+#define reg_pc	(*p_reg_pc)
+#define reg_a   (*p_reg_a)
+#define reg_x   (*p_reg_x)
+#define reg_y   (*p_reg_y)
+#define reg_p   (*p_reg_p)
+#define reg_s   (*p_reg_s)
+
+extern UInt16 *p_reg_pc;
+extern UChar  *p_reg_a;
+extern UChar  *p_reg_x;
+extern UChar  *p_reg_y;
+extern UChar  *p_reg_p;
+extern UChar  *p_reg_s;
+
+#else
 extern UInt16 reg_pc;
 extern UChar  reg_a;
 extern UChar  reg_x;
 extern UChar  reg_y;
 extern UChar  reg_p;
 extern UChar  reg_s;
+#endif
+
 // These are the main h6280 register, reg_p is the flag register
 
-extern UChar  halt_flag;
-extern long   cycles;
-extern long   frames;
-// TODO : comment and/or remove those variables
+#define cycles (*p_cycles)
+
+extern UInt32 *p_cycles;
+// Number of pc engine cycles elapsed since the resetting of the emulated console
+
+#define frames (*p_frames)
+
+extern UInt32 *p_frames;
+// Number of frames the console would have rendered (i.e. when setting frameskip to 1,
+// This is the double of frame rendered on pc)
 
 /**
   * Definitions to ease writing

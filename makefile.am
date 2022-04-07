@@ -1,0 +1,122 @@
+bin_PROGRAMS = hugo
+
+if SDL_LINUX
+
+hugo_SOURCES = pce.c hard_pce.c sprite.c h6280.c view_zp.c edit_ram.c debug.c format.c \
+  subs_eagle.c cd.c hcd.c lsmp3.c sound.c mix.c followop.c dis.c optable.c \
+  view_inf.c lang.c list_rom.c iniconfig.c trans_fx.c cheat.c gfx.c bp.c bios.c \
+	osd_linux_cd.c osd_linux_snd.c osd_linux_keyboard.c osd_linux_sdl_gfx.c osd_linux_sdl_machine.c \
+	hugo.c support.c interface.c callbacks.c gtk_main.c
+
+endif
+
+if ALLEGRO_LINUX
+
+hugo_SOURCES = pce.c hard_pce.c sprite.c h6280.c view_zp.c edit_ram.c debug.c format.c \
+  subs_eagle.c cd.c hcd.c lsmp3.c sound.c mix.c followop.c dis.c optable.c \
+  view_inf.c lang.c list_rom.c iniconfig.c trans_fx.c cheat.c gfx.c bp.c bios.c \
+	osd_linux_cd.c osd_linux_snd.c osd_linux_keyboard.c osd_linux_allegro_gfx.c osd_linux_allegro_machine.c \
+	hugo.c
+
+endif
+
+if SDL_WIN32
+
+hugo_SOURCES = pce.c hard_pce.c sprite.c h6280.c view_zp.c edit_ram.c debug.c format.c \
+  subs_eagle.c cd.c hcd.c lsmp3.c sound.c mix.c followop.c dis.c optable.c \
+  view_inf.c lang.c list_rom.c iniconfig.c trans_fx.c cheat.c gfx.c bp.c bios.c \
+	osd_win_cd.c osd_win_snd.c osd_win_keyboard.c osd_win_sdl_gfx.c osd_win_sdl_machine.c \
+	hugo.c  support.c interface.c callbacks.c gtk_main.c
+
+endif
+
+if ALLEGRO_WIN32
+
+hugo_SOURCES = pce.c hard_pce.c sprite.c h6280.c view_zp.c edit_ram.c debug.c format.c \
+  subs_eagle.c cd.c hcd.c lsmp3.c sound.c mix.c followop.c dis.c optable.c \
+  view_inf.c lang.c list_rom.c iniconfig.c trans_fx.c cheat.c gfx.c bp.c bios.c \
+	osd_win_cd.c osd_win_snd.c osd_win_keyboard.c osd_win_allegro_gfx.c osd_win_allegro_machine.c \
+	hugo.c
+
+endif
+
+if ALLEGRO_DJGPP
+
+hugo_SOURCES = pce.c hard_pce.c sprite.c h6280.c view_zp.c edit_ram.c debug.c format.c \
+  subs_eagle.c cd.c hcd.c lsmp3.c sound.c mix.c followop.c dis.c optable.c \
+  view_inf.c lang.c list_rom.c iniconfig.c trans_fx.c cheat.c gfx.c bp.c bios.c \
+	osd_dos_cd.c osd_dos_snd.c osd_dos_keyboard.c osd_dos_gfx.c osd_dos_machine.c hugo.c
+
+endif
+
+if SDL_FREEBSD
+
+hugo_SOURCES = pce.c hard_pce.c sprite.c h6280.c view_zp.c edit_ram.c debug.c format.c \
+  subs_eagle.c cd.c hcd.c lsmp3.c sound.c mix.c followop.c dis.c optable.c \
+  view_inf.c lang.c list_rom.c iniconfig.c trans_fx.c cheat.c gfx.c bp.c bios.c \
+	osd_freebsd_cd.c osd_linux_snd.c osd_linux_keyboard.c osd_linux_sdl_gfx.c osd_linux_sdl_machine.c \
+	hugo.c support.c interface.c callbacks.c gtk_main.c
+
+endif
+
+if GTK
+
+  hugo_SOURCES += support.c interface.c callbacks.c gtk_main.c
+
+endif
+
+EXTRA_hugo_SOURCES = osd_dos_cd.c osd_dos_cd.h osd_dos_gfx.c osd_dos_gfx.h \
+  osd_dos_keyboard.c osd_dos_keyboard.h osd_dos_machine.c osd_dos_machine.h \
+	osd_linux_allegro_gfx.c osd_linux_allegro_gfx.h osd_linux_allegro_machine.c \
+	osd_linux_allegro_machine.h osd_linux_cd.c osd_linux_cd.h osd_linux_keyboard.c \
+	osd_linux_keyboard.h osd_linux_sdl_gfx.c osd_linux_sdl_gfx.h osd_linux_sdl_machine.c \
+	osd_linux_sdl_machine.h osd_linux_snd.c osd_linux_snd.h osd_win_allegro_gfx.c \
+	osd_win_allegro_gfx.h osd_win_allegro_machine.c osd_win_allegro_machine.h osd_win_cd.c \
+	osd_win_cd.h osd_win_keyboard.c osd_win_keyboard.h osd_win_sdl_gfx.c osd_win_sdl_gfx.h \
+	osd_win_sdl_machine.c osd_win_sdl_machine.h osd_win_snd.c osd_win_snd.h \
+	pce.h sys_cd.h sys_dep.h sys_gfx.h sys_inp.h sys_misc.h sys_snd.h cleantyp.h hard_pce.h \
+	cheat.h bios.h cd.h crc_ctl.h debug.h dis.h dis_cst.h dis_runtime.h edit_ram.h followop.h \
+	lang.h hcd.h h6280.h list_rom.h menu.h mix.h optable.h format.h view_zp.h globals.h \
+	defs.h interupt.h gui.h trans_fx.h sprite.h sound.h lsmp3.h libamp.h iso_ent.h bp.h \
+	view_inf.h iniconfig.h interf.h gfx.h shared_memory.h \
+	osd_freebsd_cd.c osd_freebsd_cd.h hugo.c hugo.h	support.c support.h callbacks.c callbacks.h \
+	interface.c interface.h gtk_main.c gtk_main.h akrip32.h myaspi32.h manual.h manual_convert.pl
+
+CFLAGS = @GTK_CFLAGS@ @CFLAGS@ -D@HUGO_TARGET_MACHINE@ @HUGO_TARGET_LIBRARY@
+
+hugo_LDFLAGS = @HUGO_TARGET_LIBRARY_LD@
+hugo_LDADD = @GTK_LIBS@
+
+install-data-local:
+	@$(NORMAL_INSTALL)
+	if test -d $(srcdir)/pixmaps; then \
+	  $(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/pixmaps; \
+	  for pixmap in $(srcdir)/pixmaps/*; do \
+	    if test -f $$pixmap; then \
+	      $(INSTALL_DATA) $$pixmap $(DESTDIR)$(pkgdatadir)/pixmaps; \
+	    fi \
+	  done \
+	fi	
+
+dist-hook:
+	if test -d pixmaps; then \
+	  mkdir $(distdir)/pixmaps; \
+	  for pixmap in pixmaps/*; do \
+	    if test -f $$pixmap; then \
+	      cp -p $$pixmap $(distdir)/pixmaps; \
+	    fi \
+	  done \
+	fi && \
+	if test -d extra_dev; then \
+	  mkdir $(distdir)/extra_dev; \
+	  for extra_dev in extra_dev/*; do \
+	    if test -f $$extra_dev; then \
+	      cp -p $$extra_dev $(distdir)/extra_dev; \
+	    fi \
+	  done \
+	fi
+
+manual.h : README manual_convert.pl
+	  ./manual_convert.pl > manual.h
+	  
+gtk_main.o : gtk_main.c manual.h gtk_main.h

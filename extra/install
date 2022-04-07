@@ -1,8 +1,0 @@
-cp hugo /usr/bin
-chown root.allegro /usr/bin/hugo
-chmod 4750 /usr/bin/hugo
-cp hu-go!.dat /etc/hugo.dat
-cp hu-go!.ini /etc/hugo.ini
-echo "if there were a problem with setting owner root.allegro"
-echo "add the following line to the file /etc/group"
-echo "allegro:x:25079:<list of users that want to run Hu-Go!>"

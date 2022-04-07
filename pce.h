@@ -2,8 +2,19 @@
 #ifndef _INCLUDE_PCE_H
 #define _INCLUDE_PCE_H
 
+#include "config.h"
+#include "sys_dep.h"
 #include "hard_pce.h"
 #include "cheat.h"
+#include "debug.h"
+#include "gfx.h"
+
+#if defined(SDL)
+
+// #include "osd_machine_sdl.h"
+
+#else
+#endif
 
 #define	WIDTH	(360+64)
 
@@ -33,9 +44,16 @@
 #include <sys/ioctl.h>
 #include <linux/cdrom.h>
 
+#elif defined(FREEBSD)
+
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+
 #elif defined(WIN32)
 
 #define PATH_MAX 255
+#define MAX_INPUT 255
 
 #endif
 
@@ -72,19 +90,12 @@
 #define	alleg_gui_unused
 
 #include "allegro.h"
-#include "gfx.h"
 #include "info_dat.h"
 #include "data.h"
 // Include some informations to correctly use the datafile
 
 extern DATAFILE* datafile;
 
-#endif
-
-#ifdef __GNUC__
-UChar _Rd6502(UInt16 A) __attribute__ ((const,regparm (1)))  ;
-void _Wr6502(UInt16 A,UChar V) __attribute__ ((regparm (2))) ;
-void bank_set(UChar P,UChar V) __attribute__ ((regparm (2)));
 #endif
 
 SInt32  CheckSprites(void);
@@ -143,9 +154,15 @@ extern char initial_path[PATH_MAX];
 
 extern char short_exe_name[PATH_MAX];
 
-extern UInt32 scanline;
+extern char sav_basepath[PATH_MAX];
+// base path for saved games
 
-extern IO io;
+extern char tmp_basepath[PATH_MAX];
+// base path for temporary operations
+
+extern char log_filename[PATH_MAX];
+// filename of the log
+
 
 #ifndef KERNEL_DS
 
@@ -192,6 +209,9 @@ extern BITMAP* XBuf;
 ####################################
 */
 
+extern char* server_hostname;
+// Name of the server to connect to
+
 extern SInt32 smode;
 // what sound card type should we use? (0 means the silent one,
 // my favorite : the fastest!!! ; and -1 means AUTODETECT;
@@ -233,6 +253,26 @@ extern UChar bcdbin[0x100];
 extern UChar binbcd[0x100];
 
 extern UInt32 pce_cd_sectoraddy;
+
+struct host_machine
+{
+  boolean stereo_sound;
+  UInt16  sample_size;
+};
+
+extern struct host_machine host;
+
+struct hugo_options
+{
+  boolean want_stereo;
+  boolean want_fullscreen;
+  boolean want_fullscreen_aspect;
+  UChar window_size;
+  UInt16 fullscreen_width;
+  UInt16 fullscreen_height;
+};
+
+extern struct hugo_options option;
 
 typedef struct
     {
@@ -297,9 +337,9 @@ extern volatile char can_blit;
 
 extern UChar cart_reload;
 
-#define min(a,b) ({typedef _ta = (a), _tb = (b); _ta _a = (a); _tb _b = (b);_a < _b ? _a : _b; })
+#define min(a,b) ({__typeof__(a) _a = (a); __typeof__(b) _b = (b);_a < _b ? _a : _b; })
 
-#define max(a,b) ({typedef _ta = (a), _tb = (b); _ta _a = (a); _tb _b = (b);_a > _b ? _a : _b; })
+#define max(a,b) ({__typeof__(a) _a = (a); __typeof__(b) _b = (b);_a > _b ? _a : _b; })
 
 // Video related defines
 
@@ -311,8 +351,6 @@ extern UChar can_write_debug;
 #define	VBlankON	   (io.VDC[CR].W&0x08)
 #define	SpriteON	   (io.VDC[CR].W&0x40)
 #define	ScreenON	   (io.VDC[CR].W&0x80)
-
-#define	VRAMSIZE	   0x20000
 
 #define	VDC_CR	   0x01
 #define	VDC_OR	   0x02
@@ -353,6 +391,9 @@ extern UChar can_write_debug;
 #define J_PSTART  13
 #define J_PAUTOI  14
 #define J_PAUTOII 15
+#define J_PXAXIS  16
+#define J_PYAXIS  17
+#define J_MAX     18
 
 // Post include to avoid circular definitions
 
@@ -377,10 +418,5 @@ extern UChar can_write_debug;
 #ifdef SOUND
 #include	"sound.h"
 #endif // SOUND
-
-#ifndef	TRUE
-#define	TRUE	1
-#define	FALSE	0
-#endif
 
 #endif

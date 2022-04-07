@@ -1,6 +1,11 @@
 #ifndef _INCLUDE_SYS_CD_H
 #define _INCLUDE_SYS_CD_H
 
+#ifndef LINUX
+#define CDROM_AUDIO_PLAY 0x11
+#define CDROM_AUDIO_PAUSED 0x12
+#endif
+
 /*
  * CD acces section
  * 

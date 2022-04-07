@@ -1,53 +1,112 @@
-#ifndef _DJGPP_CLEANTYP_H
-#define _DJGPP_CLEANTYP_H
+#ifndef _INCLUDE_CLEANTYP_H
+#define _INCLUDE_CLEANTYP_H
 
-#ifdef WIN32
+#include "config.h"
 
-#include "win/cleantyp.h"
+#ifdef TRUE
+#undef TRUE
+#endif
+
+#ifdef FALSE
+#undef FALSE
+#endif
+
+typedef enum
+{
+  FALSE,
+  TRUE
+} boolean;
+
+/* 8 Bits defines */
+
+#if SIZEOF_CHAR == 1
+
+/* Unsigned */
+typedef unsigned char UChar;
+
+#ifdef __AUDIO_H
+  typedef unsigned char BYTE;
+#endif
+
+/* Signed */
+typedef signed char SChar;
+typedef signed char Char;
 
 #else
 
-#if defined(DJGPP) && defined(MSDOS)
+#error sizeof (char) is not 1. Pretty weird. Contact author
 
-#include "dos/cleantyp.h"
+#endif // SIZEOF_CHAR == 1
 
-#else
+/****************************************************************************/
 
-#ifdef LINUX
+/* 16 Bits defines */
 
-#include "linux/cleantyp.h"
+#if SIZEOF_SHORT_INT == 2
 
-#else
+/* Unsigned */
+typedef unsigned short int UInt16;
 
-#ifdef generic
+#ifdef __AUDIO_H
+typedef unsigned short int WORD;
+#endif
 
-#include "generic/cleantyp.h"
+/* Signed */
+typedef signed short int SInt16;
+typedef signed short int Int16;
 
-#else
+#elif SIZEOF_INT == 2
 
-  // It's quite obvious but it's better when said :
-  // UChar are 8 bits unsigned values
-  // SChar are 8 bits signed values
+/* Unsigned */
+typedef unsigned int UInt16;
 
-  // BYTE are also 8 bits unsigned values
+#ifdef __AUDIO_H
+typedef unsigned short int WORD;
+#endif
 
-  // UInt16 are 16 bits unsigned values
-  // SInt16 are 16 bits signed values
+/* Signed */
+typedef signed int SInt16;
+typedef signed int Int16;
 
-  // WORD are also 16 bits unsigned values
+#else // neither int nor short are coded on 16 bits
 
-  // UInt32 are 32 bits unsigned values
-  // SInt32 are 32 bits signed values
-
-  // DWORD are also 32 bits unsigned values
-
-  #error Please define types accordingly to your system...
+#error neither short ints or ints are 16 bits long. Contact author.
 
 #endif
 
+/************************************************************************/
+
+/* 32 Bits defines */
+
+#if SIZEOF_INT == 4
+
+/* Unsigned */
+typedef unsigned int UInt32;
+
+#ifdef __AUDIO_H
+typedef unsigned int DWORD;
 #endif
 
+/* Signed */
+typedef signed int SInt32;
+typedef signed int Int32;
+
+#elif SIZEOF_LONG_INT == 4
+
+/* Unsigned */
+typedef unsigned long int UInt32;
+
+#ifdef __AUDIO_H
+typedef unsigned long int DWORD;
 #endif
+
+/* Signed */
+typedef signed long int SInt32;
+typedef signed long int Int32;
+
+#else
+
+#error neither ints nor long ints are 32 bits long. Contact author.
 
 #endif
 

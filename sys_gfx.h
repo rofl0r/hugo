@@ -1,14 +1,6 @@
 #ifndef _INCLUDE_SYS_GFX_H
 #define _INCLUDE_SYS_GFX_H
 
-typedef struct {
-        int  (*init)(void);
-        void (*draw)(void);
-        void (*shut)(void);
-} osd_gfx_driver;
-
-extern osd_gfx_driver osd_gfx_driver_list[];
-
 /*
  * Gfx section
  * 
@@ -30,6 +22,26 @@ extern osd_gfx_driver osd_gfx_driver_list[];
    */
    extern UChar* osd_gfx_buffer;
 
+   /*
+	  * osd_gfx_driver
+		*
+		* Structure defining an entry for a useable graphical plug in in Hu-Go!
+		*/		
+   typedef struct {
+        int  (*init)(void);
+        int  (*mode)(void);
+        void (*draw)(void);
+        void (*shut)(void);
+   } osd_gfx_driver;
+
+  /* 
+	 * osd_gfx_driver
+   *
+   * List of all driver (plug in) which can be used to render graphics
+   */
+   extern osd_gfx_driver osd_gfx_driver_list[];
+
+
   /*
    * osd_gfx_set_color
    *
@@ -39,7 +51,6 @@ extern osd_gfx_driver osd_gfx_driver_list[];
                        UChar r,
                        UChar g,
                        UChar b);
-
 
   /*
    * osd_gfx_savepict

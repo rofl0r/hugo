@@ -1,0 +1,32 @@
+Hu-Go! authors
+==============
+
+Hu-Go! is based on fpce, a pc engine emulator made by Bero.
+Improvements done in Xpce, from Hmmx, were also integrated.
+
+Work had then been resumed by Zeograd with the help (in no special order) of :
+- David Shadoff (new kernel code, ideas, ...)
+- Nyef (cd emulation, ...)
+- Ixion (linux coding, sdl joypad, cd emulation, sound emulation, ...)
+- Black- (gfx bug fixes, gp32 port, ...)
+- Cleaner (freeBSD port fixes)
+- Pit (gfx)
+- David Michel (ideas, ...)
+- Lester Barrow (linux coding, joypad support, ...)
+- Mooz (ideas, ...)
+- Bt Garner (ideas, ...)
+- Zoop & his gf (gfx bug fixes)
+
+Tests by :
+- Raph
+- Fagemul
+- NaMco
+- Fixo
+- sALTY
+- Gato
+- Nostromo
+- Cissou
+- Leeloo
+- Sir Jaguar
+
+I probably forgot some people, don't hesitate to contact me so that I can fix this.
