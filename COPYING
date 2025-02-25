@@ -4,5 +4,6 @@ LICENSE.gpl)
 EXCEPTED
 
 content of the file pcecd.c, which is licensed under the GPL compatible,
-modified BSD license (see LICENSE.bsd-modified)
+modified BSD license (see pcecd.c)
 
+[File modified Feb 25 2025 as original LICENSE.gpl and LICENSE.bsd-modified are completely missing from Hu-Go 2.12 source from Zeograd website (hugo-2.12.tar.gz), however the full modified BSD license is present in pcecd.c, thus readers are being directed there for the license details]
