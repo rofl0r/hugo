@@ -25,6 +25,21 @@
 #include "pce.h"
 #include "utils.h"
 
+/* Control codes */
+#define CMD_READ_SECTOR 0x08
+#define CMD_PLAY_AUDIO 0xD8
+#define CMD_STOP_AUDIO 0xD9
+#define CMD_PAUSE_AUDIO 0xDA
+#define CMD_GET_DIR_INFO 0xDE
+
+#define STATUS_CMD_ARG_RECEIVED 0xD0
+#define STATUS_CMD_COMPLETE 0xC8
+#define STATUS_PLAY_AUDIO 0xD8
+#define STATUS_RESET 0x40
+#define STATUS_DATA_READY 0x10
+#define STATUS_DATA_ACK 0x20
+#define STATUS_DATA_TRANSFER 0x80
+
 UChar pce_cd_cmdcnt;
 
 UInt32 pce_cd_sectoraddy;
@@ -65,13 +80,13 @@ pce_cd_handle_command (void)
 #endif
 
       if (--pce_cd_cmdcnt)
-	io.cd_port_1800 = 0xd0;
+	io.cd_port_1800 = STATUS_CMD_ARG_RECEIVED;
       else
-	io.cd_port_1800 = 0xc8;
+	io.cd_port_1800 = STATUS_CMD_COMPLETE;
 
       switch (pce_cd_curcmd)
 	{
-	case 0x08:
+	case CMD_READ_SECTOR:
 	  if (!pce_cd_cmdcnt)
 	    {
 #ifdef CD_DEBUG
@@ -95,7 +110,7 @@ pce_cd_handle_command (void)
 
 
 	      /* TEST */
-	      // cd_port_1800 = 0xD0; // Xanadu 2 doesn't block but still crash
+	      // cd_port_1800 = STATUS_CMD_ARG_RECEIVED; // Xanadu 2 doesn't block but still crash
 	      /* TEST */
 
 #ifdef CD_DEBUG
@@ -107,7 +122,7 @@ pce_cd_handle_command (void)
     if (Rd6502(0x20ff)==0xfe)
      cd_port_1800 = 0x98;
     else
-     cd_port_1800 = 0xc8;
+     cd_port_1800 = STATUS_CMD_COMPLETE;
  * ******** */
 
 	    }
@@ -115,22 +130,22 @@ pce_cd_handle_command (void)
 	    pce_cd_sectoraddress[3 - pce_cd_cmdcnt] = io.cd_port_1801;
 
 	  break;
-	case 0xd8:
+	case CMD_PLAY_AUDIO:
 
 	  pce_cd_temp_play[pce_cd_cmdcnt] = io.cd_port_1801;
 
 	  if (!pce_cd_cmdcnt)
 	    {
-	      io.cd_port_1800 = 0xd8;
+	      io.cd_port_1800 = CMD_PLAY_AUDIO;
 	    }
 	  break;
-	case 0xd9:
+	case CMD_STOP_AUDIO:
 
 	  pce_cd_temp_stop[pce_cd_cmdcnt] = io.cd_port_1801;
 
 	  if (!pce_cd_cmdcnt)
 	    {
-	      io.cd_port_1800 = 0xd8;
+	      io.cd_port_1800 = CMD_PLAY_AUDIO;
 /*
                if (pce_cd_temp_stop[3] == 1)
                  osd_cd_play_audio_track(bcdbin[pce_cd_temp_play[2]]);
@@ -175,10 +190,10 @@ pce_cd_handle_command (void)
 
 	    }
 	  break;
-	case 0xde:
+	case CMD_GET_DIR_INFO:
 
 #ifdef CD_DEBUG
-	  Log (" Arg for 0xde command is %X, command count is %d\n",
+	  Log (" Arg for CMD_GET_DIR_INFO command is %X, command count is %d\n",
 	       io.cd_port_1801, pce_cd_cmdcnt);
 #endif
 
@@ -195,7 +210,7 @@ pce_cd_handle_command (void)
 
 #ifdef CD_DEBUG
 	      Log
-		(" I'll answer to 0xde command request\nArguments are %x, %x, %x, %x\n",
+		(" I'll answer to CMD_GET_DIR_INFO command request\nArguments are %x, %x, %x, %x\n",
 		 pce_cd_temp_dirinfo[0], pce_cd_temp_dirinfo[1],
 		 pce_cd_temp_dirinfo[2], pce_cd_temp_dirinfo[3]);
 #endif
@@ -233,7 +248,7 @@ pce_cd_handle_command (void)
 		  pce_cd_read_datacnt = 2;
 
 #ifdef CD_DEBUG
-		  Log (" Data resulting of 0xde request is %x and %x\n",
+		  Log (" Data resulting of CMD_GET_DIR_INFO request is %x and %x\n",
 		       cd_read_buffer[0], cd_read_buffer[1]);
 #endif
 		  break;
@@ -337,21 +352,21 @@ pce_cd_handle_command (void)
       switch (io.cd_port_1801)
 	{
 	case 0x00:
-	  io.cd_port_1800 = 0xD8;
+	  io.cd_port_1800 = CMD_PLAY_AUDIO;
 	  break;
-	case 0x08:
+	case CMD_READ_SECTOR:
 	  pce_cd_curcmd = io.cd_port_1801;
 	  pce_cd_cmdcnt = 4;
 	  break;
-	case 0xD8:
+	case CMD_PLAY_AUDIO:
 	  pce_cd_curcmd = io.cd_port_1801;
 	  pce_cd_cmdcnt = 4;
 	  break;
-	case 0xD9:
+	case CMD_STOP_AUDIO:
 	  pce_cd_curcmd = io.cd_port_1801;
 	  pce_cd_cmdcnt = 4;
 	  break;
-	case 0xDA:
+	case CMD_PAUSE_AUDIO:
 	  pce_cd_curcmd = io.cd_port_1801;
 	  pce_cd_cmdcnt = 0;
 
@@ -361,11 +376,11 @@ pce_cd_handle_command (void)
 	    HCD_pause_playing ();
 
 	  break;
-	case 0xDE:
+	case CMD_GET_DIR_INFO:
 	  /* Get CD directory info */
 	  /* First arg is command? */
 	  /* Second arg is track? */
-	  io.cd_port_1800 = 0xd0;
+	  io.cd_port_1800 = STATUS_CMD_ARG_RECEIVED;
 	  pce_cd_cmdcnt = 2;
 	  pce_cd_read_datacnt = 3;	/* 4 bytes */
 	  pce_cd_curcmd = io.cd_port_1801;
@@ -374,21 +389,21 @@ pce_cd_handle_command (void)
 
 /*
         if (cd_port_1801 == 0x00) {
-            cd_port_1800 = 0xd8;
-        } else if (cd_port_1801 == 0x08) {
+            cd_port_1800 = CMD_PLAY_AUDIO;
+        } else if (cd_port_1801 == CMD_READ_SECTOR) {
             pce_cd_curcmd = cd_port_1801;
             pce_cd_cmdcnt = 4;
-        } else if (cd_port_1801 == 0xd8) {
+        } else if (cd_port_1801 == CMD_PLAY_AUDIO) {
             pce_cd_cmdcnt = 4;
             pce_cd_curcmd = cd_port_1801;
-        } else if (cd_port_1801 == 0xd9) {
+        } else if (cd_port_1801 == CMD_STOP_AUDIO) {
             pce_cd_cmdcnt = 4;
             pce_cd_curcmd = cd_port_1801;
-        } else if (cd_port_1801 == 0xde) {
+        } else if (cd_port_1801 == CMD_GET_DIR_INFO) {
             // Get CD directory info
             // First arg is command?
             // Second arg is track?
-            cd_port_1800 = 0xd0;
+            cd_port_1800 = STATUS_CMD_ARG_RECEIVED;
             pce_cd_cmdcnt = 2;
             pce_cd_read_datacnt = 3; // 4 bytes
             pce_cd_curcmd = cd_port_1801;
@@ -441,9 +456,9 @@ UChar pce_cd_handle_read_1800(UInt16 A)
 
         io.backup = DISABLE;
 
-        /* TEST */// return 0x20;
+        /* TEST */// return STATUS_DATA_ACK;
 
-        return tmp_res | 0x20;
+        return tmp_res | STATUS_DATA_ACK;
 
       }
 
@@ -498,7 +513,7 @@ UChar pce_cd_handle_read_1800(UInt16 A)
                   fprintf (stderr,
                            "Sector data count over.\n");
 #endif
-                  io.cd_port_1800 |= 0x10;
+                  io.cd_port_1800 |= STATUS_DATA_READY;
                   pce_cd_curcmd = 0;
                 }
               else
@@ -531,7 +546,7 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
 
     case 0:
       if (V == 0x81)
-        io.cd_port_1800 = 0xD0;
+        io.cd_port_1800 = STATUS_CMD_ARG_RECEIVED;
       return;
     case 1:
       io.cd_port_1801 = V;
@@ -564,10 +579,10 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
               fprintf(stderr,"ANOTHER RESET? command at 1801\n");
               #endif
             */
-            io.cd_port_1800 = 0x40;
+            io.cd_port_1800 = STATUS_RESET;
             return;
-          case 0xD8:
-          case 0xD9:
+          case CMD_PLAY_AUDIO:
+          case CMD_STOP_AUDIO:
             /*
               #ifndef FINAL_RELEASE
               fprintf(stderr,"PLAY AUDIO? command at 1801\n");
@@ -575,7 +590,7 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
             */
             return;
 
-          case 0xDA:
+          case CMD_PAUSE_AUDIO:
             /*
               #ifndef FINAL_RELEASE
               fprintf(stderr,"PAUSE AUDIO PLAYING? command at 1801\n");
@@ -590,7 +605,7 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
               #endif
             */
             return;
-          case 0xDE:
+          case CMD_GET_DIR_INFO:
             /*
               #ifndef FINAL_RELEASE
               fprintf(stderr,"GET DIRECTORY INFO? command at 1801\n");
@@ -615,13 +630,13 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
       // fprintf(stderr,"trying to access port 1802 in write\n");
 #endif
 
-      if ((!(io.cd_port_1802 & 0x80)) && (V & 0x80))
+      if ((!(io.cd_port_1802 & STATUS_DATA_TRANSFER)) && (V & STATUS_DATA_TRANSFER))
         {
-          io.cd_port_1800 &= ~0x40;
+          io.cd_port_1800 &= ~STATUS_RESET;
         }
-      else if ((io.cd_port_1802 & 0x80) && (!(V & 0x80)))
+      else if ((io.cd_port_1802 & STATUS_DATA_TRANSFER) && (!(V & STATUS_DATA_TRANSFER)))
         {
-          io.cd_port_1800 |= 0x40;
+          io.cd_port_1800 |= STATUS_RESET;
 
 #ifndef FINAL_RELEASE
           Log ("ADPCM trans = %d\n", pce_cd_adpcm_trans_done);
@@ -633,29 +648,29 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
               Log ("ack the DMA transfert of ADPCM data\n");
 #endif
 
-              io.cd_port_1800 |= 0x10;
+              io.cd_port_1800 |= STATUS_DATA_READY;
               pce_cd_curcmd = 0x00;
               pce_cd_adpcm_trans_done = 0;
 
             }
 
-          if (io.cd_port_1800 & 0x08)
+          if (io.cd_port_1800 & CMD_READ_SECTOR)
             {
               /*              deb_printf("pce_cd: data byte acknowledged.\n"); */
-              if (io.cd_port_1800 & 0x20)
+              if (io.cd_port_1800 & STATUS_DATA_ACK)
                 {
-                  io.cd_port_1800 &= ~0x80;
+                  io.cd_port_1800 &= ~STATUS_DATA_TRANSFER;
                 }
               else if (!pce_cd_read_datacnt)
                 {
-                  if (pce_cd_curcmd == 0x08)
+                  if (pce_cd_curcmd == CMD_READ_SECTOR)
                     {
                       if (!--cd_sectorcnt)
                         {
 #ifndef FINAL_RELEASE
                           fprintf (stderr, "sector data count over.\n");
 #endif
-                          io.cd_port_1800 |= 0x10;	/* wrong */
+                          io.cd_port_1800 |= STATUS_DATA_READY;	/* wrong */
                           pce_cd_curcmd = 0x00;
                         }
                       else
@@ -669,13 +684,13 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
                     }
                   else
                     {
-                      if (io.cd_port_1800 & 0x10)
+                      if (io.cd_port_1800 & STATUS_DATA_READY)
                         {
-                          io.cd_port_1800 |= 0x20;
+                          io.cd_port_1800 |= STATUS_DATA_ACK;
                         }
                       else
                         {
-                          io.cd_port_1800 |= 0x10;
+                          io.cd_port_1800 |= STATUS_DATA_READY;
                         }
                     }
                 }
@@ -723,7 +738,7 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
           Wr6502 (0x222D, 1);
           // This byte is set to 1 if a disc if present
 
-          //cd_port_1800 &= ~0x40;
+          //cd_port_1800 &= ~STATUS_RESET;
           io.cd_port_1804 = V;
         }
       else
@@ -732,8 +747,8 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
           fprintf (stderr, "Normal mode for CD asked\n");
 #endif
           io.cd_port_1804 = V;
-          // cd_port_1800 |= 0x40; // Maybe the previous reset is enough
-          // cd_port_1800 |= 0xD0;
+          // cd_port_1800 |= STATUS_RESET; // Maybe the previous reset is enough
+          // cd_port_1800 |= STATUS_CMD_ARG_RECEIVED;
           // Indicates that the Hardware is ready after such a reset
         }
       return;
@@ -767,7 +782,7 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
       if (!V)
         {
           io.cd_port_1800 &= ~0xF8;
-          io.cd_port_1800 |= 0xD8;
+          io.cd_port_1800 |= CMD_PLAY_AUDIO;
         }
 
       cd_port_180b = V;
@@ -792,7 +807,7 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
 #endif
         }
 
-      if (V & 0x08)		// set read pointer
+      if (V & CMD_READ_SECTOR)		// set read pointer
         {
           io.adpcm_rptr = io.adpcm_ptr.W;
           io.adpcm_firstread = 2;
@@ -807,9 +822,9 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
          else { io.adpcm_rptr = io.adpcm_ptr.W; io.adpcm_firstread = TRUE; }
       */
       /* TEST */
-      //if (V&0x08) io.
+      //if (V&CMD_READ_SECTOR) io.
 
-      if (V & 0x80)
+      if (V & STATUS_DATA_TRANSFER)
         {			// ADPCM reset
 #ifndef FINAL_RELEASE
           fprintf (stderr, "Reset mode for ADPCM\n");
