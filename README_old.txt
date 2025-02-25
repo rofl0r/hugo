@@ -258,7 +258,7 @@
 
     -- language : Language of most messages during the emulation
           0 -> English (default) (by me)
-          1 -> Français (by me)
+          1 -> FranÃ§ais (by me)
           2 -> Espanol (by my gf, and Juan roman Soriano)
           3 -> Slovensko (by ]pit[ )
           4 -> Portuguese (by CodeMaster)
