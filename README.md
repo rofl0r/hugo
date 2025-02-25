@@ -1,10 +1,14 @@
 # Hu-Go! PC Engine/TurboGrafx-16 Emulator
 
-_**Updated for modern AMD64 & ARM64 Linux.**_
+_**Updated for modern AMD64 & ARM64 Linux. ARM64 binaries provided.**_
 
-![Screenshot from 2025-02-25 03-36-04](https://github.com/user-attachments/assets/b0d69b44-dab5-45d5-b77f-975288a067fe)
+![Screenshot from 2025-02-25 04-34-09](https://github.com/user-attachments/assets/e8e53920-1a78-406f-89dc-ec07261c7cab)
 
-### Building (Linux)
+![Screenshot from 2025-02-25 04-37-04](https://github.com/user-attachments/assets/5255ca68-2b58-4937-96b1-0adcc933baad)
+
+_Screenshot from public domain ROM "Blox Graphics Slideshow"_
+
+## Building (Linux)
 
 Prerequisites:
 - gcc
