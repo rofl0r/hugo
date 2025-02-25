@@ -40,6 +40,11 @@
 #define STATUS_DATA_ACK 0x20
 #define STATUS_DATA_TRANSFER 0x80
 
+/* Helper macros */
+#define SET_CURRENT_CD_COMMAND() (pce_cd_curcmd = io.cd_port_1801)
+#define SET_STATUS_DATA_READY() (io.cd_port_1800 |= STATUS_DATA_READY)
+#define CLEAR_CURRENT_CD_COMMAND() (pce_cd_curcmd = 0x00)
+
 UChar pce_cd_cmdcnt;
 
 UInt32 pce_cd_sectoraddy;
@@ -355,19 +360,19 @@ pce_cd_handle_command (void)
 	  io.cd_port_1800 = CMD_PLAY_AUDIO;
 	  break;
 	case CMD_READ_SECTOR:
-	  pce_cd_curcmd = io.cd_port_1801;
+	  SET_CURRENT_CD_COMMAND();
 	  pce_cd_cmdcnt = 4;
 	  break;
 	case CMD_PLAY_AUDIO:
-	  pce_cd_curcmd = io.cd_port_1801;
+	  SET_CURRENT_CD_COMMAND();
 	  pce_cd_cmdcnt = 4;
 	  break;
 	case CMD_STOP_AUDIO:
-	  pce_cd_curcmd = io.cd_port_1801;
+	  SET_CURRENT_CD_COMMAND();
 	  pce_cd_cmdcnt = 4;
 	  break;
 	case CMD_PAUSE_AUDIO:
-	  pce_cd_curcmd = io.cd_port_1801;
+	  SET_CURRENT_CD_COMMAND();
 	  pce_cd_cmdcnt = 0;
 
 	  if (CD_emulation == 1)
@@ -383,7 +388,7 @@ pce_cd_handle_command (void)
 	  io.cd_port_1800 = STATUS_CMD_ARG_RECEIVED;
 	  pce_cd_cmdcnt = 2;
 	  pce_cd_read_datacnt = 3;	/* 4 bytes */
-	  pce_cd_curcmd = io.cd_port_1801;
+	  SET_CURRENT_CD_COMMAND();
 	  break;
 	}
 
@@ -513,7 +518,7 @@ UChar pce_cd_handle_read_1800(UInt16 A)
                   fprintf (stderr,
                            "Sector data count over.\n");
 #endif
-                  io.cd_port_1800 |= STATUS_DATA_READY;
+                  SET_STATUS_DATA_READY();
                   pce_cd_curcmd = 0;
                 }
               else
@@ -648,8 +653,8 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
               Log ("ack the DMA transfert of ADPCM data\n");
 #endif
 
-              io.cd_port_1800 |= STATUS_DATA_READY;
-              pce_cd_curcmd = 0x00;
+              SET_STATUS_DATA_READY();
+              CLEAR_CURRENT_CD_COMMAND();
               pce_cd_adpcm_trans_done = 0;
 
             }
@@ -670,8 +675,8 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
 #ifndef FINAL_RELEASE
                           fprintf (stderr, "sector data count over.\n");
 #endif
-                          io.cd_port_1800 |= STATUS_DATA_READY;	/* wrong */
-                          pce_cd_curcmd = 0x00;
+                          SET_STATUS_DATA_READY();	/* wrong */
+                          CLEAR_CURRENT_CD_COMMAND();
                         }
                       else
                         {
@@ -690,7 +695,7 @@ void pce_cd_handle_write_1800(UInt16 A, UChar V)
                         }
                       else
                         {
-                          io.cd_port_1800 |= STATUS_DATA_READY;
+                          SET_STATUS_DATA_READY();
                         }
                     }
                 }
