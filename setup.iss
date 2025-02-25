@@ -5,9 +5,9 @@
 AppName=Hu-Go!
 AppVerName=Hu-Go! 2.12
 AppPublisher=Zeograd
-AppPublisherURL=http://www.zeograd.com
+AppPublisherURL=https://github.com/sukibaby/hugo
 AppSupportURL=http://bugzilla.pcedev.com
-AppUpdatesURL=http://www.zeograd.com
+AppUpdatesURL=https://github.com/sukibaby/hugo
 DefaultDirName={pf}\hugo
 DefaultGroupName=Hu-Go!
 LicenseFile=LICENSE.full
@@ -38,9 +38,6 @@ Source: "BUGS"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "NEWS"; DestDir: "{app}\doc"; Flags: ignoreversion
 Source: "Changelog"; DestDir: "{app}\doc"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-
-[INI]
-Filename: "{app}\hugo.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://www.zeograd.com"
 
 [Icons]
 Name: "{group}\Hu-Go!"; Filename: "{app}\hugo.exe"

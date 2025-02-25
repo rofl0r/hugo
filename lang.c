@@ -42,7 +42,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "STILL NEED TO SEARCH",
    " * Allocating sprite array\n",
    "You played %s.\nThank you very much.\nSee you soon.\n",
-   "You can find free roms, tools to make your own pc engine game and more at\nHTTP://WWW.ZEOGRAD.COM.",
+   "Unknown ROM.",
    "See Ya!\n",			/* 40 */
    "time elapsed : %.0f sec.\n",
    "frame per sec. : %.2f (very informal)\n",
@@ -97,7 +97,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "PLUSIEURS ENDROITS POSSIBLES",
    " * Allocation du tableau de sprites\n",
    "Vous avez jouВ Е %s.\nMerci beaucoup.\nA bientУt.\n",
-   "ROM inconnue\nSi vous voulez faire avancer la science\nS'il vous plait, prenez contact avec moi Е ZEOGRAD@CARAMAIL.COM ;)\nJ'aimerai bien l'avoir.",
+   "ROM inconnue.",
    "A+ !\n",			/* 40 */
    "temps ВcoulВ : %.0f sec.\n",
    "images par seconde : %.2f (Е titre informel)\n",
@@ -153,7 +153,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "SE DEBE SEGUIR BUSCANDO",
    " * Ubicando de los sprites\n",
    "Juguadas %s.\nMuchas gracias.\nHasta la proxima vez.\n",
-   "ROM desconocida\nSi quieres hacer avanzar la sciencia\nEnviame un mail a ZEOGRAD@CARAMAIL.COM ;)\nQueria tenerla.",
+   "ROM desconocida.",
    "Hasta la proxima!\n",
    "tiempo passado : %.0f sec.\n",
    "imagen por sec. : %.2f (informal solo)\n",
@@ -209,7 +209,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "SE VEDNO MORA ISKATI",
    " * Zaznavanje 'sprite' zaporedja\n",
    "Igral si %s.\nHvala lepa.\nSe Se vidimo kasneje.\n",
-   "Neznan ROM\nCe hoces naredit napredek v vedi\nme kontaktirajte na ZEOGRAD@CARAMAIL.COM ;)\nSem zainterisiran za vse prispevke.",
+   "Neznan ROM.",
    "Adijo!\n",
    "porabljen cas : %.0f sek.\n",
    "slik na sekundo. : %.2f (zelo nepravilno)\n",
@@ -264,7 +264,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "AINDA PRECISA PROCURAR",
    " * Alocando a ordem do sprite\n",
    "VocИ jogou %s.\nMuito Obrigado.\nVejo vocИ logo.\n",
-   "ROM Desconhecida\nSe vocИ deseja informaЗФes sobre o progresso\nPor favor me contate em ZEOGRAD@CARAMAIL.COM ;)\nE ser interessado em ter isto.",
+   "ROM Desconhecida.",
    "Falo!\n",			/* 40 */
    "\ntempo decorrido : %.0f sec.\n",
    "quadro por seg. : %.2f (muito informal)\n",
@@ -320,7 +320,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "ES WIRD NOCH GESUCHT",
    " * Lokalisiere Sprite array",
    "Du hast %s gespielt.\nVielen Dank.\nSee you soon.\n",
-   "Unbekanntes ROM\nWenn du einen Vorschlag hast \nSchick mir ne Mail ZEOGRAD@CARAMAIL.COM ;)\nIch waere sehr interessiert ihn zu wissen ;).",
+   "Unbekanntes ROM.",
    "Ciao Ciao!\n",		/* 40 */
    "Vergangende Zeit : %.0f sec.\n",
    "Bilder pro sek. : %.2f (very informal)\n",
@@ -377,7 +377,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "ZOEKEN BLIJFT DOORGAAN",
    " * Allocating sprite array\n",
    "Je speelde %s.\nDank u vriendelijk.\nTot later.\n",
-   "Onbekende ROM\nAls je de wetenschap wil helpen\nstuur een mailtje naar ZEOGRAD@CARAMAIL.COM ;)\nI'd be interested in having it.",
+   "Onbekende ROM.",
    "Groeten!\n",		/* 40 */
    "gebruikte tijd : %.0f sec.\n",
    "beelden per sec. : %.2f (erg informatief)\n",
@@ -432,7 +432,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "KONIECZNE DALSZE POSZUKIWANIE",
    " * Rezerwacja tablicy obiektow\n",
    "Grales w %s.\nDziekuje ...\nDo zobaczenia.\n",
-   "Nieznany ROM\n Jesli chcesz wspomoc emulacje\nSkontaktuj sie ze mna: ZEOGRAD@CARAMAIL.COM ;)\nChetnie sie tym zajme.",
+   "Nieznany ROM.",
    "Czesc!\n",			/* 40 */
    "czas emulacji : %.0f sek.\n",
    "klatek na sek. : %.2f \n",
@@ -488,7 +488,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "CONTINUA A CERCARE!",
    " * Preparo sprite array \n",
    "hai giocato a %s.\nGrazie mille!.\nCi vediamo!.\n",
-   "ROM Ignota\nSe vuoi aiutare la scienza\nScrivimi a  ZEOGRAD@CARAMAIL.COM ;)\nMi interesserebbe averla.",
+   "ROM Ignota.",
    "Ciao!\n",			/* 40 */
    "Tempo trascorso : %.0f sec.\n",
    "frame per sec. : %.2f (approssim.)\n",
@@ -547,7 +547,7 @@ char *MESSAGE[NB_LANG][NB_MESSAGES] = {
    "ЕЩЁ НУЖНО ИСКАТЬ",
    " * Выделяю спрайтовый массив\n",
    "Вы играли %s.\nБольшое спасибо.\nДо скорой встречи.\n",
-   "Неизвестный ROM\nЕсли вы хотите послужить научному прогрессу\nПожалуйста свяжитесь со мной по адресу ZEOGRAD@CARAMAIL.COM ;)\nМне было бы интересно получить его.",
+   "Неизвестный ROM.",
    "Увидемся!\n",			/* 40 */
    "Прошедшее время : %.0f сек.\n",
    "Кадры в сек. : %.2f (very informal)\n",

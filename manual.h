@@ -1,7 +1,7 @@
 static char manual_content[] = "\
 Hu-Go! Quickstart\n\
 \n\
-[mail:zeograd@zeograd.com||Zeograd]\n\
+https://github.com/sukibaby/hugo\n\
 \n\
 Table of Contents\n\
 \n\

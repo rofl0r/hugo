@@ -1271,7 +1271,7 @@ create_window_about (void)
   gtk_label_set_justify (GTK_LABEL (label25), GTK_JUSTIFY_CENTER);
   gtk_label_set_line_wrap (GTK_LABEL (label25), TRUE);
 
-  label26 = gtk_label_new ("Maintainer : Zeograd\nHomepage : http://www.zeograd.com\nIRC : #utopiasoft @ Efnet\nThis software wouldn't have been here without the help of :\nDavid Shadoff\nBt Garner\nNyef\nMooz\nCleaner\nBero\nHmmx\nVideoman\nEagan\nGravis Zero\nRaph99\nFagemul\nIxion\nLester Barrow\nAnd many others I can't cite here but I don't forget");
+  label26 = gtk_label_new ("Maintainer : rofl0r, sukibaby\nHomepage : https://github.com/sukibaby/hugo");
   gtk_widget_show (label26);
   gtk_table_attach (GTK_TABLE (table6), label26, 0, 1, 2, 3,
                     (GtkAttachOptions) (GTK_FILL),
